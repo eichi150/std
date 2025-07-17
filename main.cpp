@@ -235,14 +235,15 @@ int main(int argc, char* argv[]){
 			}
 		}
 	}
+	
 	//Für Alias Stunden h oder Minuten m hinzufügen
 	for(auto& account : all_accounts){
 		if(str_argv[1] == account.get_alias() && argc >= 4){
-			if(str_argv[3] != "h" && str_argv[3] != "m"){
+			if(str_argv[3] != "-h" && str_argv[3] != "-m"){
 				return static_cast<int>(errors::untitled_error);
 			}
 			float time_float = stof(str_argv[2]);
-			if (str_argv[3] == "m"){
+			if (str_argv[3] == "-m"){
 				time_float /= 60.f;
 			}
 			
