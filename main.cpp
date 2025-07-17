@@ -16,7 +16,7 @@
 //./std BD 2 -n 
 
 //Zeige alle Entitys und Alias
-//./std -e
+//./std show
 
 //Zeige Stundenkonto an
 //./std show BD 
@@ -54,7 +54,8 @@ public:
 	std::string get_entity()const {return entity;}
 	std::string get_alias()const {return alias;}
 	std::vector<Entry> get_entry()const {return entry;}
-
+	
+	float get_hours()const{return hours;}
 	void add_entry(const Entry& new_entry){
 		entry.push_back(new_entry);
 	}
@@ -62,7 +63,7 @@ public:
 private:
 	std::string entity{};
 	std::string alias{};
-	float hours;
+	float hours{0.f};
 	std::vector<Entry> entry;
 	
 };
@@ -184,9 +185,31 @@ int main(int argc, char* argv[]){
 		all_accounts.push_back(new_account);
 		
 		jsonH.save_json_accounts(all_accounts);
+		
+		return 0;
 	}
-
-	for(const auto& account : all_accounts){
+	
+	//Zeige alle Entity und Alias an
+	if(argc == 2){
+		if(str_argv[1] == "show"){
+			int index{0};
+			for(const auto& account : all_accounts){
+				std::cout << index << ") " << account.get_alias() << " | " << account.get_entity() << std::endl;
+				++index;
+			}
+			return 0;
+		}
+	}
+	//Zeige spezifischen Account an
+	if(argc > 2 && str_argv[1] == "show"){
+		for(const auto& account : all_accounts){
+			if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
+				std::cout << "Bei " << account.get_entity() << " bisher " << account.get_hours() << " Stunden geleistet." << std::endl;
+				return 0;
+			}
+		}
+	}
+	/*for(const auto& account : all_accounts){
 		//Alias Stunden oder Minuten hinzufügen
 		if(str_argv[1] == account.get_alias() && argc == 4){
 			std::cout << "+ " << str_argv[2];
@@ -199,7 +222,7 @@ int main(int argc, char* argv[]){
 			}
 			std::cout << " " << einheit << " für "  <<  " eintragen - " << clock.get_time() << std::endl;
 		}
-	}
+	}*/
 	
 	
 	return 0;
