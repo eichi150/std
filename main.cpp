@@ -3,9 +3,11 @@
 #include <vector>
 #include <ctime>
 #include <iomanip>
-
+#include <regex>
+#include <ostream>
 #include <fstream>
 #include "json.hpp"
+
 // SIMPLE TIME DOCUMENTATION == std
 
 
@@ -26,14 +28,13 @@ using json = nlohmann::json;
 
 class Clock{
 public:
-	std::tm* get_time(){
+	std::tm get_time(){
 		
 		std::time_t now = std::time(nullptr);
 
-		std::tm* localTime = std::localtime(&now);
+		std::tm localTime = *std::localtime(&now);
 
-		
-		std::cout << std::put_time(localTime, "%Y-%m-%d %H:%M:%S") << std::endl;
+		std::cout << std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << std::endl;
 
 		return localTime;
 	}
@@ -43,20 +44,30 @@ public:
 struct Entry{
 	float hours;
 	std::string description;
-	std::tm* time_point;
+	std::tm time_point;
 };
 
 
 class Time_Account{
 public:
 	Time_Account(const std::string& ent, const std::string& al) : entity(ent), alias(al){};
-
+	
+	void set_hours(const float& amount){
+		hours = amount;
+	}
+	
 	std::string get_entity()const {return entity;}
 	std::string get_alias()const {return alias;}
 	std::vector<Entry> get_entry()const {return entry;}
 	
 	float get_hours()const{return hours;}
+	
+	void add_json_read_entry(const Entry& read_entry){
+		entry.push_back(read_entry);
+	}
+	
 	void add_entry(const Entry& new_entry){
+		hours += new_entry.hours;
 		entry.push_back(new_entry);
 	}
 	
@@ -83,14 +94,19 @@ public:
 			json account_json;
 			account_json["entity"] = account.get_entity();
 			account_json["alias"] = account.get_alias();
-
+			account_json["total_hours"] = account.get_hours();
+			
 			// Liste der Einträge
 			json eintraege = json::array();
 			for(const auto& entry : account.get_entry()){
 				json eintrag;
 				eintrag["hours"] = entry.hours;
 				eintrag["description"] = entry.description;
-				// eintrag["timepoint"] = entry.time_point;  // ggf. konvertieren
+				
+				std::stringstream ss;
+				ss << std::put_time(&entry.time_point, "%Y-%m-%d %H:%M:%S");
+				eintrag["timepoint"] = ss.str();
+				  
 				eintraege.push_back(eintrag);
 			}
 
@@ -102,7 +118,7 @@ public:
 		if (file.is_open()) {
 			file << daten.dump(4);
 			file.close();
-			std::cout << "Accounts gespeichert!" << std::endl;
+			std::cout << "Speichern erfolgreich!" << std::endl;
 		} else {
 			std::cerr << "Fehler beim öffnen der Datei." << std::endl;
 		}
@@ -128,12 +144,21 @@ public:
 				std::string entity = account_json.value("entity", "");
 				std::string alias = account_json.value("alias", "");
 				Time_Account account(entity, alias);
+				float total_hours = account_json.value("total_hours", 0.0f);
+				account.set_hours(total_hours);
 
 				for (const auto& entry_json : account_json["entries"]) {
 					float hours = entry_json.value("hours", 0.0f);
 					std::string description = entry_json.value("description", "");
-					Entry entry{hours, description, nullptr};  // Zeit ignoriert
-					account.add_entry(entry);
+					std::tm time_point{};
+					std::istringstream ss(entry_json.value("timepoint", ""));
+					ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
+					if(ss.fail()){
+						std::cerr << "Zeit konnte nicht gelesen werden.\n";
+						time_point = std::tm{};
+					}
+					Entry entry{hours, description, time_point};
+					account.add_json_read_entry(entry);
 				}
 
 				all_accounts.push_back(account);
@@ -186,6 +211,7 @@ int main(int argc, char* argv[]){
 		
 		jsonH.save_json_accounts(all_accounts);
 		
+		std::cout << alias << " | " << entity << " angelegt." << std::endl; 
 		return 0;
 	}
 	
@@ -209,20 +235,30 @@ int main(int argc, char* argv[]){
 			}
 		}
 	}
-	/*for(const auto& account : all_accounts){
-		//Alias Stunden oder Minuten hinzufügen
-		if(str_argv[1] == account.get_alias() && argc == 4){
-			std::cout << "+ " << str_argv[2];
-			std::string einheit;
-			
-			if (str_argv[3] == "h"){
-				einheit = "Std";
-			}else if(str_argv[3] == "m"){
-				einheit = "Min";
+	//Für Alias Stunden h oder Minuten m hinzufügen
+	for(auto& account : all_accounts){
+		if(str_argv[1] == account.get_alias() && argc >= 4){
+			if(str_argv[3] != "h" && str_argv[3] != "m"){
+				return static_cast<int>(errors::untitled_error);
 			}
-			std::cout << " " << einheit << " für "  <<  " eintragen - " << clock.get_time() << std::endl;
+			float time_float = stof(str_argv[2]);
+			if (str_argv[3] == "m"){
+				time_float /= 60.f;
+			}
+			
+			std::string description;
+			if(argc > 4){
+				description = str_argv[4];
+			}
+			Entry entry{time_float, description, clock.get_time()};
+			account.add_entry(entry);
+			
+			jsonH.save_json_accounts(all_accounts);
+			
+			std::cout << "Zeit eingetragen" << std::endl;
+			return 0;
 		}
-	}*/
+	}
 	
 	
 	return 0;
