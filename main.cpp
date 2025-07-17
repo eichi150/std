@@ -6,6 +6,7 @@
 #include <regex>
 #include <ostream>
 #include <fstream>
+#include <memory>
 #include "json.hpp"
 
 // SIMPLE TIME DOCUMENTATION == std
@@ -176,6 +177,38 @@ enum class errors{
 	untitled_error = 9
 };
 
+class Arg_Manager{
+public:
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv ) : jsonH(jH), str_argv(argv){};
+	
+	int add_account(std::vector<Time_Account>& all_accounts){
+		std::string entity = str_argv[2];
+		std::string alias = str_argv[3];
+				
+		for(const auto& account : all_accounts){
+			if(account.get_entity() == entity){
+				std::cout << "Entity bereits vergeben" << std::endl;
+				return static_cast<int>(errors::double_entity);
+			}
+			if(account.get_alias() == alias){
+				std::cout << "Alias bereits vergeben" << std::endl;
+				return static_cast<int>(errors::double_alias);
+			}
+		}
+		Time_Account new_account{entity, alias};
+		all_accounts.push_back(new_account);
+				
+		jsonH->save_json_accounts(all_accounts);
+				
+		std::cout << alias << " | " << entity << " angelegt." << std::endl;
+		
+		return 0;
+	}
+	
+private:
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::vector<std::string> str_argv;
+};
 
 int main(int argc, char* argv[]){
 
@@ -190,29 +223,12 @@ int main(int argc, char* argv[]){
 	Clock clock{};
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
+
+	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv};
 	
 	//Neuen Account hinzufügen	
 	if(str_argv[1] == "add" && argc == 4){
-		std::string entity = str_argv[2];
-		std::string alias = str_argv[3];
-		
-		for(const auto& account : all_accounts){
-			if(account.get_entity() == entity){
-				std::cout << "Entity bereits vergeben" << std::endl;
-				return static_cast<int>(errors::double_entity);
-			}
-			if(account.get_alias() == alias){
-				std::cout << "Alias bereits vergeben" << std::endl;
-				return static_cast<int>(errors::double_alias);
-			}
-		}
-		Time_Account new_account{entity, alias};
-		all_accounts.push_back(new_account);
-		
-		jsonH.save_json_accounts(all_accounts);
-		
-		std::cout << alias << " | " << entity << " angelegt." << std::endl; 
-		return 0;
+		return arg_man.add_account(all_accounts);
 	}
 	
 	//Zeige alle Entity und Alias an
