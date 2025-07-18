@@ -65,8 +65,8 @@ private:
 
 class JSON_Handler{
 private:
-	std::string entity_filepath{"../files/"};
-	std::string accounts_filepath{"../files/accounts.json"};
+	const std::string entity_filepath{"../files/"};
+	const std::string accounts_filepath{"../files/accounts.json"};
 public:
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
 		read_json_accounts(all_accounts);
@@ -204,11 +204,140 @@ enum class errors{
 	synthax = 3,
 	untitled_error = 9
 };
+enum class command{
+	  help = 0
+	, add
+	, delete_
+	, show
+	, time_unit 
+};
+
+enum class Language{
+	english = 0,
+	german 
+};
+
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc) : jsonH(jH), str_argv(argv), argc(argc){};
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, Language language)
+		 : jsonH(jH), str_argv(argv), argc(argc), language(language){};
 
+	int proceed_inputs(std::vector<Time_Account>& all_accounts){
+	
+		int method_responce{-1};
+			
+		if(argc == 1){
+			std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
+			method_responce = static_cast<int>(errors::ok);
+		}else
+		
+		if(argc == 2){
+		
+			//Zeige Hilfe an
+			//help
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
+				std::cout << help << std::endl;
+				method_responce = static_cast<int>(errors::ok);
+			}
+			
+			//Zeige alle Entity und Alias an
+			//show
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
+				method_responce = show_all(all_accounts);
+			}
+			
+		}else
+	
+		if(argc == 3){
+			//Zeige spezifischen Account an
+			//show ALIAS
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
+				method_responce = show_specific_entity(all_accounts);
+			}else
+					
+			//Account löschen
+			//del
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
+				method_responce = delete_account(all_accounts, str_argv[2]);
+			}
+			
+		}else
+		
+		if(argc == 4){
+			//Neuen Account hinzufügen
+			//add	
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
+				method_responce = add_account(all_accounts);
+			}else
+	
+			//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
+			//-h -m
+			if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
+				method_responce = add_hours(all_accounts);
+	
+			}else{
+				method_responce = static_cast<int>(errors::synthax);
+			}
+		}else
+	
+		if(argc == 5){
+			//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
+			//-h -m
+			if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
+				method_responce = add_hours(all_accounts);
+			}else{
+				method_responce = static_cast<int>(errors::synthax);
+			}
+		}else{
+			method_responce = static_cast<int>(errors::untitled_error);
+		}
+
+		return method_responce;
+	}
+	
+private:
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::vector<std::string> str_argv;
+	int argc;
+	Clock clock{};
+
+	Language language;
+	const std::string total_hours = "Total Hours";
+	
+	//show Tabellen setw(max_length[]) 
+	std::vector<int> max_length{
+		  10 //Index Standard	
+		, 10 //Alias Standard
+		, 15 //Entity Standard
+		, static_cast<int>(total_hours.size()) //TotalHours Standard
+	};
+
+	const std::map<int, std::regex> regex_pattern{
+		{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } }
+	};
+
+	const std::map<std::string, std::string> english_pack{
+		{"timepoint", "%Y-%m-%d %H:%M:%S"}
+	};
+	
+	const std::map<std::string, std::string> german_pack{
+		{"timepoint", "%d-%m-%Y %H:%M:%S"}
+	};
+	
+	const std::string help = {
+		"add 			Add new Entity give it a Alias\n"
+		"-h -m  		Time to save in Hours or Minutes\n"
+		"show 			Show all Entitys and Alias's\n"
+		"sh 			Short Form of show\n"
+		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
+		"For more Information read the README.md at github.com/eichi150/std\n"
+	 };
+		 
 	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
 		if(all_accounts.empty()){
 			return static_cast<int>(errors::untitled_error);
@@ -287,12 +416,12 @@ public:
 
 			int alias_size = account.get_alias().size();
 			if(alias_size > max_length[0]){
-				max_length[0] = alias_size;
+				max_length[1] = alias_size;
 			}
 						
 			int entity_size = account.get_entity().size();
 			if(entity_size > max_length[1]){
-				max_length[1] = entity_size;
+				max_length[2] = entity_size + 5;
 			}
 		}
 	}
@@ -345,7 +474,14 @@ public:
 				index = 0;
 				for(const auto& entry : account.get_entry()){
 					std::stringstream ss;
-					ss << std::put_time(&entry.time_point, "%Y-%m-%d %H:%M:%S");
+					
+					std::string time_format = english_pack.at("timepoint");
+					if(static_cast<int>(language) == static_cast<int>(Language::english)){
+						time_format = english_pack.at("timepoint");
+					}else if(static_cast<int>(language) == static_cast<int>(Language::german)){
+						time_format = german_pack.at("timepoint");
+					}
+					ss << std::put_time(&entry.time_point, time_format.c_str());
 
 					//Trennlinie 
 					std::cout << std::setfill('-') << std::setw( max_length[0] + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
@@ -395,46 +531,14 @@ public:
 			++index;
 		}
 		return static_cast<int>(errors::ok);
-	}
-	
-private:
-	std::shared_ptr<JSON_Handler> jsonH;
-	std::vector<std::string> str_argv;
-	int argc;
-	Clock clock{};
-
-
-	const std::string total_hours = "Total Hours";
-
-	//show Tabellen setw(max_length[]) 
-	std::vector<int> max_length{
-		  10 //Index Standard	
-		, 10 //Alias Standard
-		, 15 //Entity Standard
-		, static_cast<int>(total_hours.size()) //TotalHours Standard
-	};
-			
+	}	
 };
 
-enum class command{
-	  help = 0
-	, add
-	, delete_
-	, show
-	, time_unit 
-};
+
 
 int main(int argc, char* argv[]){
 
-	const std::string help = {
-		"add 			Add new Entity give it a Alias\n"
-		"-h -m  		Time to save in Hours or Minutes\n"
-		"show 			Show all Entitys and Alias's\n"
-		"sh 			Short Form of show\n"
-		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
-		"For more Information read the README.md at github.com/eichi150/std\n"
-	 };
-
+	Language language = Language::german;
 	
 	//Argumente entgegen nehmen und in vector<string> speichern
 	std::vector<std::string> str_argv;
@@ -442,87 +546,14 @@ int main(int argc, char* argv[]){
 		std::string arg = argv[i];
 		str_argv.push_back(arg);
 	}
+	argv = {};
 	
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
 
-	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc};
+	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, language};
 
-	std::map<int, std::regex> regex_pattern{
-		{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|show)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } }
-	};
-
-	int method_responce{-1};
-		
-	if(argc == 1){
-		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
-		method_responce = static_cast<int>(errors::ok);
-	}else
-	
-	if(argc == 2){
-	
-		//Zeige Hilfe an
-		//help
-		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
-			std::cout << help << std::endl;
-			method_responce = static_cast<int>(errors::ok);
-		}
-		
-		//Zeige alle Entity und Alias an
-		//show
-		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
-			method_responce = arg_man.show_all(all_accounts);
-		}
-		
-	}else
-
-	if(argc == 3){
-		//Zeige spezifischen Account an
-		//show ALIAS
-		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
-			method_responce = arg_man.show_specific_entity(all_accounts);
-		}else
-				
-		//Account löschen
-		//del
-		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
-			method_responce = arg_man.delete_account(all_accounts, str_argv[2]);
-		}
-		
-	}else
-	
-	if(argc == 4){
-		//Neuen Account hinzufügen
-		//add	
-		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
-			method_responce = arg_man.add_account(all_accounts);
-		}else
-
-		//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
-		//-h -m
-		if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
-			method_responce = arg_man.add_hours(all_accounts);
-
-		}else{
-			method_responce = static_cast<int>(errors::synthax);
-		}
-	}else
-
-	if(argc == 5){
-		//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
-		//-h -m
-		if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
-			method_responce = arg_man.add_hours(all_accounts);
-		}else{
-			method_responce = static_cast<int>(errors::synthax);
-		}
-	}else{
-		method_responce = static_cast<int>(errors::untitled_error);
-	}
+	int method_responce = arg_man.proceed_inputs(all_accounts);
 
 	//Error Output
 	switch (method_responce){
@@ -539,7 +570,7 @@ int main(int argc, char* argv[]){
 			std::cout << "Error9: Untitled Error\n";
 			break;
 		case static_cast<int>(errors::ok):
-			std::cout << "ok\n";
+			//std::cout << "ok\n";
 			break;
 		case -1:
 			std::cout << "unknown command\n";
