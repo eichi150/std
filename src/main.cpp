@@ -7,6 +7,8 @@
 #include <ostream>
 #include <fstream>
 #include <memory>
+#include <regex>
+#include <map>
 #include "json.hpp"
 
 // SIMPLE TIME DOCUMENTATION == std
@@ -208,8 +210,11 @@ public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc) : jsonH(jH), str_argv(argv), argc(argc){};
 
 	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
+		if(all_accounts.empty()){
+			return static_cast<int>(errors::untitled_error);
+		}
 		std::vector<Time_Account> adjusted_accounts;
-
+	
 		size_t size_before = all_accounts.size();
 		
 		std::remove_copy_if(all_accounts.begin(), all_accounts.end(),
@@ -245,7 +250,7 @@ public:
 		jsonH->save_json_accounts(all_accounts);
 		jsonH->save_json_entity(all_accounts, entity);
 				
-		std::cout << alias << " | " << entity << " angelegt." << std::endl;
+		std::cout << "-> " << alias << " | " << entity << " angelegt." << std::endl;
 		
 		return static_cast<int>(errors::ok);
 	}
@@ -411,6 +416,14 @@ private:
 			
 };
 
+enum class command{
+	  help = 0
+	, add
+	, delete_
+	, show
+	, time_unit 
+};
+
 int main(int argc, char* argv[]){
 
 	const std::string help = {
@@ -435,22 +448,33 @@ int main(int argc, char* argv[]){
 
 	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc};
 
+	std::map<int, std::regex> regex_pattern{
+		{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|show)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } }
+	};
+
 	int method_responce{-1};
-	
+		
 	if(argc == 1){
 		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 		method_responce = static_cast<int>(errors::ok);
 	}else
 	
 	if(argc == 2){
+	
 		//Zeige Hilfe an
-		if(str_argv[1] == "-h" || str_argv[1] == "help"){
+		//help
+		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
 			std::cout << help << std::endl;
 			method_responce = static_cast<int>(errors::ok);
 		}
 		
 		//Zeige alle Entity und Alias an
-		if(str_argv[1] == "show" || str_argv[1] == "sh"){
+		//show
+		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
 			method_responce = arg_man.show_all(all_accounts);
 		}
 		
@@ -458,25 +482,29 @@ int main(int argc, char* argv[]){
 
 	if(argc == 3){
 		//Zeige spezifischen Account an
-		if(str_argv[1] == "show" || str_argv[1] == "sh"){
+		//show ALIAS
+		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
 			method_responce = arg_man.show_specific_entity(all_accounts);
 		}else
 				
 		//Account löschen
-		if(str_argv[1] == "del"){
+		//del
+		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
 			method_responce = arg_man.delete_account(all_accounts, str_argv[2]);
 		}
 		
 	}else
 	
 	if(argc == 4){
-		//Neuen Account hinzufügen	
-		if(str_argv[1] == "add"){
+		//Neuen Account hinzufügen
+		//add	
+		if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
 			method_responce = arg_man.add_account(all_accounts);
 		}else
 
 		//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
-		if(str_argv[3] == "-h" || str_argv[3] == "-m"){
+		//-h -m
+		if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
 			method_responce = arg_man.add_hours(all_accounts);
 
 		}else{
@@ -485,8 +513,9 @@ int main(int argc, char* argv[]){
 	}else
 
 	if(argc == 5){
-		//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar	
-		if(str_argv[3] == "-h" || str_argv[3] == "-m"){
+		//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
+		//-h -m
+		if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
 			method_responce = arg_man.add_hours(all_accounts);
 		}else{
 			method_responce = static_cast<int>(errors::synthax);
