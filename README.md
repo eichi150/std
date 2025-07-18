@@ -1,56 +1,84 @@
+# 📘 std – Zeiterfassungstool
 
 ---
 
-*** README ***
+## 🔧 Befehle
 
----
+### ➕ Neue Entität mit Alias anlegen
 
-Mit add kann eine neue Entität mit Alias erstellt werden. std Ansprache per Alias!
+```bash
 ./std add ENTITY ALIAS
+```
 
-Bsp: 
-	> ./std add Minijob MJ  -> Minijob MJ erstellt.
+> Die Entität wird unter dem Alias angesprochen.
 
----
-
-Stunden oder Minuten eintragen, mit oder ohne Kommentar möglich:
-	> ./std ALIAS ZEIT EINHEIT "Comment"
-	> ./std ALIAS ZEIT EINHEIT
-
-Bsp:	
-	> ./std MJ 1 -h "Comment" 
-	=> Minijob +1 Stunde eingetragen.
-
-	oder
-
-	> ./std MJ 60 -m "Comment" 
-	-> 60min/60 = 1 Stunde => Minijob +1 Stunde eingetragen.
+**Beispiel:**
+```bash
+./std add Minijob MJ
+# → Minijob mit Alias MJ erstellt.
+```
 
 ---
 
-Alle Entity | Alias -Paare gespeicherter Accounts anzeigen:
-	> ./std show
+### ⏱️ Zeit eintragen (Stunden oder Minuten)
 
-Spezifischen Account anzeigen:
-	> ./std show ALIAS/ENTITY
+```bash
+./std ALIAS ZEIT EINHEIT "Kommentar"
+./std ALIAS ZEIT EINHEIT
+```
 
-Bsp: 	
-	> ./std show MJ
-	oder 
-	> ./std show Minijob
+**Beispiele:**
+
+```bash
+./std MJ 1 -h "Kommentar"
+# → Minijob +1 Stunde eingetragen
+
+./std MJ 60 -m "Kommentar"
+# → 60min / 60 = 1 Stunde → Minijob +1 Stunde eingetragen
+```
+
+---
+
+### 📄 Accounts anzeigen
+
+#### 🔹 Alle gespeicherten Accounts:
+```bash
+./std show
+```
+
+#### 🔹 Spezifischen Account anzeigen:
+```bash
+./std show ALIAS
+./std show ENTITY
+```
+
+**Beispiele:**
+```bash
+./std show MJ
+./std show Minijob
+```
 
 ---
 
-*** Ordnerstruktur: ***
+## 🗂️ Ordnerstruktur
 
-> std/
-	> src/
-		> main.cpp
-		> json.hpp
-		> std.exe
-	> files/
-		> accounts.json
-		> **Entity_Files**
+```
+std/
+├── src/
+│   ├── main.cpp
+│   ├── json.hpp
+│   └── std.exe
+├── files/
+│   ├── accounts.json
+│   └── <entity>.json (einzelne Entitätsdateien)
+```
 
 ---
-	
+
+## 📝 Hinweise
+
+- Zeit kann in Stunden (`-h`) oder Minuten (`-m`) eingegeben werden.
+- Kommentare sind optional.
+- Aliase vereinfachen die Eingabe und Verwaltung.
+
+---
