@@ -88,57 +88,63 @@ public:
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
 		read_json_accounts(all_accounts);
 	};
+
+	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
+		for(const auto& account : all_accounts){
+			if(entity_to_save == account.get_entity()){
+				json eintraege;
+				eintraege["entity"] = account.get_entity();
+				eintraege["alias"] = account.get_alias();
+				eintraege["total_hours"] = account.get_hours();
+				eintraege["entries"] = json::array();
+
+				for(const auto& entry : account.get_entry()){
+					json eintrag;
+					eintrag["hours"] = entry.hours;
+					eintrag["description"] = entry.description;
+
+					std::stringstream ss;
+					ss << std::put_time(&entry.time_point, "%Y-%m-%d %H:%M:%S");
+					eintrag["timepoint"] = ss.str();
+
+					eintraege["entries"].push_back(eintrag);
+				}
+
+				std::string entity_filepath_total = entity_filepath + account.get_entity() + ".json";
+				std::ofstream file_entry(entity_filepath_total);
+				if (file_entry.is_open()) {
+					file_entry << eintraege.dump(4);
+					file_entry.close();
+					std::cout << "**Debug: Entity-Datei gespeichert." << std::endl;
+				} else {
+					std::cerr << "Fehler beim �ffnen der Datei." << std::endl;
+				}
+			}
+		}
+	}
+
 	
-	void save_json_accounts(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
-		json daten = json::array();  // Hauptliste aller Accounts
+	void save_json_accounts(const std::vector<Time_Account>& all_accounts){
+		json daten = json::array();
 
 		for(const auto& account : all_accounts){
 			json account_json;
 			account_json["entity"] = account.get_entity();
 			account_json["alias"] = account.get_alias();
 			account_json["total_hours"] = account.get_hours();
-			
-			// Liste der Einträge
-			json eintraege = json::array();
-			for(const auto& entry : account.get_entry()){
-				json eintrag;
-				eintrag["hours"] = entry.hours;
-				eintrag["description"] = entry.description;
-				
-				std::stringstream ss;
-				ss << std::put_time(&entry.time_point, "%Y-%m-%d %H:%M:%S");
-				eintrag["timepoint"] = ss.str();
-				  
-				eintraege.push_back(eintrag);
-			}
-			
 			daten.push_back(account_json);
-			account_json["entries"] = eintraege;
-			
-			if(entity_to_save == account.get_entity()){
-		
-				std::string entity_filepath_total = entity_filepath + account.get_entity() + ".json";
-				std::ofstream file_entry(entity_filepath_total);
-				if (file_entry.is_open()) {
-					file_entry << account_json.dump(4);
-					file_entry.close();
-					std::cout << "**Debug: Entity_Datei Speichern erfolgreich!" << std::endl;
-				} else {
-					std::cerr << "Fehler beim öffnen der Datei." << std::endl;
-				}
-			}
 		}
-		
-				
+
 		std::ofstream file(accounts_filepath);
 		if (file.is_open()) {
 			file << daten.dump(4);
 			file.close();
-			std::cout << "**Debug: Accounts_Datei Speichern erfolgreich!" << std::endl;
+			std::cout << "**Debug: Accounts-Datei gespeichert." << std::endl;
 		} else {
-			std::cerr << "Fehler beim öffnen der Datei." << std::endl;
+			std::cerr << "Fehler beim �ffnen der Datei." << std::endl;
 		}
 	}
+
 
 	void read_json_accounts(std::vector<Time_Account>& all_accounts) {
 		std::ifstream eingabe(accounts_filepath);
@@ -201,7 +207,7 @@ public:
 		std::string alias = str_argv[3];
 				
 		for(const auto& account : all_accounts){
-			if(account.get_entity() == entity && account.get_alias() == alias){
+			if(account.get_entity() == entity){// && account.get_alias() == alias){
 				std::cout << "Entity / Alias Paar bereits vergeben" << std::endl;
 				return static_cast<int>(errors::double_pair);
 			}
@@ -209,7 +215,8 @@ public:
 		Time_Account new_account{entity, alias};
 		all_accounts.push_back(new_account);
 				
-		jsonH->save_json_accounts(all_accounts, entity);
+		jsonH->save_json_accounts(all_accounts);
+		jsonH->save_json_entity(all_accounts, entity);
 				
 		std::cout << alias << " | " << entity << " angelegt." << std::endl;
 		
@@ -299,7 +306,8 @@ int main(int argc, char* argv[]){
 			Entry entry{time_float, description, clock.get_time()};
 			account.add_entry(entry);
 			
-			jsonH.save_json_accounts(all_accounts, account.get_entity());
+			jsonH.save_json_accounts(all_accounts);
+			jsonH.save_json_entity(all_accounts, account.get_entity());
 			
 			std::cout << "Zeit eingetragen" << std::endl;
 			method_responce = 0;
