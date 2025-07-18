@@ -20,6 +20,30 @@
 
 ---
 
+###  Entität löschen
+
+```bash
+./std del ENTITY
+
+```
+
+**Beispiel:**
+```bash
+./std del Minijob
+# → Minijob entfernt.
+Die Entitätsdatei bleibt erhalten.
+```
+
+---
+
+**Beispiel:**
+```bash
+./std add Minijob MJ
+# → Minijob mit Alias MJ erstellt.
+```
+
+---
+
 ### ⏱️ Zeit eintragen (Stunden oder Minuten)
 
 ```bash
