@@ -1,4 +1,4 @@
-# 📘 std – Zeiterfassungstool
+# 📘 std – Simple Time Documentation - Zeiterfassungstool
 
 ---
 
@@ -44,6 +44,7 @@
 #### 🔹 Alle gespeicherten Accounts:
 ```bash
 ./std show
+./std sh
 ```
 
 #### 🔹 Spezifischen Account anzeigen:
