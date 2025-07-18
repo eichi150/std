@@ -3,7 +3,7 @@
 #include <vector>
 #include <ctime>
 #include <iomanip>
-#include <regex>
+#include <algorithm>
 #include <ostream>
 #include <fstream>
 #include <memory>
@@ -206,6 +206,29 @@ enum class errors{
 class Arg_Manager{
 public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc) : jsonH(jH), str_argv(argv), argc(argc){};
+
+	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
+		std::vector<Time_Account> adjusted_accounts;
+
+		size_t size_before = all_accounts.size();
+		
+		std::remove_copy_if(all_accounts.begin(), all_accounts.end(),
+			std::back_inserter(adjusted_accounts),
+			[entity_to_delete](const Time_Account& account){
+				return account.get_entity() == entity_to_delete;
+			}
+		);
+		
+		all_accounts = adjusted_accounts;
+		
+		if( all_accounts.size() < size_before){
+			std::cout << entity_to_delete << " wurde gelöscht." << std::endl;
+		}
+
+		jsonH->save_json_accounts(all_accounts);
+		
+		return static_cast<int>(errors::ok);
+	}
 	
 	int add_account(std::vector<Time_Account>& all_accounts){
 		std::string entity = str_argv[2];
@@ -273,37 +296,42 @@ public:
 		
 		set_table_width(all_accounts, max_length);
 		
-		std::cout << std::left 
-			<< std::setw(10) << "index"
-			<< std::setw(max_length[0]) << "Alias"
-			<< std::setw(max_length[1]) << "Entity"
-			<< std::setw(max_length[2]) << total_hours
-			<< std::endl;
-			
-		//Trennlinie 
-		std::cout << std::setfill('-') << std::setw(10 + max_length[0] + max_length[1] + max_length[2]) 
-			<< "-" << std::setfill(' ') << std::endl;
-		
 		int index{0};
 		
 		for(const auto& account : all_accounts){
 
 			if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
-				
-				//Datenzeilen
-				std::cout << std::left
-					<< std::setw(10) << index
-					<< std::setw( max_length[0]) << account.get_alias()
-					<< std::setw( max_length[1]) << account.get_entity()
-					<< std::setprecision(3) << std::setw( max_length[2]) << account.get_hours()
+				std::cout << std::left 
+					<< std::setw(max_length[0]) << "index"
+					<< std::setw(max_length[1]) << "Alias"
+					<< std::setw(max_length[2]) << "Entity"
+					<< std::setw(max_length[3]) << total_hours
 					<< std::endl;
 					
 				//Trennlinie 
-				std::cout << std::setfill('-') << std::setw(10 + max_length[0] + max_length[1] + max_length[2]) 
+				std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+					<< "-" << std::setfill(' ') << std::endl;
+
+					
+				//Datenzeilen
+				std::cout << std::left
+					<< std::setw( max_length[0]) << index
+					<< std::setw( max_length[1]) << account.get_alias()
+					<< std::setw( max_length[2]) << account.get_entity()
+					<< std::setprecision(3) << std::setw( max_length[3]) << account.get_hours()
+					<< std::endl;
+					
+				//Trennlinie 
+				std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
 					<< "-" << std::setfill(' ') << '\n' << std::endl;
 
+				if(account.get_entry().empty()){
+					std::cout << "No Entrys available" << std::endl;
+					break;
+				}
+				
 				std::cout << std::left
-					<< std::setw(10) << "index"
+					<< std::setw( max_length[0]) << "index"
 					<< std::setw(10) << "Hours"
 					<< std::setw(25) << "Timestamp"
 					<< std::setw(15) << "Comment"
@@ -315,10 +343,10 @@ public:
 					ss << std::put_time(&entry.time_point, "%Y-%m-%d %H:%M:%S");
 
 					//Trennlinie 
-					std::cout << std::setfill('-') << std::setw(10 + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
+					std::cout << std::setfill('-') << std::setw( max_length[0] + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
 					
 					std::cout << std::left
-						<< std::setw(10) << index
+						<< std::setw( max_length[0]) << index
 						<< std::setw(10) << entry.hours
 						<< std::setw(25) << ss.str()
 						<< std::setw(15) << entry.description
@@ -339,24 +367,24 @@ public:
 		set_table_width(all_accounts, max_length);
 		
 		std::cout << std::left 
-			<< std::setw(10) << "index"
-			<< std::setw( max_length[0]) << "Alias"
-			<< std::setw( max_length[1]) << "Entity"
-			<< std::setw( max_length[2]) << total_hours
+			<< std::setw( max_length[0]) << "index"
+			<< std::setw( max_length[1]) << "Alias"
+			<< std::setw( max_length[2]) << "Entity"
+			<< std::setw( max_length[3]) << total_hours
 			<< std::endl;
 		
 		int index{0};
 		for(const auto& account : all_accounts){
 
 			//Trennlinie 
-			std::cout << std::setfill('-') << std::setw(10 + max_length[0] + max_length[1] + max_length[2]) << "-" << std::setfill(' ') << std::endl;
+			std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) << "-" << std::setfill(' ') << std::endl;
 
 			//Datenzeilen
 			std::cout << std::left
-				<< std::setw(10) << index
-				<< std::setw( max_length[0]) << account.get_alias()
-				<< std::setw( max_length[1]) << account.get_entity()
-				<< std::setprecision(3) << std::setw( max_length[2]) << account.get_hours()
+				<< std::setw( max_length[0]) << index
+				<< std::setw( max_length[1]) << account.get_alias()
+				<< std::setw( max_length[2]) << account.get_entity()
+				<< std::setprecision(3) << std::setw( max_length[3]) << account.get_hours()
 				<< std::endl;
 			
 			++index;
@@ -372,9 +400,11 @@ private:
 
 
 	const std::string total_hours = "Total Hours";
-	
+
+	//show Tabellen setw(max_length[]) 
 	std::vector<int> max_length{
-		  10 //Alias Standard
+		  10 //Index Standard	
+		, 10 //Alias Standard
 		, 15 //Entity Standard
 		, static_cast<int>(total_hours.size()) //TotalHours Standard
 	};
@@ -423,13 +453,20 @@ int main(int argc, char* argv[]){
 		if(str_argv[1] == "show" || str_argv[1] == "sh"){
 			method_responce = arg_man.show_all(all_accounts);
 		}
+		
 	}else
 
 	if(argc == 3){
 		//Zeige spezifischen Account an
 		if(str_argv[1] == "show" || str_argv[1] == "sh"){
 			method_responce = arg_man.show_specific_entity(all_accounts);
+		}else
+				
+		//Account löschen
+		if(str_argv[1] == "del"){
+			method_responce = arg_man.delete_account(all_accounts, str_argv[2]);
 		}
+		
 	}else
 	
 	if(argc == 4){
@@ -437,10 +474,11 @@ int main(int argc, char* argv[]){
 		if(str_argv[1] == "add"){
 			method_responce = arg_man.add_account(all_accounts);
 		}else
-		
+
 		//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
 		if(str_argv[3] == "-h" || str_argv[3] == "-m"){
 			method_responce = arg_man.add_hours(all_accounts);
+
 		}else{
 			method_responce = static_cast<int>(errors::synthax);
 		}
