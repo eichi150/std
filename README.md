@@ -97,5 +97,14 @@ std/
 - Zeit kann in Stunden (`-h`) oder Minuten (`-m`) eingegeben werden.
 - Kommentare sind optional.
 - Aliase vereinfachen die Eingabe und Verwaltung.
+- Build with g++ 12.2.0 (Debian System)
+
+---
+
+## Lizenz und Haftung
+
+Dieses Projekt steht unter der [MIT-Lizenz](./LICENSE).
+Die Nutzung erfolgt **auf eigene Gefahr**. Der Autor übernimmt **keine Haftung**
+für etwaige Fehler, Datenverluste oder Schäden, die durch die Verwendung entstehen könnten.
 
 ---
