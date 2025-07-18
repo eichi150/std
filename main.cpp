@@ -16,7 +16,7 @@
 //./std add BuendnisDepression BD
 
 //BuendisDepression = BD 2Stunden zum aktuellen Zeitpunkt eintragen
-//./std BD 2 -n 
+//./std BD 2 -h "Comment"
 
 //Zeige alle Entitys und Alias
 //./std show
@@ -172,8 +172,7 @@ public:
 
 
 enum class errors{
-	double_entity = 1,
-	double_alias = 2,
+	double_pair = 1,
 	untitled_error = 9
 };
 
@@ -186,13 +185,9 @@ public:
 		std::string alias = str_argv[3];
 				
 		for(const auto& account : all_accounts){
-			if(account.get_entity() == entity){
-				std::cout << "Entity bereits vergeben" << std::endl;
-				return static_cast<int>(errors::double_entity);
-			}
-			if(account.get_alias() == alias){
-				std::cout << "Alias bereits vergeben" << std::endl;
-				return static_cast<int>(errors::double_alias);
+			if(account.get_entity() == entity && account.get_alias() == alias){
+				std::cout << "Entity / Alias Paar bereits vergeben" << std::endl;
+				return static_cast<int>(errors::double_pair);
 			}
 		}
 		Time_Account new_account{entity, alias};
@@ -212,6 +207,15 @@ private:
 
 int main(int argc, char* argv[]){
 
+	const std::string help = {
+		"add 		Add new Entity give it a Alias\n"
+		"-h -m  		Time to save in Hours or Minutes\n"
+		"show			Show all Entitys and Alias's\n"
+		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
+		"For more Information read the README.md at github.com/eichi150/std\n"
+	 };
+
+	
 	//Argumente entgegen nehmen und in vector<string> speichern
 	std::vector<std::string> str_argv;
 	for(int i{0}; i < argc; ++i){
@@ -225,10 +229,17 @@ int main(int argc, char* argv[]){
 	JSON_Handler jsonH{all_accounts};
 
 	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv};
+
+	int method_responce{-1};
+
+	if(argc == 2 && (str_argv[1] == "-h" || str_argv[1] == "help")){
+		std::cout << help << std::endl;
+		method_responce = 0;
+	}
 	
 	//Neuen Account hinzufügen	
 	if(str_argv[1] == "add" && argc == 4){
-		return arg_man.add_account(all_accounts);
+		method_responce = arg_man.add_account(all_accounts);
 	}
 	
 	//Zeige alle Entity und Alias an
@@ -239,7 +250,7 @@ int main(int argc, char* argv[]){
 				std::cout << index << ") " << account.get_alias() << " | " << account.get_entity() << std::endl;
 				++index;
 			}
-			return 0;
+			method_responce = 0;
 		}
 	}
 	//Zeige spezifischen Account an
@@ -247,7 +258,7 @@ int main(int argc, char* argv[]){
 		for(const auto& account : all_accounts){
 			if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
 				std::cout << "Bei " << account.get_entity() << " bisher " << account.get_hours() << " Stunden geleistet." << std::endl;
-				return 0;
+				method_responce = 0;
 			}
 		}
 	}
@@ -256,7 +267,8 @@ int main(int argc, char* argv[]){
 	for(auto& account : all_accounts){
 		if(str_argv[1] == account.get_alias() && argc >= 4){
 			if(str_argv[3] != "-h" && str_argv[3] != "-m"){
-				return static_cast<int>(errors::untitled_error);
+				method_responce = static_cast<int>(errors::untitled_error);
+				break;
 			}
 			float time_float = stof(str_argv[2]);
 			if (str_argv[3] == "-m"){
@@ -273,10 +285,10 @@ int main(int argc, char* argv[]){
 			jsonH.save_json_accounts(all_accounts);
 			
 			std::cout << "Zeit eingetragen" << std::endl;
-			return 0;
+			method_responce = 0;
 		}
 	}
 	
-	
-	return 0;
+		
+	return method_responce;
 }
