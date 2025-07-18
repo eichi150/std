@@ -11,9 +11,7 @@
 
 // SIMPLE TIME DOCUMENTATION == std
 
-
 using json = nlohmann::json;
-
 
 class Clock{
 public:
@@ -27,13 +25,11 @@ public:
 	}
 };
 
-
 struct Entry{
 	float hours;
 	std::string description;
 	std::tm time_point;
 };
-
 
 class Time_Account{
 public:
@@ -159,7 +155,6 @@ public:
 				}
 			}
 		}
-
 	}
 
 
@@ -194,10 +189,11 @@ public:
 	}
 };
 
-
 enum class errors{
+	ok = 0,
 	double_pair = 1,
 	not_found = 2,
+	synthax = 3,
 	untitled_error = 9
 };
 
@@ -210,8 +206,7 @@ public:
 		std::string alias = str_argv[3];
 				
 		for(const auto& account : all_accounts){
-			if(account.get_entity() == entity){// && account.get_alias() == alias){
-				//std::cout << "Entity / Alias Paar bereits vergeben" << std::endl;
+			if(account.get_entity() == entity){
 				return static_cast<int>(errors::double_pair);
 			}
 		}
@@ -223,7 +218,7 @@ public:
 				
 		std::cout << alias << " | " << entity << " angelegt." << std::endl;
 		
-		return 0;
+		return static_cast<int>(errors::ok);
 	}
 	
 	int add_hours(std::vector<Time_Account>& all_accounts){
@@ -245,7 +240,7 @@ public:
 				jsonH->save_json_entity(all_accounts, account.get_entity());
 				
 				std::cout << "Zeit eingetragen" << std::endl;
-				return 0;
+				return static_cast<int>(errors::ok);
 			}
 		}
 		return static_cast<int>(errors::not_found);
@@ -260,9 +255,10 @@ private:
 int main(int argc, char* argv[]){
 
 	const std::string help = {
-		"add 		Add new Entity give it a Alias\n"
+		"add 			Add new Entity give it a Alias\n"
 		"-h -m  		Time to save in Hours or Minutes\n"
-		"show			Show all Entitys and Alias's\n"
+		"show 			Show all Entitys and Alias's\n"
+		"sh 			Short Form of show\n"
 		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
 		"For more Information read the README.md at github.com/eichi150/std\n"
 	 };
@@ -283,45 +279,62 @@ int main(int argc, char* argv[]){
 	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc};
 
 	int method_responce{-1};
-
-	if(argc == 2 && (str_argv[1] == "-h" || str_argv[1] == "help")){
-		std::cout << help << std::endl;
-		method_responce = 0;
-	}
-
-	//Für Alias Stunden h oder Minuten m hinzufügen
-	if(argc >= 4){
-			
-		if(str_argv[3] != "-h" && str_argv[3] != "-m"){
-			method_responce = static_cast<int>(errors::untitled_error);
-		}else{
-			method_responce = arg_man.add_hours(all_accounts);
-		}
-	}
-
-	//Neuen Account hinzufügen	
-	if(str_argv[1] == "add" && argc == 4){
-		method_responce = arg_man.add_account(all_accounts);
+	
+	if(argc == 1){
+		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
+		method_responce = static_cast<int>(errors::ok);
 	}
 	
-	//Zeige alle Entity und Alias an
 	if(argc == 2){
-		if(str_argv[1] == "show"){
+		//Zeige Hilfe an
+		if(str_argv[1] == "-h" || str_argv[1] == "help"){
+			std::cout << help << std::endl;
+			method_responce = static_cast<int>(errors::ok);
+
+		}
+		//Zeige alle Entity und Alias an
+		if(str_argv[1] == "show" || str_argv[1] == "sh"){
 			int index{0};
 			for(const auto& account : all_accounts){
 				std::cout << index << ") " << account.get_alias() << " | " << account.get_entity() << std::endl;
 				++index;
 			}
-			method_responce = 0;
+			method_responce = static_cast<int>(errors::ok);
 		}
 	}
-	//Zeige spezifischen Account an
-	if(argc > 2 && str_argv[1] == "show"){
-		for(const auto& account : all_accounts){
-			if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
-				std::cout << "Bei " << account.get_entity() << " bisher " << account.get_hours() << " Stunden geleistet." << std::endl;
-				method_responce = 0;
+
+	if(argc == 3){
+		//Zeige spezifischen Account an
+		if(str_argv[1] == "show" || str_argv[1] == "sh"){
+			for(const auto& account : all_accounts){
+				if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
+					std::cout << "Bei " << account.get_entity() << " bisher " << account.get_hours() << " Stunden geleistet." << std::endl;
+					method_responce = static_cast<int>(errors::ok);
+				}
 			}
+		}
+	}
+	
+	if(argc == 4){
+		//Neuen Account hinzufügen	
+		if(str_argv[1] == "add"){
+			method_responce = arg_man.add_account(all_accounts);
+		}else
+		
+		//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
+		if(str_argv[3] == "-h" || str_argv[3] == "-m"){
+			method_responce = arg_man.add_hours(all_accounts);
+		}else{
+			method_responce = static_cast<int>(errors::synthax);
+		}
+	}
+
+	if(argc == 5){
+		//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar	
+		if(str_argv[3] == "-h" || str_argv[3] == "-m"){
+			method_responce = arg_man.add_hours(all_accounts);
+		}else{
+			method_responce = static_cast<int>(errors::synthax);
 		}
 	}
 	
@@ -332,17 +345,17 @@ int main(int argc, char* argv[]){
 		case static_cast<int>(errors::not_found):
 			std::cout << "Error2: Not found.\n";
 			break;
-		case static_cast<int>(errors::untitled_error):
+		case static_cast<int>(errors::synthax):
 			std::cout << "Synthax wrong\n";
 			break;
-		case 0:
+		case static_cast<int>(errors::ok):
 			std::cout << "ok\n";
 			break;
 		case -1:
-			std::cout << "nothing happend\n";
+			std::cout << "unknown command\n";
 			break;
 		default:
 			break;
 	}
-	return method_responce;
+	return 0;
 }
