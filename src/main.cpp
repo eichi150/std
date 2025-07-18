@@ -114,6 +114,7 @@ public:
 			account_json["entity"] = account.get_entity();
 			account_json["alias"] = account.get_alias();
 			account_json["total_hours"] = account.get_hours();
+			
 			daten.push_back(account_json);
 		}
 
@@ -143,13 +144,16 @@ public:
 				for (const auto& entry_json : entry_data["entries"]) {
 					float hours = entry_json.value("hours", 0.0f);
 					std::string description = entry_json.value("description", "");
+					
 					std::tm time_point{};
 					std::istringstream ss(entry_json.value("timepoint", ""));
 					ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
+					
 					if(ss.fail()){
 						std::cerr << "Zeit konnte nicht gelesen werden.\n";
 						time_point = std::tm{};
 					}
+					
 					Entry entry{hours, description, time_point};
 					account.add_json_read_entry(entry);
 				}
@@ -177,9 +181,11 @@ public:
 			for (const auto& account_json : gelesene_daten) {
 				std::string entity = account_json.value("entity", "");
 				std::string alias = account_json.value("alias", "");
+				
 				Time_Account account(entity, alias);
 				float total_hours = account_json.value("total_hours", 0.0f);
 				account.set_hours(total_hours);
+				
 				all_accounts.push_back(account);
 			}
 			
@@ -245,11 +251,134 @@ public:
 		}
 		return static_cast<int>(errors::not_found);
 	}
+
+
+	void set_table_width(const std::vector<Time_Account>& all_accounts, std::vector<int>& max_length){
+		
+		for(const auto& account : all_accounts){
+
+			int alias_size = account.get_alias().size();
+			if(alias_size > max_length[0]){
+				max_length[0] = alias_size;
+			}
+						
+			int entity_size = account.get_entity().size();
+			if(entity_size > max_length[1]){
+				max_length[1] = entity_size;
+			}
+		}
+	}
+	
+	int show_specific_entity(const std::vector<Time_Account>& all_accounts) {
+		
+		set_table_width(all_accounts, max_length);
+		
+		std::cout << std::left 
+			<< std::setw(10) << "index"
+			<< std::setw(max_length[0]) << "Alias"
+			<< std::setw(max_length[1]) << "Entity"
+			<< std::setw(max_length[2]) << total_hours
+			<< std::endl;
+			
+		//Trennlinie 
+		std::cout << std::setfill('-') << std::setw(10 + max_length[0] + max_length[1] + max_length[2]) 
+			<< "-" << std::setfill(' ') << std::endl;
+		
+		int index{0};
+		
+		for(const auto& account : all_accounts){
+
+			if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
+				
+				//Datenzeilen
+				std::cout << std::left
+					<< std::setw(10) << index
+					<< std::setw( max_length[0]) << account.get_alias()
+					<< std::setw( max_length[1]) << account.get_entity()
+					<< std::setprecision(3) << std::setw( max_length[2]) << account.get_hours()
+					<< std::endl;
+					
+				//Trennlinie 
+				std::cout << std::setfill('-') << std::setw(10 + max_length[0] + max_length[1] + max_length[2]) 
+					<< "-" << std::setfill(' ') << '\n' << std::endl;
+
+				std::cout << std::left
+					<< std::setw(10) << "index"
+					<< std::setw(10) << "Hours"
+					<< std::setw(25) << "Timestamp"
+					<< std::setw(15) << "Comment"
+					<< std::endl;
+					
+				index = 0;
+				for(const auto& entry : account.get_entry()){
+					std::stringstream ss;
+					ss << std::put_time(&entry.time_point, "%Y-%m-%d %H:%M:%S");
+
+					//Trennlinie 
+					std::cout << std::setfill('-') << std::setw(10 + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
+					
+					std::cout << std::left
+						<< std::setw(10) << index
+						<< std::setw(10) << entry.hours
+						<< std::setw(25) << ss.str()
+						<< std::setw(15) << entry.description
+						<< std::endl;
+										
+					++index;
+				}
+
+				break;
+			}
+		}
+		return static_cast<int>(errors::ok);
+	}
+
+	
+	int show_all(const std::vector<Time_Account>& all_accounts) {
+
+		set_table_width(all_accounts, max_length);
+		
+		std::cout << std::left 
+			<< std::setw(10) << "index"
+			<< std::setw( max_length[0]) << "Alias"
+			<< std::setw( max_length[1]) << "Entity"
+			<< std::setw( max_length[2]) << total_hours
+			<< std::endl;
+		
+		int index{0};
+		for(const auto& account : all_accounts){
+
+			//Trennlinie 
+			std::cout << std::setfill('-') << std::setw(10 + max_length[0] + max_length[1] + max_length[2]) << "-" << std::setfill(' ') << std::endl;
+
+			//Datenzeilen
+			std::cout << std::left
+				<< std::setw(10) << index
+				<< std::setw( max_length[0]) << account.get_alias()
+				<< std::setw( max_length[1]) << account.get_entity()
+				<< std::setprecision(3) << std::setw( max_length[2]) << account.get_hours()
+				<< std::endl;
+			
+			++index;
+		}
+		return static_cast<int>(errors::ok);
+	}
+	
 private:
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::vector<std::string> str_argv;
 	int argc;
 	Clock clock{};
+
+
+	const std::string total_hours = "Total Hours";
+	
+	std::vector<int> max_length{
+		  10 //Alias Standard
+		, 15 //Entity Standard
+		, static_cast<int>(total_hours.size()) //TotalHours Standard
+	};
+			
 };
 
 int main(int argc, char* argv[]){
@@ -268,10 +397,8 @@ int main(int argc, char* argv[]){
 	std::vector<std::string> str_argv;
 	for(int i{0}; i < argc; ++i){
 		std::string arg = argv[i];
-		//std::cout << "Argument " << i << ": " << arg << std::endl;
 		str_argv.push_back(arg);
 	}
-	
 	
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
@@ -283,37 +410,27 @@ int main(int argc, char* argv[]){
 	if(argc == 1){
 		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 		method_responce = static_cast<int>(errors::ok);
-	}
+	}else
 	
 	if(argc == 2){
 		//Zeige Hilfe an
 		if(str_argv[1] == "-h" || str_argv[1] == "help"){
 			std::cout << help << std::endl;
 			method_responce = static_cast<int>(errors::ok);
-
 		}
+		
 		//Zeige alle Entity und Alias an
 		if(str_argv[1] == "show" || str_argv[1] == "sh"){
-			int index{0};
-			for(const auto& account : all_accounts){
-				std::cout << index << ") " << account.get_alias() << " | " << account.get_entity() << std::endl;
-				++index;
-			}
-			method_responce = static_cast<int>(errors::ok);
+			method_responce = arg_man.show_all(all_accounts);
 		}
-	}
+	}else
 
 	if(argc == 3){
 		//Zeige spezifischen Account an
 		if(str_argv[1] == "show" || str_argv[1] == "sh"){
-			for(const auto& account : all_accounts){
-				if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
-					std::cout << "Bei " << account.get_entity() << " bisher " << account.get_hours() << " Stunden geleistet." << std::endl;
-					method_responce = static_cast<int>(errors::ok);
-				}
-			}
+			method_responce = arg_man.show_specific_entity(all_accounts);
 		}
-	}
+	}else
 	
 	if(argc == 4){
 		//Neuen Account hinzufügen	
@@ -327,7 +444,7 @@ int main(int argc, char* argv[]){
 		}else{
 			method_responce = static_cast<int>(errors::synthax);
 		}
-	}
+	}else
 
 	if(argc == 5){
 		//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar	
@@ -336,8 +453,11 @@ int main(int argc, char* argv[]){
 		}else{
 			method_responce = static_cast<int>(errors::synthax);
 		}
+	}else{
+		method_responce = static_cast<int>(errors::untitled_error);
 	}
-	
+
+	//Error Output
 	switch (method_responce){
 		case static_cast<int>(errors::double_pair):
 			std::cout << "Error1: Entity / Alias Paar bereits vergeben" << std::endl;
@@ -346,7 +466,10 @@ int main(int argc, char* argv[]){
 			std::cout << "Error2: Not found.\n";
 			break;
 		case static_cast<int>(errors::synthax):
-			std::cout << "Synthax wrong\n";
+			std::cout << "Error3: Synthax wrong\n";
+			break;
+		case static_cast<int>(errors::untitled_error):
+			std::cout << "Error9: Untitled Error\n";
 			break;
 		case static_cast<int>(errors::ok):
 			std::cout << "ok\n";
@@ -355,6 +478,7 @@ int main(int argc, char* argv[]){
 			std::cout << "unknown command\n";
 			break;
 		default:
+			std::cout << "unknown error\n";
 			break;
 	}
 	return 0;
