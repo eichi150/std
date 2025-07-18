@@ -12,18 +12,6 @@
 // SIMPLE TIME DOCUMENTATION == std
 
 
-//Entity hinzufügen mit Alias
-//./std add BuendnisDepression BD
-
-//BuendisDepression = BD 2Stunden zum aktuellen Zeitpunkt eintragen
-//./std BD 2 -h "Comment"
-
-//Zeige alle Entitys und Alias
-//./std show
-
-//Zeige Stundenkonto an
-//./std show BD 
-
 using json = nlohmann::json;
 
 
@@ -32,11 +20,9 @@ public:
 	std::tm get_time(){
 		
 		std::time_t now = std::time(nullptr);
-
 		std::tm localTime = *std::localtime(&now);
 
 		std::cout << std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << std::endl;
-
 		return localTime;
 	}
 };
@@ -77,7 +63,6 @@ private:
 	std::string alias{};
 	float hours{0.f};
 	std::vector<Entry> entry;
-	
 };
 
 class JSON_Handler{
@@ -87,6 +72,7 @@ private:
 public:
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
 		read_json_accounts(all_accounts);
+		read_json_entity(all_accounts);
 	};
 
 	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
@@ -117,7 +103,7 @@ public:
 					file_entry.close();
 					std::cout << "**Debug: Entity-Datei gespeichert." << std::endl;
 				} else {
-					std::cerr << "Fehler beim �ffnen der Datei." << std::endl;
+					std::cerr << "Fehler beim oeffnen der Datei." << std::endl;
 				}
 			}
 		}
@@ -141,7 +127,7 @@ public:
 			file.close();
 			std::cout << "**Debug: Accounts-Datei gespeichert." << std::endl;
 		} else {
-			std::cerr << "Fehler beim �ffnen der Datei." << std::endl;
+			std::cerr << "Fehler beim oeffnen der Datei." << std::endl;
 		}
 	}
 
@@ -199,25 +185,9 @@ public:
 				Time_Account account(entity, alias);
 				float total_hours = account_json.value("total_hours", 0.0f);
 				account.set_hours(total_hours);
-				/*if (account_json.contains("entries")) {
-					for (const auto& entry_json : account_json["entries"]) {
-						float hours = entry_json.value("hours", 0.0f);
-						std::string description = entry_json.value("description", "");
-						std::tm time_point{};
-						std::istringstream ss(entry_json.value("timepoint", ""));
-						ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
-						if(ss.fail()){
-							std::cerr << "Zeit konnte nicht gelesen werden.\n";
-							time_point = std::tm{};
-						}
-						Entry entry{hours, description, time_point};
-						account.add_json_read_entry(entry);
-					}
-				}*/
-
 				all_accounts.push_back(account);
 			}
-			read_json_entity(all_accounts);
+			
 		} catch (const json::parse_error& e) {
 			std::cerr << "JSON-Fehler: " << e.what() << std::endl;
 		}
@@ -227,12 +197,13 @@ public:
 
 enum class errors{
 	double_pair = 1,
+	not_found = 2,
 	untitled_error = 9
 };
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv ) : jsonH(jH), str_argv(argv){};
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc) : jsonH(jH), str_argv(argv), argc(argc){};
 	
 	int add_account(std::vector<Time_Account>& all_accounts){
 		std::string entity = str_argv[2];
@@ -240,7 +211,7 @@ public:
 				
 		for(const auto& account : all_accounts){
 			if(account.get_entity() == entity){// && account.get_alias() == alias){
-				std::cout << "Entity / Alias Paar bereits vergeben" << std::endl;
+				//std::cout << "Entity / Alias Paar bereits vergeben" << std::endl;
 				return static_cast<int>(errors::double_pair);
 			}
 		}
@@ -255,9 +226,35 @@ public:
 		return 0;
 	}
 	
+	int add_hours(std::vector<Time_Account>& all_accounts){
+		for(auto& account : all_accounts){
+			if(str_argv[1] == account.get_alias() ){
+				float time_float = stof(str_argv[2]);
+				if (str_argv[3] == "-m"){
+					time_float /= 60.f;
+				}
+				
+				std::string description;
+				if(argc > 4){
+					description = str_argv[4];
+				}
+				Entry entry{time_float, description, clock.get_time()};
+				account.add_entry(entry);
+				
+				jsonH->save_json_accounts(all_accounts);
+				jsonH->save_json_entity(all_accounts, account.get_entity());
+				
+				std::cout << "Zeit eingetragen" << std::endl;
+				return 0;
+			}
+		}
+		return static_cast<int>(errors::not_found);
+	}
 private:
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::vector<std::string> str_argv;
+	int argc;
+	Clock clock{};
 };
 
 int main(int argc, char* argv[]){
@@ -279,11 +276,11 @@ int main(int argc, char* argv[]){
 		str_argv.push_back(arg);
 	}
 	
-	Clock clock{};
+	
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
 
-	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv};
+	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc};
 
 	int method_responce{-1};
 
@@ -291,7 +288,17 @@ int main(int argc, char* argv[]){
 		std::cout << help << std::endl;
 		method_responce = 0;
 	}
-	
+
+	//Für Alias Stunden h oder Minuten m hinzufügen
+	if(argc >= 4){
+			
+		if(str_argv[3] != "-h" && str_argv[3] != "-m"){
+			method_responce = static_cast<int>(errors::untitled_error);
+		}else{
+			method_responce = arg_man.add_hours(all_accounts);
+		}
+	}
+
 	//Neuen Account hinzufügen	
 	if(str_argv[1] == "add" && argc == 4){
 		method_responce = arg_man.add_account(all_accounts);
@@ -318,34 +325,24 @@ int main(int argc, char* argv[]){
 		}
 	}
 	
-	//Für Alias Stunden h oder Minuten m hinzufügen
-	for(auto& account : all_accounts){
-		if(str_argv[1] == account.get_alias() && argc >= 4){
-		
-			if(str_argv[3] != "-h" && str_argv[3] != "-m"){
-				method_responce = static_cast<int>(errors::untitled_error);
-				break;
-			}
-			float time_float = stof(str_argv[2]);
-			if (str_argv[3] == "-m"){
-				time_float /= 60.f;
-			}
-			
-			std::string description;
-			if(argc > 4){
-				description = str_argv[4];
-			}
-			Entry entry{time_float, description, clock.get_time()};
-			account.add_entry(entry);
-			
-			jsonH.save_json_accounts(all_accounts);
-			jsonH.save_json_entity(all_accounts, account.get_entity());
-			
-			std::cout << "Zeit eingetragen" << std::endl;
-			method_responce = 0;
-		}
+	switch (method_responce){
+		case static_cast<int>(errors::double_pair):
+			std::cout << "Error1: Entity / Alias Paar bereits vergeben" << std::endl;
+			break;
+		case static_cast<int>(errors::not_found):
+			std::cout << "Error2: Not found.\n";
+			break;
+		case static_cast<int>(errors::untitled_error):
+			std::cout << "Synthax wrong\n";
+			break;
+		case 0:
+			std::cout << "ok\n";
+			break;
+		case -1:
+			std::cout << "nothing happend\n";
+			break;
+		default:
+			break;
 	}
-	
-		
 	return method_responce;
 }
