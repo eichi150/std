@@ -7,14 +7,14 @@
 ### ➕ Neue Entität mit Alias anlegen
 
 ```bash
-./std add ENTITY ALIAS
+std add ENTITY ALIAS
 ```
 
 > Die Entität wird unter dem Alias angesprochen.
 
 **Beispiel:**
 ```bash
-./std add Minijob MJ
+std add Minijob MJ
 # → Minijob mit Alias MJ erstellt.
 ```
 
@@ -23,13 +23,13 @@
 ###  Entität löschen
 
 ```bash
-./std del ENTITY
+std del ENTITY
 
 ```
 
 **Beispiel:**
 ```bash
-./std del Minijob
+std del Minijob
 # → Minijob entfernt.
 Die Entitätsdatei bleibt erhalten.
 ```
@@ -39,17 +39,17 @@ Die Entitätsdatei bleibt erhalten.
 ### ⏱️ Zeit eintragen (Stunden oder Minuten)
 
 ```bash
-./std ALIAS ZEIT EINHEIT "Kommentar"
-./std ALIAS ZEIT EINHEIT
+std ALIAS ZEIT EINHEIT "Kommentar"
+std ALIAS ZEIT EINHEIT
 ```
 
 **Beispiele:**
 
 ```bash
-./std MJ 1 -h "Kommentar"
+std MJ 1 -h "Kommentar"
 # → Minijob +1 Stunde eingetragen
 
-./std MJ 60 -m "Kommentar"
+std MJ 60 -m "Kommentar"
 # → 60min / 60 = 1 Stunde → Minijob +1 Stunde eingetragen
 ```
 
@@ -59,20 +59,38 @@ Die Entitätsdatei bleibt erhalten.
 
 #### 🔹 Alle gespeicherten Accounts:
 ```bash
-./std show
-./std sh
+std show
+std sh
 ```
 
 #### 🔹 Spezifischen Account anzeigen:
 ```bash
-./std show ALIAS
-./std show ENTITY
+std show ALIAS
+std show ENTITY
 ```
 
 **Beispiele:**
 ```bash
-./std show MJ
-./std show Minijob
+std show MJ
+std show Minijob
+```
+
+#### 🔹 Filepaths  anzeigen:
+```bash
+std show -f
+std show filepath
+```
+
+---
+
+#### 🔹 Filepaths ändern:
+```bash
+std -f <entity_path> <accounts_path> 
+```
+
+**Beispiel:**
+```bash
+std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/accounts.json
 ```
 
 ---
