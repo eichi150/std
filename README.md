@@ -109,6 +109,19 @@ std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/accounts.json
 
 ---
 
+#### 🔹 Sprache ändern:
+```bash
+std -l <sprache>  
+```
+
+**Beispiel:**
+```bash
+std -l german
+std -l english
+```
+
+---
+
 ## 🗂️ Projekt Ordnerstruktur
 
 ```
