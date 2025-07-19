@@ -104,7 +104,7 @@ std -f <entity_path> <accounts_path>
 
 **Beispiel:**
 ```bash
-std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/accounts.json
+std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/files/accounts.json
 ```
 
 ---
