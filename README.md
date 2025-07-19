@@ -109,17 +109,35 @@ std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/accounts.json
 
 ---
 
-## 🗂️ Ordnerstruktur
+## 🗂️ Projekt Ordnerstruktur
 
 ```
 std/
+├── bin/
+│	├── install.sh
+│   ├── uninstall.sh
+│   ├── std.exe
+│	└── config.json
 ├── src/
 │   ├── main.cpp
 │   ├── json.hpp
+├── files/
+│   ├── accounts.json
+│   └── <entity>.json (einzelne Entitätsdateien)
+```
+
+## 🗂️ Installierte Ordnerstruktur
+
+```
+std/
+├── bin/
+│	├── install.sh
+│   ├── uninstall.sh
 │   └── std.exe
 ├── files/
 │   ├── accounts.json
 │   └── <entity>.json (einzelne Entitätsdateien)
+├── config.json
 ```
 
 ---
