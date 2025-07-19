@@ -154,13 +154,13 @@ public:
 	void read_config_file(){
 		std::ifstream try_config_file(config_filepath);
 		if(!try_config_file.is_open()){
-			std::cerr << "Cant open " << config_filepath  << std::endl;
+			std::cerr << "**Cant open " << config_filepath  << std::endl;
 
 			config_filepath = getConfigFilePath(); 
 			
 			std::ifstream try_config_file_2(config_filepath);
 			if(!try_config_file_2.is_open()){
-				std::cerr << "Cant open " << config_filepath << std::endl;
+				std::cerr << "**Cant open " << config_filepath << std::endl;
 				return;
 			}
 		}
@@ -202,7 +202,7 @@ public:
 					file_entry.close();
 					std::cout << "**Debug: Entity-Datei gespeichert." << std::endl;
 				} else {
-					std::cerr << "Fehler beim oeffnen der Datei." << std::endl;
+					std::cerr << "**Fehler beim oeffnen der Datei." << std::endl;
 				}
 			}
 		}
@@ -227,7 +227,7 @@ public:
 			file.close();
 			std::cout << "**Debug: Accounts-Datei gespeichert." << std::endl;
 		} else {
-			std::cerr << "Fehler beim oeffnen der Datei." << std::endl;
+			std::cerr << "**Fehler beim oeffnen der Datei." << std::endl;
 		}
 	}
 
@@ -236,7 +236,7 @@ public:
 			std::string filename = entity_filepath + account.get_entity() + ".json";
 			std::ifstream entry_file(filename);
 			if (!entry_file.is_open()) {
-				std::cerr << "Eintragsdatei konnte nicht geoeffnet werden: " << filename << std::endl;
+				std::cerr << "**Eintragsdatei konnte nicht geoeffnet werden: " << filename << std::endl;
 				continue;
 			}
 
@@ -268,12 +268,12 @@ public:
 	void read_json_accounts(std::vector<Time_Account>& all_accounts) {
 		std::ifstream eingabe(accounts_filepath);
 		if (!eingabe.is_open()) {
-			std::cerr << "Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
+			std::cerr << "**Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
 			return;
 		}
 
 		if (eingabe.peek() == std::ifstream::traits_type::eof()) {
-			std::cerr << "Datei ist leer.\n";
+			std::cerr << "**Datei ist leer.\n";
 			return;
 		}
 
@@ -293,7 +293,7 @@ public:
 			}
 			
 		} catch (const json::parse_error& e) {
-			std::cerr << "JSON-Fehler: " << e.what() << std::endl;
+			std::cerr << "**JSON-Fehler: " << e.what() << std::endl;
 		}
 	}
 };
@@ -312,6 +312,7 @@ enum class command{
 	, show
 	, time_unit 
 	, filepath
+	, user_filepath
 };
 
 enum class Language{
@@ -378,7 +379,13 @@ public:
 		}else
 		
 		if(argc == 4){
-			
+			//-f <entityFilepath> <accountsFilepath>
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::user_filepath)))){
+				method_responce = user_change_filepaths(str_argv[2], str_argv[3]);
+				
+				std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
+				
+			}else
 			//Neuen Account hinzufügen
 			//add	
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
@@ -396,7 +403,7 @@ public:
 		}else
 	
 		if(argc == 5){
-			//-f <entityFilepath> <accountsFilepath>
+			//-cf <configFilepath> <entityFilepath> <accountsFilepath>
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::filepath)))){
 				method_responce = change_filepaths(str_argv[2], str_argv[3], str_argv[4]);
 				
@@ -442,7 +449,8 @@ private:
 		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
 		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
 		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+		{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
 	};
 
 	const std::map<std::string, std::string> english_pack{
@@ -478,6 +486,16 @@ private:
 		return static_cast<int>(errors::ok);
 	}
 
+	int user_change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
+		std::map<std::string, std::string> new_filepaths = {
+			  {"entity_filepath", ent_filepath}
+			, {"accounts_filepath", acc_filepath}
+		};
+		jsonH->save_config_file(new_filepaths);
+
+		return static_cast<int>(errors::ok);
+	}
+		
 		
 	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
 		if(all_accounts.empty()){
@@ -711,25 +729,25 @@ int main(int argc, char* argv[]){
 	//Error Output
 	switch (method_responce){
 		case static_cast<int>(errors::double_pair):
-			std::cout << "Error1: Entity / Alias Paar bereits vergeben" << std::endl;
+			std::cout << "**Error1: Entity / Alias Paar bereits vergeben" << std::endl;
 			break;
 		case static_cast<int>(errors::not_found):
-			std::cout << "Error2: Not found.\n";
+			std::cout << "**Error2: Not found.\n";
 			break;
 		case static_cast<int>(errors::synthax):
-			std::cout << "Error3: Synthax wrong\n";
+			std::cout << "**Error3: Synthax wrong\n";
 			break;
 		case static_cast<int>(errors::untitled_error):
-			std::cout << "Error9: Untitled Error\n";
+			std::cout << "**Error9: Untitled Error\n";
 			break;
 		case static_cast<int>(errors::ok):
 			//std::cout << "ok\n";
 			break;
 		case -1:
-			std::cout << "unknown command\n";
+			std::cout << "**unknown command\n";
 			break;
 		default:
-			std::cout << "unknown error\n";
+			std::cout << "**unknown error\n";
 			break;
 	}
 	return 0;
