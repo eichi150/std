@@ -30,6 +30,29 @@ public:
 	}
 };
 
+enum class errors{
+	ok = 0,
+	double_pair = 1,
+	not_found = 2,
+	synthax = 3,
+	untitled_error = 9
+};
+enum class command{
+	  help = 0
+	, add
+	, delete_
+	, show
+	, time_unit 
+	, filepath
+	, user_filepath
+	, language
+};
+
+enum class Language{
+	english = 0,
+	german 
+};
+
 struct Entry{
 	float hours;
 	std::string description;
@@ -74,11 +97,13 @@ private:
 		"config_filepath"
 		, "entity_filepath"
 		, "accounts_filepath"
+		, "language"
 	};
 	
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
-	
+
+	Language config_language = Language::english;
 public:
 
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
@@ -99,6 +124,10 @@ public:
 		return accounts_filepath;
 	}
 
+	Language get_config_language() const {
+		return config_language;
+	}
+	
 	//Search Filepath in home Directory
 	std::string getExecutableDir(){
 		char result[PATH_MAX];
@@ -172,6 +201,18 @@ public:
 		config_filepath = config_data.value("config_filepath", "");
 		entity_filepath = config_data.value("entity_filepath", "");
 		accounts_filepath = config_data.value("accounts_filepath", "");
+		std::string str_config_language = config_data.value("language", "");
+
+		if(!str_config_language.empty()){
+			if(str_config_language == "english"){
+				config_language = Language::english;
+			}else
+			if(str_config_language == "german"){
+				config_language = Language::german;
+			}
+		}else{
+			config_language = Language::english;
+		}
 	}
 		
 	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
@@ -298,33 +339,16 @@ public:
 	}
 };
 
-enum class errors{
-	ok = 0,
-	double_pair = 1,
-	not_found = 2,
-	synthax = 3,
-	untitled_error = 9
-};
-enum class command{
-	  help = 0
-	, add
-	, delete_
-	, show
-	, time_unit 
-	, filepath
-	, user_filepath
-};
-
-enum class Language{
-	english = 0,
-	german 
-};
 
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, Language language)
-		 : jsonH(jH), str_argv(argv), argc(argc), language(language){};
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, std::map<std::string, std::string> language_map )
+		 : jsonH(jH), str_argv(argv), argc(argc){
+		 
+		 	language_pack = language_map;
+
+		 };
 	
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
@@ -374,6 +398,12 @@ public:
 			//del
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
 				method_responce = delete_account(all_accounts, str_argv[2]);
+			}else
+
+			//Language changeTo
+			//-l ger
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::language)))){
+				method_responce = change_config_json_language(str_argv[2]);
 			}
 			
 		}else
@@ -405,7 +435,7 @@ public:
 		if(argc == 5){
 			//-cf <configFilepath> <entityFilepath> <accountsFilepath>
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::filepath)))){
-				method_responce = change_filepaths(str_argv[2], str_argv[3], str_argv[4]);
+				method_responce = change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
 				
 				std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
 				
@@ -432,7 +462,6 @@ private:
 	int argc;
 	Clock clock{};
 
-	Language language;
 	const std::string total_hours = "Total Hours";
 	
 	//show Tabellen setw(max_length[]) 
@@ -450,20 +479,11 @@ private:
 		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
 		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
 		{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+		{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
 	};
 
-	const std::map<std::string, std::string> english_pack{
-		{"timepoint", "%Y-%m-%d %H:%M:%S"}
-	};
-	
-	const std::map<std::string, std::string> german_pack{
-		{"timepoint", "%d-%m-%Y %H:%M:%S"}
-	};
-	std::vector<std::map<std::string, std::string>> language_pack {
-		{english_pack}
-		, {german_pack}
-	};
+	std::map<std::string, std::string> language_pack;
 	
 	const std::string help = {
 		"add 			Add new Entity give it a Alias\n"
@@ -474,14 +494,39 @@ private:
 		"For more Information read the README.md at github.com/eichi150/std\n"
 	 };
 
+	std::string get_str_config_language(){
+		std::string str_config_language = "english";
+		if(static_cast<int>(jsonH->get_config_language()) == static_cast<int>(Language::english)){
+			str_config_language = "english";
+		}else
+		if(static_cast<int>(jsonH->get_config_language()) == static_cast<int>(Language::german)){
+			str_config_language == "german";
+		}
+		
+		return str_config_language;
+	}
 
-	int change_filepaths(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
-		std::map<std::string, std::string> new_filepaths = {
+	int change_config_json_language(const std::string& to_language){
+		std::map<std::string, std::string> new_data = {
+			{"config_filepath", jsonH->get_config_filepath()}
+			, {"entity_filepath", jsonH->get_entity_filepath()}
+			, {"accounts_filepath", jsonH->get_accounts_filepath()}
+			, {"language", to_language}
+		};
+		jsonH->save_config_file(new_data);
+		
+		return static_cast<int>(errors::ok);
+	}
+
+	int change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
+	
+		std::map<std::string, std::string> new_data = {
 			  {"config_filepath", conf_filepath}
 			, {"entity_filepath", ent_filepath}
 			, {"accounts_filepath", acc_filepath}
+			, {"language", get_str_config_language()}
 		};
-		jsonH->save_config_file(new_filepaths);
+		jsonH->save_config_file(new_data);
 
 		return static_cast<int>(errors::ok);
 	}
@@ -495,7 +540,7 @@ private:
 
 		return static_cast<int>(errors::ok);
 	}
-		
+	
 		
 	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
 		if(all_accounts.empty()){
@@ -515,7 +560,7 @@ private:
 		all_accounts = adjusted_accounts;
 		
 		if( all_accounts.size() < size_before){
-			std::cout << entity_to_delete << " wurde gelöscht." << std::endl;
+			std::cout << entity_to_delete << language_pack.at("deleted_out_of_accounts.json") << std::endl;
 		}
 
 		jsonH->save_json_accounts(all_accounts);
@@ -538,7 +583,7 @@ private:
 		jsonH->save_json_accounts(all_accounts);
 		jsonH->save_json_entity(all_accounts, entity);
 				
-		std::cout << "-> " << alias << " | " << entity << " angelegt." << std::endl;
+		std::cout << "-> " << alias << " | " << entity << " saved." << std::endl;
 		
 		return static_cast<int>(errors::ok);
 	}
@@ -561,7 +606,7 @@ private:
 				jsonH->save_json_accounts(all_accounts);
 				jsonH->save_json_entity(all_accounts, account.get_entity());
 				
-				std::cout << "Zeit eingetragen" << std::endl;
+				std::cout << "Time saved." << std::endl;
 				return static_cast<int>(errors::ok);
 			}
 		}
@@ -643,13 +688,7 @@ private:
 				for(const auto& entry : account.get_entry()){
 					std::stringstream ss;
 					
-					std::string time_format = english_pack.at("timepoint");
-					if(static_cast<int>(language) == static_cast<int>(Language::english)){
-						time_format = language_pack[static_cast<int>(Language::english)].at("timepoint");
-						
-					}else if(static_cast<int>(language) == static_cast<int>(Language::german)){
-						time_format = language_pack[static_cast<int>(Language::german)].at("timepoint");
-					}
+					std::string time_format = language_pack.at("timepoint");
 					ss << std::put_time(&entry.time_point, time_format.c_str());
 
 					//Trennlinie 
@@ -703,11 +742,40 @@ private:
 	}	
 };
 
+class Translator{
+public:
+	Translator(const Language& language) : language(language){};
+	
+	std::map<std::string, std::string> which_language_pack(){
+		std::map<std::string, std::string> english_pack{
+			{"timepoint", "%Y-%m-%d %H:%M:%S"}
+			,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
+		};
+		
+		std::map<std::string, std::string> german_pack{
+			{"timepoint", "%d-%m-%Y %H:%M:%S"}
+			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren, ist weiterhin möglich."}
+		};
+	
+	
+		auto language_pack = english_pack;
+		
+		if(static_cast<int>(language) == static_cast<int>(Language::english)){
+			language_pack = english_pack;
+		}else
+		if(static_cast<int>(language) == static_cast<int>(Language::german)){
+			language_pack = german_pack;
+		}
+	
+		return language_pack;
+	}
+
+private:
+	Language language;
+};
 
 
 int main(int argc, char* argv[]){
-
-	Language language = Language::german;
 	
 	//Argumente entgegen nehmen und in vector<string> speichern
 	std::vector<std::string> str_argv;
@@ -717,19 +785,28 @@ int main(int argc, char* argv[]){
 	}
 	argv = {};
 	
+	//Initalize
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
-	
-	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, language};
 
-	int method_responce{-1};
+		//Set Language_Pack - Standard english
+		Language language = jsonH.get_config_language();
+		
+		Translator translator{language};
+		
+		auto language_pack = translator.which_language_pack();
+		
+		//Init Argument Manager
+		Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, language_pack};
+
+		int method_responce{-1};
 	
 	method_responce = arg_man.proceed_inputs(all_accounts);
 
 	//Error Output
 	switch (method_responce){
 		case static_cast<int>(errors::double_pair):
-			std::cout << "**Error1: Entity / Alias Paar bereits vergeben" << std::endl;
+			std::cout << "**Error1: Entity + Alias pair already chosen." << std::endl;
 			break;
 		case static_cast<int>(errors::not_found):
 			std::cout << "**Error2: Not found.\n";
