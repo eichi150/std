@@ -40,7 +40,7 @@ fi
 echo "Lade ~/.bashrc neu ..."
 source "$HOME/.bashrc"
 
-"$STD_DIR/$EXE_NAME" -f "$FILES_DIR/" "$FILES_DIR/accounts.json"
+"$STD_DIR/$EXE_NAME" -f "$FILES_DIR" "$FILES_DIR/accounts.json"
 
 echo "Installation abgeschlossen. Du kannst jetzt 'std' im Terminal verwenden."
 
