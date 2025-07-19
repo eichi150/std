@@ -1,14 +1,15 @@
 ## ?? TODO
 
 - [ ] delete Methode: Entitätsdatei bleibt nach dem entfernen aus dem vector noch vorhanden. Wird bei neu anlage eines Accounts mit gleichem Namen überschrieben. 
-- [ ] Regex Pattern 
+- [X] Regex Pattern 
 - [ ] Anweisungshilfe bei falscher Synthax. Bsp: add Minijob   -> Alias vergessen
+- [X] Config_File für Filepath erstellen
 
 ---
 
 ## ?? Bugs
 
-- [ ] 
+- [ ] config_filepath noch absolut
 
 # ?? Markdown Demo
 
