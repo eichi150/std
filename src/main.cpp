@@ -384,26 +384,29 @@ public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc)
 		 : jsonH(jH), str_argv(argv), argc(argc)
 	 {
-		 	regex_pattern = {
-	 			{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
-	 			{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
-	 		};
-		 		
-		 	init_language();
-		 	
-		 	max_length = {
-	 			  10 //Index Standard	
-	 			, 10 //Alias Standard
-	 			, 15 //Entity Standard
-	 			, static_cast<int>(language_pack.at("total_hours").size()) //TotalHours Standard
-	 		};
-	 };
+		regex_pattern = {
+ 			{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
+ 			{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
+ 		};
+	};
+
+	void init(){
+	 		
+	 	init_language();
+	 	
+	 	max_length = {
+ 			  10 //Index Standard	
+ 			, 10 //Alias Standard
+ 			, 15 //Entity Standard
+ 			, static_cast<int>(language_pack.at("total_hours").size()) //TotalHours Standard
+ 		};
+	}
 	
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
@@ -414,11 +417,12 @@ public:
 			method_responce = static_cast<int>(errors::ok);
 		}
 
-		if(argc >= 2){
-			if(!check_for_valid_arg()){
-				return method_responce;		
-			}
+		//Valid Command??
+		if(argc >= 2 && !check_for_valid_arg()){
+			return method_responce;		
 		}
+
+		init();
 		
 		if(argc == 2){
 		
