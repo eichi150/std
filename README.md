@@ -2,6 +2,20 @@
 
 ---
 
+## Install / Uninstall
+```bash
+./install.sh
+./uninstall.sh
+```
+
+Cant be executed then:
+```bash
+chmod +x install.sh
+chmod +x uninstall.sh
+```
+
+---
+
 ## 🔧 Befehle
 
 ### ➕ Neue Entität mit Alias anlegen
