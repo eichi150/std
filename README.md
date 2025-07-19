@@ -8,7 +8,7 @@
 ./uninstall.sh
 ```
 
-Cant be executed then:
+If cant be executed then:
 ```bash
 chmod +x install.sh
 chmod +x uninstall.sh
