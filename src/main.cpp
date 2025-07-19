@@ -9,6 +9,9 @@
 #include <memory>
 #include <regex>
 #include <map>
+#include <limits.h>
+#include <unistd.h>
+
 #include "json.hpp"
 
 // SIMPLE TIME DOCUMENTATION == std
@@ -65,7 +68,7 @@ private:
 
 class JSON_Handler{
 private:
-	const std::string config_filepath{"/home/eichi/bin/std/config.json"};
+	std::string config_filepath{"./config.json"};//"home/eichi/bin/std/config.json
 	
 	const std::vector<std::string> allowed_keys = {
 		"entity_filepath"
@@ -79,6 +82,7 @@ public:
 
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
 	
+		config_filepath = getExecutableDir() + "/config.json";
 		read_config_file();
 		
 		read_json_accounts(all_accounts);
@@ -93,6 +97,16 @@ public:
 	}
 	std::string get_accounts_filepath() const {
 		return accounts_filepath;
+	}
+
+	std::string getExecutableDir(){
+		char result[PATH_MAX];
+		ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+		if(count == -1){
+			return ".";
+		}
+		std::string path(result, count);
+		return path.substr(0, path.find_last_of('/'));
 	}
 	
 	void save_config_file(std::map<std::string, std::string>& save_to_config){
@@ -285,16 +299,6 @@ class Arg_Manager{
 public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, Language language)
 		 : jsonH(jH), str_argv(argv), argc(argc), language(language){};
-
-	int change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
-		std::map<std::string, std::string> new_filepaths = {
-			  {"entity_filepath", ent_filepath}
-			, {"accounts_filepath", acc_filepath}
-		};
-		jsonH->save_config_file(new_filepaths);
-
-		return static_cast<int>(errors::ok);
-	}
 	
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
@@ -433,7 +437,19 @@ private:
 		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
 		"For more Information read the README.md at github.com/eichi150/std\n"
 	 };
-		 
+
+
+	int change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
+		std::map<std::string, std::string> new_filepaths = {
+			  {"entity_filepath", ent_filepath}
+			, {"accounts_filepath", acc_filepath}
+		};
+		jsonH->save_config_file(new_filepaths);
+
+		return static_cast<int>(errors::ok);
+	}
+
+		
 	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
 		if(all_accounts.empty()){
 			return static_cast<int>(errors::untitled_error);
