@@ -120,10 +120,10 @@ std/
 │   └── config.json
 ├── src/
 │   ├── main.cpp
-│   ├── json.hpp
-├── files/
-│   ├── accounts.json
-│   └── <entity>.json (einzelne Entitätsdateien)
+│   └── json.hpp
+└── files/
+    ├── accounts.json
+    └── <entity>.json (einzelne Entitätsdateien)
 ```
 
 ## 🗂️ Installierte Ordnerstruktur
@@ -137,7 +137,7 @@ std/
 ├── files/
 │   ├── accounts.json
 │   └── <entity>.json (einzelne Entitätsdateien)
-├── config.json
+└── config.json
 ```
 
 ---
