@@ -339,16 +339,71 @@ public:
 	}
 };
 
+class Translator{
+public:
 
+	void set_language(const Language& language){
+		this->language = language;
+	}
+	
+	std::map<std::string, std::string> which_language_pack(){
+		std::map<std::string, std::string> english_pack{
+			{"timepoint", "%Y-%m-%d %H:%M:%S"}
+			,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
+			,{"total_hours", "Total Hours"}
+			,{"entity", "Entity"}
+		};
+		
+		std::map<std::string, std::string> german_pack{
+			{"timepoint", "%d-%m-%Y %H:%M:%S"}
+			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren, ist weiterhin möglich."}
+			,{"total_hours", "Stunden gesamt"}
+			,{"entity", "Entität"}
+		};
+		
+		auto language_pack = english_pack;
+		
+		if(static_cast<int>(language) == static_cast<int>(Language::english)){
+		
+			language_pack = english_pack;
+		}else
+		if(static_cast<int>(language) == static_cast<int>(Language::german)){
+
+			language_pack = german_pack;
+		}
+	
+		return language_pack;
+	}
+
+private:
+	Language language;
+};
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, std::map<std::string, std::string> language_map )
-		 : jsonH(jH), str_argv(argv), argc(argc){
-		 
-		 	language_pack = language_map;
-
-		 };
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc)
+		 : jsonH(jH), str_argv(argv), argc(argc)
+	 {
+		 	regex_pattern = {
+	 			{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
+	 			{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
+	 		};
+		 		
+		 	init_language();
+		 	
+		 	max_length = {
+	 			  10 //Index Standard	
+	 			, 10 //Alias Standard
+	 			, 15 //Entity Standard
+	 			, static_cast<int>(language_pack.at("total_hours").size()) //TotalHours Standard
+	 		};
+	 };
 	
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
@@ -357,7 +412,13 @@ public:
 		if(argc == 1){
 			std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 			method_responce = static_cast<int>(errors::ok);
-		}else
+		}
+
+		if(argc >= 2){
+			if(!check_for_valid_arg()){
+				return method_responce;		
+			}
+		}
 		
 		if(argc == 2){
 		
@@ -457,31 +518,18 @@ public:
 	}
 	
 private:
+
 	std::shared_ptr<JSON_Handler> jsonH;
+	Translator translator{};
+	Clock clock{};
+		
 	std::vector<std::string> str_argv;
 	int argc;
-	Clock clock{};
-
-	const std::string total_hours = "Total Hours";
 	
 	//show Tabellen setw(max_length[]) 
-	std::vector<int> max_length{
-		  10 //Index Standard	
-		, 10 //Alias Standard
-		, 15 //Entity Standard
-		, static_cast<int>(total_hours.size()) //TotalHours Standard
-	};
+	std::vector<int> max_length;
 
-	const std::map<int, std::regex> regex_pattern{
-		{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
-	};
+	std::map<int, std::regex> regex_pattern;
 
 	std::map<std::string, std::string> language_pack;
 	
@@ -494,6 +542,26 @@ private:
 		"For more Information read the README.md at github.com/eichi150/std\n"
 	 };
 
+	bool check_for_valid_arg(){
+		//Argumente checken ob ein Command zulässig ist. Ansonsten Programm frühzeitig ende
+		
+		for(const auto& pattern : regex_pattern){
+			if(std::regex_match(str_argv[1], pattern.second)){
+				return  true;
+			}
+		}
+		
+		return false;
+	}
+
+	void init_language(){
+		//Set Language_Pack - Standard english
+		Language language = jsonH->get_config_language();
+ 			
+	 	translator.set_language(language);
+		language_pack = translator.which_language_pack();
+	}
+		
 	std::string get_str_config_language(){
 		std::string str_config_language = "english";
 		if(static_cast<int>(jsonH->get_config_language()) == static_cast<int>(Language::english)){
@@ -633,7 +701,7 @@ private:
 	int show_filepaths(){
 		std::cout 
 			<< "Config: " << jsonH->get_config_filepath() << '\n'
-			<< "Entity: " << jsonH->get_entity_filepath() << '\n' 
+			<< language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
 			<< "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
 		return static_cast<int>(errors::ok);
 	}
@@ -651,8 +719,8 @@ private:
 				std::cout << std::left 
 					<< std::setw(max_length[0]) << "index"
 					<< std::setw(max_length[1]) << "Alias"
-					<< std::setw(max_length[2]) << "Entity"
-					<< std::setw(max_length[3]) << total_hours
+					<< std::setw(max_length[2]) << language_pack.at("entity")
+					<< std::setw(max_length[3]) << language_pack.at("total_hours")
 					<< std::endl;
 					
 				//Trennlinie 
@@ -718,8 +786,8 @@ private:
 		std::cout << std::left 
 			<< std::setw( max_length[0]) << "index"
 			<< std::setw( max_length[1]) << "Alias"
-			<< std::setw( max_length[2]) << "Entity"
-			<< std::setw( max_length[3]) << total_hours
+			<< std::setw( max_length[2]) << language_pack.at("entity")
+			<< std::setw( max_length[3]) << language_pack.at("total_hours")
 			<< std::endl;
 		
 		int index{0};
@@ -742,38 +810,6 @@ private:
 	}	
 };
 
-class Translator{
-public:
-	Translator(const Language& language) : language(language){};
-	
-	std::map<std::string, std::string> which_language_pack(){
-		std::map<std::string, std::string> english_pack{
-			{"timepoint", "%Y-%m-%d %H:%M:%S"}
-			,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
-		};
-		
-		std::map<std::string, std::string> german_pack{
-			{"timepoint", "%d-%m-%Y %H:%M:%S"}
-			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren, ist weiterhin möglich."}
-		};
-	
-	
-		auto language_pack = english_pack;
-		
-		if(static_cast<int>(language) == static_cast<int>(Language::english)){
-			language_pack = english_pack;
-		}else
-		if(static_cast<int>(language) == static_cast<int>(Language::german)){
-			language_pack = german_pack;
-		}
-	
-		return language_pack;
-	}
-
-private:
-	Language language;
-};
-
 
 int main(int argc, char* argv[]){
 	
@@ -789,17 +825,10 @@ int main(int argc, char* argv[]){
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
 
-		//Set Language_Pack - Standard english
-		Language language = jsonH.get_config_language();
-		
-		Translator translator{language};
-		
-		auto language_pack = translator.which_language_pack();
-		
-		//Init Argument Manager
-		Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, language_pack};
+	//Init Argument Manager
+	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc};
 
-		int method_responce{-1};
+	int method_responce{-1};
 	
 	method_responce = arg_man.proceed_inputs(all_accounts);
 
