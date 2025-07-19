@@ -65,14 +65,76 @@ private:
 
 class JSON_Handler{
 private:
-	const std::string entity_filepath{"./bin/std/files/"};
-	const std::string accounts_filepath{"./bin/std/files/accounts.json"};
+	const std::string config_filepath{"/home/eichi/bin/std/config.json"};
+	
+	const std::vector<std::string> allowed_keys = {
+		"entity_filepath"
+		, "accounts_filepath"
+	};
+	
+	std::string entity_filepath{"../files/"};
+	std::string accounts_filepath{"../files/accounts.json"};
+	
 public:
+
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
+	
+		read_config_file();
+		
 		read_json_accounts(all_accounts);
 		read_json_entity(all_accounts);
 	};
 
+	std::string get_config_filepath() const { 
+		return config_filepath;
+	}
+	std::string get_entity_filepath() const {
+		return entity_filepath;
+	}
+	std::string get_accounts_filepath() const {
+		return accounts_filepath;
+	}
+	
+	void save_config_file(std::map<std::string, std::string>& save_to_config){
+		json config;
+		bool has_data = false;
+
+		for(const auto& key : allowed_keys){
+			auto it = save_to_config.find(key);
+			if(it != save_to_config.end()){
+				config[key] = it->second;
+				has_data = true;
+			}
+		}
+		if(has_data){
+			std::ofstream config_file(config_filepath);
+			if(config_file.is_open()){
+				config_file << config.dump(4);
+				config_file.close();
+				std::cout << "**Config_File saved" << std::endl;
+			}else{
+				std::cout << "**Cant open Config_File!" << std::endl;
+			}
+		}else{
+			std::cout << "No new valid config entries to save" << std::endl;
+		}
+		
+	}
+
+	void read_config_file(){
+		std::ifstream config_file(config_filepath);
+		if(!config_file.is_open()){
+			std::cerr << "Cant open config.json." << std::endl;
+			return;
+		}	
+			
+		json config_data;
+		config_file >> config_data;
+		
+		entity_filepath = config_data.value("entity_filepath", "");
+		accounts_filepath = config_data.value("accounts_filepath", "");
+	}
+		
 	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
 		for(const auto& account : all_accounts){
 			if(entity_to_save == account.get_entity()){
@@ -210,6 +272,7 @@ enum class command{
 	, delete_
 	, show
 	, time_unit 
+	, filepath
 };
 
 enum class Language{
@@ -223,6 +286,16 @@ public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, Language language)
 		 : jsonH(jH), str_argv(argv), argc(argc), language(language){};
 
+	int change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
+		std::map<std::string, std::string> new_filepaths = {
+			  {"entity_filepath", ent_filepath}
+			, {"accounts_filepath", acc_filepath}
+		};
+		jsonH->save_config_file(new_filepaths);
+
+		return static_cast<int>(errors::ok);
+	}
+	
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
 		int method_responce{-1};
@@ -250,12 +323,23 @@ public:
 		}else
 	
 		if(argc == 3){
-			//Zeige spezifischen Account an
-			//show ALIAS
+			
+			//show ++
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
-				method_responce = show_specific_entity(all_accounts);
+			
+				//Zeige entity, accounts, config filepaths an
+				//show filepath
+				if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::filepath)))){
+					method_responce = show_filepaths();
+
+				//Zeige spezifischen Account an
+				//show ALIAS
+				}else{
+					method_responce = show_specific_entity(all_accounts);
+				}
+				
 			}else
-					
+			
 			//Account löschen
 			//del
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
@@ -265,6 +349,13 @@ public:
 		}else
 		
 		if(argc == 4){
+			
+			//-f <entityFilepath> <accountsFilepath>
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::filepath)))){
+				method_responce = change_filepaths(str_argv[2], str_argv[3]);
+				std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
+			}else
+			
 			//Neuen Account hinzufügen
 			//add	
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
@@ -318,7 +409,8 @@ private:
 		{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
 		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
 		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } }
+		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
 	};
 
 	const std::map<std::string, std::string> english_pack{
@@ -429,6 +521,15 @@ private:
 			}
 		}
 	}
+
+	int show_filepaths(){
+		std::cout 
+			<< "Config: " << jsonH->get_config_filepath() << '\n'
+			<< "Entity: " << jsonH->get_entity_filepath() << '\n' 
+			<< "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
+		return static_cast<int>(errors::ok);
+	}
+	
 	
 	int show_specific_entity(const std::vector<Time_Account>& all_accounts) {
 		
@@ -555,10 +656,12 @@ int main(int argc, char* argv[]){
 	
 	std::vector<Time_Account> all_accounts{};
 	JSON_Handler jsonH{all_accounts};
-
+	
 	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, language};
 
-	int method_responce = arg_man.proceed_inputs(all_accounts);
+	int method_responce{-1};
+	
+	method_responce = arg_man.proceed_inputs(all_accounts);
 
 	//Error Output
 	switch (method_responce){
