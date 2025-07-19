@@ -68,10 +68,11 @@ private:
 
 class JSON_Handler{
 private:
-	std::string config_filepath{"./config.json"};
+	std::string config_filepath{"../config.json"};
 	
 	const std::vector<std::string> allowed_keys = {
-		"entity_filepath"
+		"config_filepath"
+		, "entity_filepath"
 		, "accounts_filepath"
 	};
 	
@@ -82,7 +83,6 @@ public:
 
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
 	
-		config_filepath = getExecutableDir() + "/config.json";
 		read_config_file();
 		
 		read_json_accounts(all_accounts);
@@ -104,12 +104,27 @@ public:
 		char result[PATH_MAX];
 		ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
 		if(count == -1){
-			return ".";
+			return "";
 		}
 		std::string path(result, count);
 		return path.substr(0, path.find_last_of('/'));
 	}
 	
+	std::string getConfigFilePath() {
+		char result[PATH_MAX];
+		ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+		if (count == -1 || count == PATH_MAX) {
+			return "";
+		}
+
+		std::string exePath(result, count);                    // /home/eichi/bin/std/bin/std
+		std::string exeDir = exePath.substr(0, exePath.find_last_of('/'));  // ? /home/eichi/bin/std/bin
+		std::string baseDir = exeDir.substr(0, exeDir.find_last_of('/'));   // ? /home/eichi/bin/std
+
+		return baseDir + "/config.json";
+	}
+
+
 	void save_config_file(std::map<std::string, std::string>& save_to_config){
 		json config;
 		bool has_data = false;
@@ -137,15 +152,24 @@ public:
 	}
 
 	void read_config_file(){
-		std::ifstream config_file(config_filepath);
-		if(!config_file.is_open()){
-			std::cerr << "Cant open config.json." << std::endl;
-			return;
-		}	
+		std::ifstream try_config_file(config_filepath);
+		if(!try_config_file.is_open()){
+			std::cerr << "Cant open " << config_filepath  << std::endl;
+
+			config_filepath = getConfigFilePath(); 
 			
+			std::ifstream try_config_file_2(config_filepath);
+			if(!try_config_file_2.is_open()){
+				std::cerr << "Cant open " << config_filepath << std::endl;
+				return;
+			}
+		}
+
+		std::ifstream config_file(config_filepath);	
 		json config_data;
 		config_file >> config_data;
-		
+
+		config_filepath = config_data.value("config_filepath", "");
 		entity_filepath = config_data.value("entity_filepath", "");
 		accounts_filepath = config_data.value("accounts_filepath", "");
 	}
@@ -244,7 +268,7 @@ public:
 	void read_json_accounts(std::vector<Time_Account>& all_accounts) {
 		std::ifstream eingabe(accounts_filepath);
 		if (!eingabe.is_open()) {
-			std::cerr << "Datei konnte nicht geöffnet werden.\n";
+			std::cerr << "Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
 			return;
 		}
 
@@ -355,12 +379,6 @@ public:
 		
 		if(argc == 4){
 			
-			//-f <entityFilepath> <accountsFilepath>
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::filepath)))){
-				method_responce = change_filepaths(str_argv[2], str_argv[3]);
-				std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
-			}else
-			
 			//Neuen Account hinzufügen
 			//add	
 			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
@@ -378,6 +396,15 @@ public:
 		}else
 	
 		if(argc == 5){
+			//-f <entityFilepath> <accountsFilepath>
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::filepath)))){
+				method_responce = change_filepaths(str_argv[2], str_argv[3], str_argv[4]);
+				
+				std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
+				
+			}else
+
+						
 			//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
 			//-h -m
 			if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
@@ -440,9 +467,10 @@ private:
 	 };
 
 
-	int change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
+	int change_filepaths(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
 		std::map<std::string, std::string> new_filepaths = {
-			  {"entity_filepath", ent_filepath}
+			  {"config_filepath", conf_filepath}
+			, {"entity_filepath", ent_filepath}
 			, {"accounts_filepath", acc_filepath}
 		};
 		jsonH->save_config_file(new_filepaths);
