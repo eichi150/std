@@ -68,7 +68,7 @@ private:
 
 class JSON_Handler{
 private:
-	std::string config_filepath{"./config.json"};//"home/eichi/bin/std/config.json
+	std::string config_filepath{"./config.json"};
 	
 	const std::vector<std::string> allowed_keys = {
 		"entity_filepath"
@@ -99,6 +99,7 @@ public:
 		return accounts_filepath;
 	}
 
+	//Search Filepath in home Directory
 	std::string getExecutableDir(){
 		char result[PATH_MAX];
 		ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
