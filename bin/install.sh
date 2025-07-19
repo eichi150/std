@@ -47,7 +47,7 @@ eval "alias std=\"$STD_BIN_DIR/$EXE_NAME\""
 echo "Lade ~/.bashrc neu ..."
 source "$HOME/.bashrc"
 
-"$STD_BIN_DIR/$EXE_NAME" -f "$STD_DIR/config.json" "$FILES_DIR" "$FILES_DIR/accounts.json"
+"$STD_BIN_DIR/$EXE_NAME" -cf "$STD_DIR/config.json" "$FILES_DIR" "$FILES_DIR/accounts.json"
 
 echo "Installation abgeschlossen. Du kannst jetzt 'std' im Terminal verwenden."
 
