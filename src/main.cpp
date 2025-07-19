@@ -65,8 +65,8 @@ private:
 
 class JSON_Handler{
 private:
-	const std::string entity_filepath{"../files/"};
-	const std::string accounts_filepath{"../files/accounts.json"};
+	const std::string entity_filepath{"./bin/std/files/"};
+	const std::string accounts_filepath{"./bin/std/files/accounts.json"};
 public:
 	JSON_Handler(std::vector<Time_Account>& all_accounts){
 		read_json_accounts(all_accounts);
@@ -328,6 +328,10 @@ private:
 	const std::map<std::string, std::string> german_pack{
 		{"timepoint", "%d-%m-%Y %H:%M:%S"}
 	};
+	std::vector<std::map<std::string, std::string>> language_pack {
+		{english_pack}
+		, {german_pack}
+	};
 	
 	const std::string help = {
 		"add 			Add new Entity give it a Alias\n"
@@ -477,9 +481,10 @@ private:
 					
 					std::string time_format = english_pack.at("timepoint");
 					if(static_cast<int>(language) == static_cast<int>(Language::english)){
-						time_format = english_pack.at("timepoint");
+						time_format = language_pack[static_cast<int>(Language::english)].at("timepoint");
+						
 					}else if(static_cast<int>(language) == static_cast<int>(Language::german)){
-						time_format = german_pack.at("timepoint");
+						time_format = language_pack[static_cast<int>(Language::german)].at("timepoint");
 					}
 					ss << std::put_time(&entry.time_point, time_format.c_str());
 
