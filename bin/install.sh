@@ -51,3 +51,4 @@ source "$HOME/.bashrc"
 
 echo "Installation abgeschlossen. Du kannst jetzt 'std' im Terminal verwenden."
 
+source ~/.bashrc
