@@ -36,7 +36,7 @@ sed -i '/alias std=/d' "$HOME/.bashrc"
 {
 	echo ""
 	echo "# Alias für std"
-	echo "alias std=\"$STD_BIN_DIR/$EXE_NAME\""
+	echo "alias std='$STD_BIN_DIR/$EXE_NAME'"
 } >> "$HOME/.bashrc"
 
 # Sofort in dieser Shell verfügbar machen
