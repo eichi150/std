@@ -1,15 +1,16 @@
 ## ?? TODO
 
-- [ ] delete Methode: Entitätsdatei bleibt nach dem entfernen aus dem vector noch vorhanden. Wird bei neu anlage eines Accounts mit gleichem Namen überschrieben. 
-- [X] Regex Pattern 
-- [ ] Anweisungshilfe bei falscher Synthax. Bsp: add Minijob   -> Alias vergessen
-- [X] Config_File für Filepath erstellen
+- [ ] Anweisungshilfe bei falscher Synthax. Bsp: `add Minijob`   -> Alias vergessen
+- [ ] Cache File anlegen. Nach dem hinzufügen einer Entität wird eine cache.json datei angelegt. Dann kann mit `std commit -d datum zeit datumEnde zeitEnde` der Zeitstempel angepasst werden. Danach wird der cache geleert.
+- [ ] Sprachauswahl für str_argv eingrenzen (english/ german)
 
 ---
 
 ## ?? Bugs
 
-- [ ] config_filepath noch absolut
+- [ ] `unalias` nach deinstallation geht nicht zuverlässig
+- [ ] Error Handling optimieren
+- [ ] delete Methode: Entitätsdatei bleibt nach dem entfernen aus dem vector noch vorhanden. Wird bei neu anlage eines Accounts mit gleichem Namen überschrieben. 
 
 # ?? Markdown Demo
 
