@@ -114,10 +114,10 @@ std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/accounts.json
 ```
 std/
 ├── bin/
-│	├── install.sh
+│   ├── install.sh
 │   ├── uninstall.sh
 │   ├── std.exe
-│	└── config.json
+│   └── config.json
 ├── src/
 │   ├── main.cpp
 │   ├── json.hpp
@@ -131,7 +131,7 @@ std/
 ```
 std/
 ├── bin/
-│	├── install.sh
+│   ├── install.sh
 │   ├── uninstall.sh
 │   └── std.exe
 ├── files/
