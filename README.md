@@ -89,7 +89,7 @@ std show MJ
 std show Minijob
 ```
 
-#### 🔹 Filepaths  anzeigen:
+#### 🔹 Config Filepaths anzeigen:
 ```bash
 std show -cf
 ```
