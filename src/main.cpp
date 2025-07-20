@@ -28,7 +28,7 @@ public:
 	}
 };
 
-enum class errors{
+enum class error{
 	ok = 0,
 	unknown,
 	not_found,
@@ -395,7 +395,7 @@ public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<int, std::regex>& pattern)
 		 : jsonH(jH), str_argv(argv), argc(argc)
 	 {
-	 	
+		
 		regex_pattern = pattern;
 
 		init_language();
@@ -408,32 +408,25 @@ public:
  		};
 	};
 	
-	int proceed_inputs(std::vector<Time_Account>& all_accounts){
+	void proceed_inputs(std::vector<Time_Account>& all_accounts, const std::map<error, std::string>& str_error){
 	
-		int method_responce{static_cast<int>(errors::unknown)};
-
+		this->str_error = str_error;
+		
 		switch(argc){
-			case 1:
-				{
-					std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
-					method_responce = static_cast<int>(errors::ok);
-					break;
-				};
-				
-
+		
 			case 2:
 				{
 					//Zeige Hilfe an
 					//help
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
 						std::cout << help << std::endl;
-						method_responce = static_cast<int>(errors::ok);
 					}
 					
 					//Zeige alle Entity und Alias an
 					//show
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
-						method_responce = show_all(all_accounts);
+					
+						 show_all(all_accounts);
 					}
 					break;
 				};
@@ -448,13 +441,13 @@ public:
 						//show filepath
 						if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::config_filepath)))){
 						
-							method_responce = show_filepaths();
+							show_filepaths();
 		
 						//Zeige spezifischen Account an
 						//show ALIAS
 						}else{
 						
-							method_responce = show_specific_entity(all_accounts, method_responce);
+							show_specific_entity(all_accounts);
 						}
 						
 					}else
@@ -463,14 +456,14 @@ public:
 					//del
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
 					
-						method_responce = delete_account(all_accounts, str_argv[2]);
+						delete_account(all_accounts, str_argv[2]);
 					}else
 		
 					//Language changeTo
 					//-l ger
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::language)))){
 					
-						method_responce = change_config_json_language(str_argv[2]);
+						change_config_json_language(str_argv[2]);
 					}
 					break;
 				};
@@ -480,7 +473,7 @@ public:
 				{
 					//-f <entityFilepath> <accountsFilepath>
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::user_filepath)))){
-						method_responce = user_change_filepaths(str_argv[2], str_argv[3]);
+						user_change_filepaths(str_argv[2], str_argv[3]);
 						
 						std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
 						
@@ -489,7 +482,8 @@ public:
 					//add	
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
 					
-						method_responce = add_account(all_accounts);
+						add_account(all_accounts);
+						
 					}else
 			
 					//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
@@ -497,10 +491,12 @@ public:
 					if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::hours)))
 						 || std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::minutes))))
 				 	{
-						method_responce = add_hours(all_accounts);
+						add_hours(all_accounts);
 			
 					}else{
-						method_responce = static_cast<int>(errors::synthax);
+					
+						throw std::runtime_error{str_error.at(error::synthax)};
+						
 					}
 					break;
 				};
@@ -511,7 +507,7 @@ public:
 					//-cf <configFilepath> <entityFilepath> <accountsFilepath>
 					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::config_filepath)))){
 					
-						method_responce = change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
+						change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
 						
 						std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
 						
@@ -523,10 +519,12 @@ public:
 					if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::hours)))
 						 || std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::minutes))))
 				 	{
-						method_responce = add_hours(all_accounts);
+						add_hours(all_accounts);
 						
 					}else{
-						method_responce = static_cast<int>(errors::synthax);
+					
+						throw std::runtime_error{str_error.at(error::synthax)};
+
 					}
 					break;
 				};
@@ -534,12 +532,9 @@ public:
 				
 			default:
 				{
-					method_responce = static_cast<int>(errors::untitled_error);
-					break;
+					throw std::runtime_error{str_error.at(error::untitled_error)};
 				};
 		};
-
-		return method_responce;
 	}
 	
 private:
@@ -557,7 +552,9 @@ private:
 	std::map<int, std::regex> regex_pattern;
 
 	std::map<std::string, std::string> language_pack;
-	
+
+	std::map<error, std::string> str_error;
+		
 	const std::string help = {
 		"add 			Add new Entity give it a Alias\n"
 		"-h -m  		Time to save in Hours or Minutes\n"
@@ -587,7 +584,7 @@ private:
 		return str_config_language;
 	}
 
-	int change_config_json_language(const std::string& to_language){
+	void change_config_json_language(const std::string& to_language){
 		std::map<std::string, std::string> new_data = {
 			  {"config_filepath", jsonH->get_config_filepath()}
 			, {"entity_filepath", jsonH->get_entity_filepath()}
@@ -596,10 +593,9 @@ private:
 		};
 		jsonH->save_config_file(new_data);
 		
-		return static_cast<int>(errors::ok);
 	}
 
-	int change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
+	void change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
 	
 		std::map<std::string, std::string> new_data = {
 			  {"config_filepath", conf_filepath}
@@ -609,23 +605,21 @@ private:
 		};
 		jsonH->save_config_file(new_data);
 
-		return static_cast<int>(errors::ok);
 	}
 
-	int user_change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
+	void user_change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
 		std::map<std::string, std::string> new_filepaths = {
 			  {"entity_filepath", ent_filepath}
 			, {"accounts_filepath", acc_filepath}
 		};
 		jsonH->save_config_file(new_filepaths);
 
-		return static_cast<int>(errors::ok);
 	}
 	
 		
-	int delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
+	void delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
 		if(all_accounts.empty()){
-			return static_cast<int>(errors::untitled_error);
+			throw std::runtime_error{str_error.at(error::untitled_error)};
 		}
 		
 		std::vector<Time_Account> adjusted_accounts;
@@ -644,25 +638,24 @@ private:
 		if( all_accounts.size() < size_before){
 			std::cout << entity_to_delete << language_pack.at("deleted_out_of_accounts.json") << std::endl;
 		}else{
-			return static_cast<int>(errors::not_found);
+			throw std::runtime_error{str_error.at(error::not_found)};
 		}
 
 		jsonH->save_json_accounts(all_accounts);
 		
-		return static_cast<int>(errors::ok);
 	}
 	
-	int add_account(std::vector<Time_Account>& all_accounts){
+	void add_account(std::vector<Time_Account>& all_accounts){
 		std::string entity = str_argv[2];
 		std::string alias = str_argv[3];
 
 		//Entity or Alias already taken?
 		for(const auto& account : all_accounts){
 			if(account.get_entity() == entity){
-				return static_cast<int>(errors::double_entity);
+				throw std::runtime_error{str_error.at(error::double_entity)};
 			}
 			if(account.get_alias() == alias){
-				return static_cast<int>(errors::double_alias);
+				throw std::runtime_error{str_error.at(error::double_alias)};
 			}
 		}
 		
@@ -674,10 +667,9 @@ private:
 				
 		std::cout << "-> " << alias << " | " << entity << " saved." << std::endl;
 		
-		return static_cast<int>(errors::ok);
 	}
 	
-	int add_hours(std::vector<Time_Account>& all_accounts){
+	void add_hours(std::vector<Time_Account>& all_accounts){
 		for(auto& account : all_accounts){
 			if(str_argv[1] == account.get_alias() ){
 				float time_float = stof(str_argv[2]);
@@ -701,10 +693,10 @@ private:
 					<< "Time saved." 
 					<< std::endl;
 					
-				return static_cast<int>(errors::ok);
+				break;	
 			}
 		}
-		return static_cast<int>(errors::not_found);
+		throw std::runtime_error{str_error.at(error::not_found)};
 	}
 
 
@@ -724,16 +716,15 @@ private:
 		}
 	}
 
-	int show_filepaths(){
+	void show_filepaths(){
 		std::cout 
 			<< "Config: " << jsonH->get_config_filepath() << '\n'
 			<< language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
 			<< "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
-		return static_cast<int>(errors::ok);
 	}
 	
 	
-	int show_specific_entity(const std::vector<Time_Account>& all_accounts, int method_responce) {
+	void show_specific_entity(const std::vector<Time_Account>& all_accounts) {
 		
 		set_table_width(all_accounts, max_length);
 		
@@ -797,17 +788,17 @@ private:
 										
 					++index;
 				}
-				method_responce = static_cast<int>(errors::ok);
 				break;
+
 			}else{
-				method_responce = static_cast<int>(errors::unknown_alias);
+			
+				throw std::runtime_error{str_error.at(error::unknown_alias)};
 			}
 		}
-		return method_responce;
 	}
 
 	
-	int show_all(const std::vector<Time_Account>& all_accounts) {
+	void show_all(const std::vector<Time_Account>& all_accounts) {
 
 		set_table_width(all_accounts, max_length);
 		
@@ -834,15 +825,14 @@ private:
 			
 			++index;
 		}
-		return static_cast<int>(errors::ok);
 	}	
 };
 
-bool check_for_valid_args(const std::vector<std::string>& str_argv, const std::map<int, std::regex>& regex_pattern ){
-	//Argumente checken ob ein Command zulässig ist. Ansonsten Programm frühzeitig ende
+//Check for valid Arguments
+bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<int, std::regex>& regex_pattern ){
 	
 	for(const auto& pattern : regex_pattern){
-		for(size_t i{0}; i < str_argv.size(); ++i){
+		for(size_t i{1}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
 				return  true;
 			}	
@@ -851,6 +841,7 @@ bool check_for_valid_args(const std::vector<std::string>& str_argv, const std::m
 	
 	return false;
 }
+
 	
 int main(int argc, char* argv[]){
 	
@@ -874,54 +865,40 @@ int main(int argc, char* argv[]){
 		{ static_cast<int>(command::language),  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
 	};
 
-	int method_responce{static_cast<int>(errors::unknown)};
+	std::map<error, std::string> str_error{
+		  {error::double_entity, "Entity already taken"}
+		, {error::double_alias,  "Alias already taken"}
+		, {error::not_found, 	 "Not found"}
+		, {error::synthax, 		 "Synthax wrong"}
+		, {error::untitled_error,"Untitled Error"}
+		, {error::unknown, 		 "Unknown Command"}
+		, {error::unknown_alias, "Unknown Alias"}
+	};
 	
-	//Check for valid Arguments
-	if(argc >= 2 && !check_for_valid_args(str_argv, regex_pattern)){
-		method_responce = static_cast<int>(errors::unknown);
+	if(argc > 1){
+		try{
+			if(is_argument_valid(str_argv, regex_pattern)){
+				//Initalize
+				std::vector<Time_Account> all_accounts{};
+				JSON_Handler jsonH{all_accounts};
+			
+				//Init Argument Manager
+				Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, regex_pattern};
+			
+				arg_man.proceed_inputs(all_accounts, str_error);
+				
+			}else{
+				throw std::runtime_error{str_error.at(error::unknown)};
+			}
+		//Error Output	
+		}catch(const std::runtime_error& re){
+			std::cerr << "**" << re.what() << std::endl;
+		}
 		
 	}else{
-		//Initalize
-		std::vector<Time_Account> all_accounts{};
-		JSON_Handler jsonH{all_accounts};
 	
-		//Init Argument Manager
-		Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, regex_pattern};
+		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
+	}
 	
-		
-		method_responce = arg_man.proceed_inputs(all_accounts);	
-	}
-
-	//Error Output
-	switch (method_responce){
-		
-		case static_cast<int>(errors::double_entity):
-			std::cout << "**Entity already taken\n";
-			break;
-		case static_cast<int>(errors::double_alias):
-			std::cout << "**Alias already taken\n";
-			break;
-		case static_cast<int>(errors::not_found):
-			std::cout << "**Not found\n";
-			break;
-		case static_cast<int>(errors::synthax):
-			std::cout << "**Synthax wrong\n";
-			break;
-		case static_cast<int>(errors::untitled_error):
-			std::cout << "**Untitled Error\n";
-			break;
-		case static_cast<int>(errors::ok):
-			std::cout << "**ok\n";
-			break;
-		case static_cast<int>(errors::unknown):
-			std::cout << "**unknown command\n";
-			break;
-		case static_cast<int>(errors::unknown_alias):
-			std::cout << "**unknown Alias\n";
-			break;
-		default:
-			std::cout << "**unknown error\n";
-			break;
-	}
 	return 0;
 }
