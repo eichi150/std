@@ -31,10 +31,11 @@ public:
 enum class errors{
 	ok = 0,
 	unknown,
-	double_pair,
 	not_found,
 	synthax,
 	untitled_error,
+	double_pair,
+	double_alias,
 	unknown_alias
 };
 enum class command{
@@ -644,6 +645,9 @@ private:
 			if(account.get_entity() == entity){
 				return static_cast<int>(errors::double_pair);
 			}
+			if(account.get_alias() == alias){
+				return static_cast<int>(errors::double_alias);
+			}
 		}
 		Time_Account new_account{entity, alias};
 		all_accounts.push_back(new_account);
@@ -873,19 +877,22 @@ int main(int argc, char* argv[]){
 	//Error Output
 	switch (method_responce){
 		case static_cast<int>(errors::double_pair):
-			std::cout << "**Error1: Entity + Alias pair already chosen." << std::endl;
+			std::cout << "**Entity + Alias pair already chosen.\n";
+			break;
+		case static_cast<int>(errors::double_alias):
+			std::cout << "**Alias already taken\n";
 			break;
 		case static_cast<int>(errors::not_found):
-			std::cout << "**Error2: Not found.\n";
+			std::cout << "**Not found.\n";
 			break;
 		case static_cast<int>(errors::synthax):
-			std::cout << "**Error3: Synthax wrong\n";
+			std::cout << "**Synthax wrong\n";
 			break;
 		case static_cast<int>(errors::untitled_error):
-			std::cout << "**Error9: Untitled Error\n";
+			std::cout << "**Untitled Error\n";
 			break;
 		case static_cast<int>(errors::ok):
-			std::cout << "ok\n";
+			std::cout << "**ok\n";
 			break;
 		case static_cast<int>(errors::unknown):
 			std::cout << "**unknown command\n";
