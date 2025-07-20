@@ -91,11 +91,20 @@ std show Minijob
 
 #### 🔹 Filepaths  anzeigen:
 ```bash
-std show -f
-std show filepath
+std show -cf
 ```
 
 ---
+
+#### 🔹 Config Filepaths ändern:
+```bash
+std -cf <config_path> <entity_path> <accounts_path> 
+```
+
+**Beispiel:**
+```bash
+std -cf /home/eichi/bin/std/config.json /home/eichi/bin/std/files/ /home/eichi/bin/std/files/accounts.json
+```
 
 #### 🔹 Filepaths ändern:
 ```bash
