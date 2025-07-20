@@ -21,21 +21,20 @@ using json = nlohmann::json;
 class Clock{
 public:
 	std::tm get_time(){
-		
 		std::time_t now = std::time(nullptr);
 		std::tm localTime = *std::localtime(&now);
 
-		std::cout << std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << std::endl;
 		return localTime;
 	}
 };
 
 enum class errors{
 	ok = 0,
-	double_pair = 1,
-	not_found = 2,
-	synthax = 3,
-	untitled_error = 9
+	unknown,
+	double_pair,
+	not_found,
+	synthax,
+	untitled_error
 };
 enum class command{
 	  help = 0
@@ -43,7 +42,7 @@ enum class command{
 	, delete_
 	, show
 	, time_unit 
-	, filepath
+	, config_filepath
 	, user_filepath
 	, language
 };
@@ -381,49 +380,31 @@ private:
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc)
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<int, std::regex>& pattern)
 		 : jsonH(jH), str_argv(argv), argc(argc)
 	 {
-		regex_pattern = {
- 			{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
- 			{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
- 		};
-	};
-
-	void init(){
-	 		
-	 	init_language();
 	 	
+		regex_pattern = pattern;
+
+		init_language();
+				 	
 	 	max_length = {
  			  10 //Index Standard	
  			, 10 //Alias Standard
  			, 15 //Entity Standard
  			, static_cast<int>(language_pack.at("total_hours").size()) //TotalHours Standard
  		};
-	}
+	};
 	
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
-		int method_responce{-1};
+		int method_responce{static_cast<int>(errors::unknown)};
 			
 		if(argc == 1){
 			std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 			method_responce = static_cast<int>(errors::ok);
-		}
+		}else
 
-		//Valid Command??
-		if(argc >= 2 && !check_for_valid_arg()){
-			return method_responce;		
-		}
-
-		init();
-		
 		if(argc == 2){
 		
 			//Zeige Hilfe an
@@ -448,7 +429,7 @@ public:
 			
 				//Zeige entity, accounts, config filepaths an
 				//show filepath
-				if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::filepath)))){
+				if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::config_filepath)))){
 					method_responce = show_filepaths();
 
 				//Zeige spezifischen Account an
@@ -499,7 +480,7 @@ public:
 	
 		if(argc == 5){
 			//-cf <configFilepath> <entityFilepath> <accountsFilepath>
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::filepath)))){
+			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::config_filepath)))){
 				method_responce = change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
 				
 				std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
@@ -545,18 +526,6 @@ private:
 		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
 		"For more Information read the README.md at github.com/eichi150/std\n"
 	 };
-
-	bool check_for_valid_arg(){
-		//Argumente checken ob ein Command zulässig ist. Ansonsten Programm frühzeitig ende
-		
-		for(const auto& pattern : regex_pattern){
-			if(std::regex_match(str_argv[1], pattern.second)){
-				return  true;
-			}
-		}
-		
-		return false;
-	}
 
 	void init_language(){
 		//Set Language_Pack - Standard english
@@ -672,13 +641,18 @@ private:
 				if(argc > 4){
 					description = str_argv[4];
 				}
-				Entry entry{time_float, description, clock.get_time()};
+				auto localTime = clock.get_time();
+				Entry entry{time_float, description, localTime};
 				account.add_entry(entry);
 				
 				jsonH->save_json_accounts(all_accounts);
 				jsonH->save_json_entity(all_accounts, account.get_entity());
 				
-				std::cout << "Time saved." << std::endl;
+				std::cout 
+					<< std::put_time(&localTime, language_pack.at("timepoint").c_str()) << '\n'
+					<< "Time saved." 
+					<< std::endl;
+					
 				return static_cast<int>(errors::ok);
 			}
 		}
@@ -814,7 +788,18 @@ private:
 	}	
 };
 
-
+bool check_for_valid_args(const std::vector<std::string>& str_argv, const std::map<int, std::regex>& regex_pattern ){
+	//Argumente checken ob ein Command zulässig ist. Ansonsten Programm frühzeitig ende
+	
+	for(const auto& pattern : regex_pattern){
+		if(std::regex_match(str_argv[1], pattern.second)){
+			return  true;
+		}
+	}
+	
+	return false;
+}
+	
 int main(int argc, char* argv[]){
 	
 	//Argumente entgegen nehmen und in vector<string> speichern
@@ -824,17 +809,35 @@ int main(int argc, char* argv[]){
 		str_argv.push_back(arg);
 	}
 	argv = {};
-	
-	//Initalize
-	std::vector<Time_Account> all_accounts{};
-	JSON_Handler jsonH{all_accounts};
 
-	//Init Argument Manager
-	Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc};
+	std::map<int, std::regex> regex_pattern = {
+		{ static_cast<int>(command::help),      std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::add),       std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::show),      std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::delete_),   std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::time_unit), std::regex{R"(^(--?h(ours)?|--?m(inutes)?|h|m)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::config_filepath),  std::regex{R"(^--?cf$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::user_filepath),  std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
+		{ static_cast<int>(command::language),  std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
+	};
 
-	int method_responce{-1};
+	int method_responce{static_cast<int>(errors::unknown)};
 	
-	method_responce = arg_man.proceed_inputs(all_accounts);
+	//Check for valid Arguments
+	if(argc >= 2 && !check_for_valid_args(str_argv, regex_pattern)){
+		method_responce = static_cast<int>(errors::unknown);
+		
+	}else{
+		//Initalize
+		std::vector<Time_Account> all_accounts{};
+		JSON_Handler jsonH{all_accounts};
+	
+		//Init Argument Manager
+		Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, regex_pattern};
+	
+		
+		method_responce = arg_man.proceed_inputs(all_accounts);	
+	}
 
 	//Error Output
 	switch (method_responce){
@@ -853,7 +856,7 @@ int main(int argc, char* argv[]){
 		case static_cast<int>(errors::ok):
 			//std::cout << "ok\n";
 			break;
-		case -1:
+		case static_cast<int>(errors::unknown):
 			std::cout << "**unknown command\n";
 			break;
 		default:
