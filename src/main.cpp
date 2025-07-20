@@ -14,7 +14,7 @@
 
 #include "json.hpp"
 
-// SIMPLE TIME DOCUMENTATION == std
+// SIMPLE TIME DOCUMENTATION /* github.com/eichi150/std */
 
 using json = nlohmann::json;
 
@@ -29,14 +29,14 @@ public:
 };
 
 enum class error{
-	ok = 0,
-	unknown,
-	not_found,
-	synthax,
-	untitled_error,
-	double_entity,
-	double_alias,
-	unknown_alias
+	  ok = 0
+	, unknown
+	, not_found
+	, synthax
+	, untitled_error
+	, double_entity
+	, double_alias
+	, unknown_alias
 };
 enum class command{
 	  help = 0
@@ -51,8 +51,8 @@ enum class command{
 };
 
 enum class Language{
-	english = 0,
-	german 
+	  english = 0
+	, german 
 };
 
 struct Entry{
@@ -379,7 +379,6 @@ public:
 		
 		//Possible to change Language
 		if(static_cast<int>(language) == static_cast<int>(Language::german)){
-
 			language_pack = german_pack;
 		}
 	
@@ -419,18 +418,18 @@ public:
 					//Zeige Hilfe an
 					//help
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
-						std::cout << help << std::endl;
-					}
 					
-					//Zeige alle Entity und Alias an
-					//show
+						std::cout << help << std::endl;
+						
+					}else
+						//Zeige alle Entity und Alias an
+						//show
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 					
 						 show_all(all_accounts);
 					}
 					break;
 				};
-			
 				
 			case 3:
 				{	
@@ -451,16 +450,14 @@ public:
 						}
 						
 					}else
-					
-					//Account löschen
-					//del
+						//Account löschen
+						//del
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_))){
 					
 						delete_account(all_accounts, str_argv[2]);
 					}else
-		
-					//Language changeTo
-					//-l ger
+						//Language changeTo
+						//-l ger
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
 					
 						change_config_json_language(str_argv[2]);
@@ -468,7 +465,6 @@ public:
 					break;
 				};
 
-				
 			case 4:
 				{
 					//-f <entityFilepath> <accountsFilepath>
@@ -497,11 +493,9 @@ public:
 					}else{
 					
 						throw std::runtime_error{str_error.at(error::synthax)};
-						
 					}
 					break;
 				};
-				
 				
 			case 5:
 				{
@@ -514,7 +508,6 @@ public:
 						
 					}else
 		
-								
 					//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
 					//-h -m
 					if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
@@ -525,11 +518,9 @@ public:
 					}else{
 					
 						throw std::runtime_error{str_error.at(error::synthax)};
-
 					}
 					break;
 				};
-				
 				
 			default:
 				{
@@ -860,8 +851,8 @@ int main(int argc, char* argv[]){
 		{ command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
 		{ command::delete_,   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
 		{ command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } },
-		{ command::minutes, 			std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} },
-		{ command::config_filepath,  	std::regex{R"(^--?cf$)", std::regex_constants::icase } },
+		{ command::minutes, 		std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} },
+		{ command::config_filepath, std::regex{R"(^--?cf$)", std::regex_constants::icase } },
 		{ command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
 		{ command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
 	};
@@ -870,9 +861,9 @@ int main(int argc, char* argv[]){
 		  {error::double_entity, "Entity already taken"}
 		, {error::double_alias,  "Alias already taken"}
 		, {error::not_found, 	 "Not found"}
-		, {error::synthax, 		 "Synthax wrong"}
+		, {error::synthax,		 "Synthax wrong"}
 		, {error::untitled_error,"Untitled Error"}
-		, {error::unknown, 		 "Unknown Command"}
+		, {error::unknown,		 "Unknown Command"}
 		, {error::unknown_alias, "Unknown Alias"}
 	};
 	
