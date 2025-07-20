@@ -182,20 +182,14 @@ public:
 	}
 
 	void read_config_file(){
-		std::ifstream try_config_file(config_filepath);
-		if(!try_config_file.is_open()){
+		config_filepath = getConfigFilePath();
+		std::ifstream config_file(config_filepath);
+		
+		if(!config_file.is_open()){
 			std::cerr << "**Cant open " << config_filepath  << std::endl;
-
-			config_filepath = getConfigFilePath(); 
-			
-			std::ifstream try_config_file_2(config_filepath);
-			if(!try_config_file_2.is_open()){
-				std::cerr << "**Cant open " << config_filepath << std::endl;
-				return;
-			}
+			return;
 		}
 
-		std::ifstream config_file(config_filepath);	
 		json config_data;
 		config_file >> config_data;
 
@@ -570,7 +564,7 @@ private:
 		"show 			Show all Entitys and Alias's\n"
 		"sh 			Short Form of show\n"
 		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
-		"For more Information read the README.md at github.com/eichi150/std\n"
+		"For more Information have a look at README.md on github.com/eichi150/std\n"
 	 };
 
 	void init_language(){
@@ -634,16 +628,6 @@ private:
 			return static_cast<int>(errors::untitled_error);
 		}
 		
-		bool same_keys = std::equal(
-			all_accounts.begin(), all_accounts.end(),
-			[&entity_to_delete](const auto& a){
-				return a.get_entity() == entity_to_delete;
-			}
-		);
-		if(!same_keys){
-			return static_cast<int>(errors::not_found);
-		}
-		
 		std::vector<Time_Account> adjusted_accounts;
 	
 		size_t size_before = all_accounts.size();
@@ -659,6 +643,8 @@ private:
 		
 		if( all_accounts.size() < size_before){
 			std::cout << entity_to_delete << language_pack.at("deleted_out_of_accounts.json") << std::endl;
+		}else{
+			return static_cast<int>(errors::not_found);
 		}
 
 		jsonH->save_json_accounts(all_accounts);
