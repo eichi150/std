@@ -8,7 +8,7 @@
 
 ## ?? Bugs
 
-- [ ] doppelte Alias verbieten!
+- [X] doppelte Alias verbieten!
 - [ ] `unalias` nach deinstallation geht nicht zuverlässig
 - [ ] Error Handling optimieren
 - [ ] delete Methode: Entitätsdatei bleibt nach dem entfernen aus dem vector noch vorhanden. Wird bei neu anlage eines Accounts mit gleichem Namen überschrieben. 
