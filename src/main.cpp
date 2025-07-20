@@ -34,7 +34,8 @@ enum class errors{
 	double_pair,
 	not_found,
 	synthax,
-	untitled_error
+	untitled_error,
+	unknown_alias
 };
 enum class command{
 	  help = 0
@@ -399,105 +400,115 @@ public:
 	int proceed_inputs(std::vector<Time_Account>& all_accounts){
 	
 		int method_responce{static_cast<int>(errors::unknown)};
-			
-		if(argc == 1){
-			std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
-			method_responce = static_cast<int>(errors::ok);
-		}else
 
-		if(argc == 2){
+		switch(argc){
+			case 1:
+				{
+					std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
+					method_responce = static_cast<int>(errors::ok);
+				};
+				break;
+
+			case 2:
+				{
+					//Zeige Hilfe an
+					//help
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
+						std::cout << help << std::endl;
+						method_responce = static_cast<int>(errors::ok);
+					}
+					
+					//Zeige alle Entity und Alias an
+					//show
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
+						method_responce = show_all(all_accounts);
+					}
+				};
+				break;
+				
+			case 3:
+				{
+					//show ++
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
+					
+						//Zeige entity, accounts, config filepaths an
+						//show filepath
+						if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::config_filepath)))){
+							method_responce = show_filepaths();
 		
-			//Zeige Hilfe an
-			//help
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
-				std::cout << help << std::endl;
-				method_responce = static_cast<int>(errors::ok);
-			}
-			
-			//Zeige alle Entity und Alias an
-			//show
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
-				method_responce = show_all(all_accounts);
-			}
-			
-		}else
-	
-		if(argc == 3){
-			
-			//show ++
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
-			
-				//Zeige entity, accounts, config filepaths an
-				//show filepath
-				if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::config_filepath)))){
-					method_responce = show_filepaths();
-
-				//Zeige spezifischen Account an
-				//show ALIAS
-				}else{
-					method_responce = show_specific_entity(all_accounts);
-				}
-				
-			}else
-			
-			//Account löschen
-			//del
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
-				method_responce = delete_account(all_accounts, str_argv[2]);
-			}else
-
-			//Language changeTo
-			//-l ger
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::language)))){
-				method_responce = change_config_json_language(str_argv[2]);
-			}
-			
-		}else
-		
-		if(argc == 4){
-			//-f <entityFilepath> <accountsFilepath>
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::user_filepath)))){
-				method_responce = user_change_filepaths(str_argv[2], str_argv[3]);
-				
-				std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
-				
-			}else
-			//Neuen Account hinzufügen
-			//add	
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
-				method_responce = add_account(all_accounts);
-			}else
-	
-			//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
-			//-h -m
-			if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
-				method_responce = add_hours(all_accounts);
-	
-			}else{
-				method_responce = static_cast<int>(errors::synthax);
-			}
-		}else
-	
-		if(argc == 5){
-			//-cf <configFilepath> <entityFilepath> <accountsFilepath>
-			if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::config_filepath)))){
-				method_responce = change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
-				
-				std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
-				
-			}else
-
+						//Zeige spezifischen Account an
+						//show ALIAS
+						}else{
+							method_responce = show_specific_entity(all_accounts, method_responce);
+						}
 						
-			//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
-			//-h -m
-			if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
-				method_responce = add_hours(all_accounts);
-			}else{
-				method_responce = static_cast<int>(errors::synthax);
-			}
-		}else{
-			method_responce = static_cast<int>(errors::untitled_error);
-		}
+					}else
+					
+					//Account löschen
+					//del
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
+						method_responce = delete_account(all_accounts, str_argv[2]);
+					}else
+		
+					//Language changeTo
+					//-l ger
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::language)))){
+						method_responce = change_config_json_language(str_argv[2]);
+					}
+				};
+				break;
+				
+			case 4:
+				{
+					//-f <entityFilepath> <accountsFilepath>
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::user_filepath)))){
+						method_responce = user_change_filepaths(str_argv[2], str_argv[3]);
+						
+						std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
+						
+					}else
+					//Neuen Account hinzufügen
+					//add	
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
+						method_responce = add_account(all_accounts);
+					}else
+			
+					//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
+					//-h -m
+					if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
+						method_responce = add_hours(all_accounts);
+			
+					}else{
+						method_responce = static_cast<int>(errors::synthax);
+					}
+				};
+				break;
+				
+			case 5:
+				{
+					//-cf <configFilepath> <entityFilepath> <accountsFilepath>
+					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::config_filepath)))){
+						method_responce = change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
+						
+						std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
+						
+					}else
+		
+								
+					//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
+					//-h -m
+					if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::time_unit)))){
+						method_responce = add_hours(all_accounts);
+					}else{
+						method_responce = static_cast<int>(errors::synthax);
+					}
+				};
+				break;
+				
+			default:
+				method_responce = static_cast<int>(errors::untitled_error);
+				break;
+		};
 
 		return method_responce;
 	}
@@ -685,7 +696,7 @@ private:
 	}
 	
 	
-	int show_specific_entity(const std::vector<Time_Account>& all_accounts) {
+	int show_specific_entity(const std::vector<Time_Account>& all_accounts, int method_responce) {
 		
 		set_table_width(all_accounts, max_length);
 		
@@ -749,11 +760,13 @@ private:
 										
 					++index;
 				}
-
+				method_responce = static_cast<int>(errors::ok);
 				break;
+			}else{
+				method_responce = static_cast<int>(errors::unknown_alias);
 			}
 		}
-		return static_cast<int>(errors::ok);
+		return method_responce;
 	}
 
 	
@@ -792,7 +805,7 @@ bool check_for_valid_args(const std::vector<std::string>& str_argv, const std::m
 	//Argumente checken ob ein Command zulässig ist. Ansonsten Programm frühzeitig ende
 	
 	for(const auto& pattern : regex_pattern){
-		for(int i{0}; i < str_argv.size(); ++i){
+		for(size_t i{0}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
 				return  true;
 			}	
@@ -856,10 +869,13 @@ int main(int argc, char* argv[]){
 			std::cout << "**Error9: Untitled Error\n";
 			break;
 		case static_cast<int>(errors::ok):
-			//std::cout << "ok\n";
+			std::cout << "ok\n";
 			break;
 		case static_cast<int>(errors::unknown):
 			std::cout << "**unknown command\n";
+			break;
+		case static_cast<int>(errors::unknown_alias):
+			std::cout << "**unknown Alias\n";
 			break;
 		default:
 			std::cout << "**unknown error\n";
