@@ -392,7 +392,7 @@ private:
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<int, std::regex>& pattern)
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern)
 		 : jsonH(jH), str_argv(argv), argc(argc)
 	 {
 		
@@ -418,13 +418,13 @@ public:
 				{
 					//Zeige Hilfe an
 					//help
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::help)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
 						std::cout << help << std::endl;
 					}
 					
 					//Zeige alle Entity und Alias an
 					//show
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 					
 						 show_all(all_accounts);
 					}
@@ -435,11 +435,11 @@ public:
 			case 3:
 				{	
 					//show ++
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::show)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 					
 						//Zeige entity, accounts, config filepaths an
 						//show filepath
-						if(std::regex_match(str_argv[2], regex_pattern.at(static_cast<int>(command::config_filepath)))){
+						if(std::regex_match(str_argv[2], regex_pattern.at(command::config_filepath))){
 						
 							show_filepaths();
 		
@@ -454,14 +454,14 @@ public:
 					
 					//Account löschen
 					//del
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::delete_)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_))){
 					
 						delete_account(all_accounts, str_argv[2]);
 					}else
 		
 					//Language changeTo
 					//-l ger
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::language)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
 					
 						change_config_json_language(str_argv[2]);
 					}
@@ -472,7 +472,8 @@ public:
 			case 4:
 				{
 					//-f <entityFilepath> <accountsFilepath>
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::user_filepath)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::user_filepath))){
+					
 						user_change_filepaths(str_argv[2], str_argv[3]);
 						
 						std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
@@ -480,7 +481,7 @@ public:
 					}else
 					//Neuen Account hinzufügen
 					//add	
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::add)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::add))){
 					
 						add_account(all_accounts);
 						
@@ -488,8 +489,8 @@ public:
 			
 					//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
 					//-h -m
-					if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::hours)))
-						 || std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::minutes))))
+					if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
+						 || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
 				 	{
 						add_hours(all_accounts);
 			
@@ -505,7 +506,7 @@ public:
 			case 5:
 				{
 					//-cf <configFilepath> <entityFilepath> <accountsFilepath>
-					if(std::regex_match(str_argv[1], regex_pattern.at(static_cast<int>(command::config_filepath)))){
+					if(std::regex_match(str_argv[1], regex_pattern.at(command::config_filepath))){
 					
 						change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
 						
@@ -516,8 +517,8 @@ public:
 								
 					//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
 					//-h -m
-					if(std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::hours)))
-						 || std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::minutes))))
+					if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
+						 || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
 				 	{
 						add_hours(all_accounts);
 						
@@ -549,7 +550,7 @@ private:
 	//show Tabellen setw(max_length[]) 
 	std::vector<int> max_length;
 
-	std::map<int, std::regex> regex_pattern;
+	std::map<command, std::regex> regex_pattern;
 
 	std::map<std::string, std::string> language_pack;
 
@@ -673,7 +674,7 @@ private:
 		for(auto& account : all_accounts){
 			if(str_argv[1] == account.get_alias() ){
 				float time_float = stof(str_argv[2]);
-				if (std::regex_match(str_argv[3], regex_pattern.at(static_cast<int>(command::minutes)))){
+				if (std::regex_match(str_argv[3], regex_pattern.at(command::minutes))){
 					time_float /= 60.f;
 				}
 				
@@ -829,7 +830,7 @@ private:
 };
 
 //Check for valid Arguments
-bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<int, std::regex>& regex_pattern ){
+bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern ){
 	
 	for(const auto& pattern : regex_pattern){
 		for(size_t i{1}; i < str_argv.size(); ++i){
@@ -853,16 +854,16 @@ int main(int argc, char* argv[]){
 	}
 	argv = {};
 
-	std::map<int, std::regex> regex_pattern = {
-		{ static_cast<int>(command::help),      		std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::add),       		std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::show),      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::delete_),   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::hours), 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::minutes), 			std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} },
-		{ static_cast<int>(command::config_filepath),  	std::regex{R"(^--?cf$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::user_filepath),  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
-		{ static_cast<int>(command::language),  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
+	std::map<command, std::regex> regex_pattern = {
+		{ command::help,      		std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
+		{ command::add,       		std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
+		{ command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
+		{ command::delete_,   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
+		{ command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } },
+		{ command::minutes, 			std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} },
+		{ command::config_filepath,  	std::regex{R"(^--?cf$)", std::regex_constants::icase } },
+		{ command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
+		{ command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
 	};
 
 	std::map<error, std::string> str_error{
@@ -888,6 +889,7 @@ int main(int argc, char* argv[]){
 				arg_man.proceed_inputs(all_accounts, str_error);
 				
 			}else{
+			
 				throw std::runtime_error{str_error.at(error::unknown)};
 			}
 		//Error Output	
