@@ -60,6 +60,7 @@ struct Entry{
 	std::string description;
 	std::tm time_point;
 };
+	
 
 class Time_Account{
 public:
@@ -87,9 +88,11 @@ public:
 private:
 	std::string entity{};
 	std::string alias{};
+	
 	float hours{0.f};
 	std::vector<Entry> entry;
 };
+
 
 class JSON_Handler{
 private:
@@ -251,8 +254,29 @@ public:
 		for(const auto& account : all_accounts){
 			json account_json;
 			account_json["entity"] = account.get_entity();
-			account_json["alias"] = account.get_alias();
-			account_json["total_hours"] = account.get_hours();
+			
+			account_json["alias"] = json::array();
+			
+			std::vector<Time_Account> similar_entity;
+
+			std::copy_if(
+				all_accounts.begin(), all_accounts.end(),
+				std::back_inserter(similar_entity),
+				[&account](const auto& a){
+					return a.get_entity() == account.get_entity();
+				}
+			);
+
+			json alias_list = json::array();
+			for(const auto& acc : similar_entity){
+			
+				alias_list["_alias"] = acc.get_alias();
+				account_json["total_hours"] = acc.get_hours();
+			}
+			account_json["alias"].push_back(alias_list);
+			
+			/*account_json["alias"] = account.get_alias();
+			account_json["total_hours"] = account.get_hours();*/
 			
 			daten.push_back(account_json);
 		}
@@ -319,13 +343,28 @@ public:
 
 			for (const auto& account_json : gelesene_daten) {
 				std::string entity = account_json.value("entity", "");
-				std::string alias = account_json.value("alias", "");
+
+				
+				if(account_json.contains("alias")){
+					for(const auto& json_alias : account_json["alias"]){
+						std::string alias = json_alias.value("_alias", "");
+						float total_hours = json_alias.value("total_hours", 0.0f);
+						
+						Time_Account account(entity, alias);
+						
+						account.set_hours(total_hours);
+						
+						all_accounts.push_back(account);
+					}	
+				}
+				
+				/*std::string alias = account_json.value("alias", "");
 				
 				Time_Account account(entity, alias);
 				float total_hours = account_json.value("total_hours", 0.0f);
 				account.set_hours(total_hours);
 				
-				all_accounts.push_back(account);
+				all_accounts.push_back(account);*/
 			}
 			
 		} catch (const json::parse_error& e) {
