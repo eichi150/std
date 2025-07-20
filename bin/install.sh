@@ -50,5 +50,6 @@ source "$HOME/.bashrc"
 "$STD_BIN_DIR/$EXE_NAME" -cf "$STD_DIR/config.json" "$FILES_DIR" "$FILES_DIR/accounts.json"
 
 echo "Installation abgeschlossen. Du kannst jetzt 'std' im Terminal verwenden."
-
+echo "Evtl 'source ~/.bashrc' ausführen um Terminal zu aktualisieren. Alias sollte in '<editor> ~/.bashrc' eingetragen sein."
+echo "Ggf. Terminal neu starten."
 source ~/.bashrc
