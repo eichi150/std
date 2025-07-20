@@ -792,8 +792,10 @@ bool check_for_valid_args(const std::vector<std::string>& str_argv, const std::m
 	//Argumente checken ob ein Command zulässig ist. Ansonsten Programm frühzeitig ende
 	
 	for(const auto& pattern : regex_pattern){
-		if(std::regex_match(str_argv[1], pattern.second)){
-			return  true;
+		for(int i{0}; i < str_argv.size(); ++i){
+			if(std::regex_match(str_argv[i], pattern.second)){
+				return  true;
+			}	
 		}
 	}
 	
