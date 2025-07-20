@@ -347,6 +347,7 @@ public:
 	}
 	
 	std::map<std::string, std::string> which_language_pack(){
+	
 		std::map<std::string, std::string> english_pack{
 			{"timepoint", "%Y-%m-%d %H:%M:%S"}
 			,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
@@ -356,17 +357,31 @@ public:
 		
 		std::map<std::string, std::string> german_pack{
 			{"timepoint", "%d-%m-%Y %H:%M:%S"}
-			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren, ist weiterhin möglich."}
+			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren ist weiterhin möglich."}
 			,{"total_hours", "Stunden gesamt"}
 			,{"entity", "Entität"}
 		};
 		
 		auto language_pack = english_pack;
+		bool same_keys = false;
 		
-		if(static_cast<int>(language) == static_cast<int>(Language::english)){
-		
-			language_pack = english_pack;
-		}else
+		if(english_pack.size() != german_pack.size()){
+			return english_pack;
+			
+		}else{
+			same_keys = std::equal(
+				english_pack.begin(), english_pack.end(),
+				german_pack.begin(),
+				[](const auto& a, const auto& b){
+					return a.first == b.first;
+				}
+			);
+			
+			if(!same_keys){
+				return english_pack;
+			}
+		}
+
 		if(static_cast<int>(language) == static_cast<int>(Language::german)){
 
 			language_pack = german_pack;
