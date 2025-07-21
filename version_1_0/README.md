@@ -6,6 +6,39 @@
 
 ---
 
+## 🗂️ Projekt Ordnerstruktur
+
+```
+std/
+├── bin/
+│   ├── install.sh
+│   ├── uninstall.sh
+│   ├── std.exe
+│   └── config.json
+├── src/
+│   ├── main.cpp
+│   └── json.hpp
+└── files/
+    ├── accounts.json
+    └── <entity>.json (einzelne Entitätsdateien)
+```
+
+## 🗂️ Installierte Ordnerstruktur
+
+```
+std/
+├── bin/
+│   ├── install.sh
+│   ├── uninstall.sh
+│   └── std.exe
+├── files/
+│   ├── accounts.json
+│   └── <entity>.json (einzelne Entitätsdateien)
+└── config.json
+```
+
+---
+
 ## 🔧 Build
 
 ### Linux
@@ -154,38 +187,6 @@ std -l english
 
 ---
 
-## 🗂️ Projekt Ordnerstruktur
-
-```
-std/
-├── bin/
-│   ├── install.sh
-│   ├── uninstall.sh
-│   ├── std.exe
-│   └── config.json
-├── src/
-│   ├── main.cpp
-│   └── json.hpp
-└── files/
-    ├── accounts.json
-    └── <entity>.json (einzelne Entitätsdateien)
-```
-
-## 🗂️ Installierte Ordnerstruktur
-
-```
-std/
-├── bin/
-│   ├── install.sh
-│   ├── uninstall.sh
-│   └── std.exe
-├── files/
-│   ├── accounts.json
-│   └── <entity>.json (einzelne Entitätsdateien)
-└── config.json
-```
-
----
 
 ## 📝 Hinweise
 
