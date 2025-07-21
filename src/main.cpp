@@ -179,12 +179,12 @@ public:
 			if(config_file.is_open()){
 				config_file << config.dump(4);
 				config_file.close();
-				std::cout << "**Config_File saved" << std::endl;
+				std::cout << "##Config_File saved" << std::endl;
 			}else{
-				std::cout << "**Cant open Config_File!" << std::endl;
+				std::cout << "##Cant open Config_File!" << std::endl;
 			}
 		}else{
-			std::cout << "No new valid config entries to save" << std::endl;
+			std::cout << "##No new valid config entries to save" << std::endl;
 		}
 	}
 
@@ -193,7 +193,7 @@ public:
 		std::ifstream config_file(config_filepath);
 		
 		if(!config_file.is_open()){
-			std::cerr << "**Cant open " << config_filepath  << std::endl;
+			std::cerr << "##Cant open " << config_filepath  << std::endl;
 			return;
 		}
 
@@ -236,11 +236,11 @@ public:
 
 		// Keine passenden Accounts?
 		if (matching_accounts.empty()) {
-			std::cerr << "**Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
+			std::cerr << "##Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
 			return;
 		}
 
-		std::cout << "**matching accounts: "<< matching_accounts.size() << std::endl;
+		std::cout << "##matching accounts: "<< matching_accounts.size() << std::endl;
 
 		// 2. Struktur aufbauen
 		json eintraege;
@@ -277,9 +277,9 @@ public:
 		if (file_entry.is_open()) {
 			file_entry << eintraege.dump(4);
 			file_entry.close();
-			std::cout << "**Debug: Entity-Datei gespeichert unter " << entity_filepath_total << std::endl;
+			std::cout << "##Debug: Entity-Datei gespeichert unter " << entity_filepath_total << std::endl;
 		} else {
-			std::cerr << "**Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
+			std::cerr << "##Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
 		}
 	
 
@@ -303,9 +303,9 @@ public:
 		if (file.is_open()) {
 			file << daten.dump(4);
 			file.close();
-			std::cout << "**Debug: Accounts-Datei gespeichert." << std::endl;
+			std::cout << "##Debug: Accounts-Datei gespeichert." << std::endl;
 		} else {
-			std::cerr << "**Fehler beim oeffnen der Datei." << std::endl;
+			std::cerr << "##Fehler beim oeffnen der Datei." << std::endl;
 		}
 	}
 
@@ -314,7 +314,7 @@ public:
 			std::string filename = entity_filepath + account.get_entity() + ".json";
 			std::ifstream entry_file(filename);
 			if (!entry_file.is_open()) {
-				std::cerr << "**Eintragsdatei konnte nicht geöffnet werden: " << filename << std::endl;
+				std::cerr << "##Eintragsdatei konnte nicht geöffnet werden: " << filename << std::endl;
 				continue;
 			}
 
@@ -322,7 +322,7 @@ public:
 			try {
 				entry_file >> entry_data;
 			} catch (const json::parse_error& e) {
-				std::cerr << "**JSON-Parse-Fehler: " << e.what() << std::endl;
+				std::cerr << "##JSON-Parse-Fehler: " << e.what() << std::endl;
 				continue;
 			}
 
@@ -345,7 +345,7 @@ public:
 							ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
 
 							if (ss.fail()) {
-								std::cerr << "Zeit konnte nicht gelesen werden für Alias: " << str_alias << std::endl;
+								std::cerr << "##Zeit konnte nicht gelesen werden für Alias: " << str_alias << std::endl;
 								time_point = std::tm{};
 							}
 
@@ -363,12 +363,12 @@ public:
 	void read_json_accounts(std::vector<Time_Account>& all_accounts) {
 		std::ifstream eingabe(accounts_filepath);
 		if (!eingabe.is_open()) {
-			std::cerr << "**Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
+			std::cerr << "##Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
 			return;
 		}
 
 		if (eingabe.peek() == std::ifstream::traits_type::eof()) {
-			std::cerr << "**Datei ist leer.\n";
+			std::cerr << "##Datei ist leer.\n";
 			return;
 		}
 
@@ -389,7 +389,7 @@ public:
 			}
 			
 		} catch (const json::parse_error& e) {
-			std::cerr << "**JSON-Fehler: " << e.what() << std::endl;
+			std::cerr << "##JSON-Fehler: " << e.what() << std::endl;
 		}
 	}
 };
@@ -428,11 +428,13 @@ public:
 			,{"entity", "Entität"}
 		};
 
-		//Default = English
-		auto lng_pack = english_pack;
+		std::map<Language, std::map<std::string, std::string>> all_packs{
+			  {Language::english, english_pack}
+			, {Language::german, german_pack}
+		};
 		
 		if(english_pack.size() != german_pack.size()){
-			return  english_pack;
+			return all_packs.at(Language::english);
 		}
 		
 		bool same_keys = std::equal(
@@ -444,15 +446,10 @@ public:
 		);
 			
 		if(!same_keys){
-			return english_pack;
+			return all_packs.at(Language::english);
 		}
 		
-		//Possible to change Language
-		if(static_cast<int>(language) == static_cast<int>(Language::german)){
-			lng_pack = german_pack;
-		}
-	
-		return lng_pack;
+		return all_packs.at(language);
 	}
 
 	std::string get_str_language(){
@@ -466,17 +463,16 @@ private:
 class Arg_Manager{
 public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern)
-		 : jsonH(jH), str_argv(argv), argc(argc)
+		 : jsonH(jH), str_argv(argv), argc(argc), regex_pattern(pattern)
 	 {
+	 
 		translator.set_language(jsonH->get_config_language());
 		
-		regex_pattern = pattern;
-
 	 	max_length = {
  			  10 //Index Standard	
  			, 10 //Alias Standard
  			, 15 //Entity Standard
- 			, static_cast<int>(translator.language_pack.at("total_hours").size()) //TotalHours Standard
+ 			, static_cast<int>(translator.language_pack.at("total_hours").size())
  		};
 	};
 	
@@ -556,12 +552,13 @@ public:
 						}
 						
 						if(!is_possible_language){
-							std::cout << "Possible Languages:\n";
+							std::stringstream ss;
+							ss << "\nPossible Languages:\n";
 							for(const auto& str : translator.dict_language){
-								std::cout << str.second << '\n';
+								ss << " > " << str.second << '\n';
 							}
 													
-							throw std::runtime_error{str_error.at(error::unknown_language)};
+							throw std::runtime_error{str_error.at(error::unknown_language) + ss.str()};
 						}
 
 						change_config_json_language(str_argv[2]);
@@ -989,10 +986,20 @@ private:
 
 //Check for valid Arguments
 bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern ){
+
+	//strings over 20 charakters are only available for config_filepath or user_filepath
+	for(const auto& str : str_argv){
+		if(str.size() > 20 
+			&& ( !std::regex_match(str, regex_pattern.at(command::config_filepath)) || !std::regex_match(str, regex_pattern.at(command::user_filepath ) )))
+		{
+			return false;
+		}
+	}
 	
 	for(const auto& pattern : regex_pattern){
 		for(size_t i{1}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
+			
 				return  true;
 			}	
 		}
@@ -1026,14 +1033,14 @@ int main(int argc, char* argv[]){
 
 	std::map<error, std::string> str_error{
 		  {error::double_entity, "Entity already taken"}
-		, {error::double_alias,  "Alias already taken"}
+		, {error::double_alias, "Alias already taken"}
 		, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
 		, {error::unknown_alias_or_entity, "Alias or Entity not found"}
-		, {error::user_input_is_command, "Unalowed Input"}
-		, {error::not_found, 	 "Not found"}
-		, {error::synthax,		 "Synthax wrong"}
+		, {error::user_input_is_command, "Rejected Input"}
+		, {error::not_found, "Not found"}
+		, {error::synthax, "Synthax wrong"}
 		, {error::untitled_error,"Untitled Error"}
-		, {error::unknown,		 "Unknown Command"}
+		, {error::unknown, "Unknown Command"}
 		, {error::unknown_alias, "Unknown Alias"}
 		, {error::unknown_language, "Unknown Language"}
 	};
