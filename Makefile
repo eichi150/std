@@ -1,5 +1,9 @@
 compile:
 	g++ ./src/main.cpp -o ./bin/std.exe
+	
+compile_win64:
+	x86_64-w64-mingw32-g++ -std=c++17 -static -O2 -o ./win_64/std_win64.exe ./src/main.cpp
+	
 main:
 	micro ./src/main.cpp
 
