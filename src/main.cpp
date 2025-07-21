@@ -233,7 +233,7 @@ public:
 		}
 
 		std::cout << "**matching accounts: "<< matching_accounts.size() << std::endl;
-		std::cout << "**entrys size: " << matching_accounts[0].get_entry().size() << std::endl;
+
 		// 2. Struktur aufbauen
 		json eintraege;
 		eintraege["entity"] = entity_to_save;
@@ -714,10 +714,11 @@ private:
 	}
 	
 	void add_hours(std::vector<Time_Account>& all_accounts){
-		bool succesfull = false;
+	
+		bool found_alias = false;
+		auto localTime = clock.get_time();
 		
 		for(auto& account : all_accounts){
-			std::cout << "before added entrySize: " << account.get_entry().size() << std::endl;
 							
 			if(str_argv[1] == account.get_alias() ){
 				float time_float = stof(str_argv[2]);
@@ -729,26 +730,26 @@ private:
 				if(argc > 4){
 					description = str_argv[4];
 				}
-				auto localTime = clock.get_time();
+				
 				Entry entry{time_float, description, localTime};
 				account.add_entry(entry);
 
-				std::cout << "added entrySize: " << account.get_entry().size() << std::endl;
-								
 				jsonH->save_json_accounts(all_accounts);
 				jsonH->save_json_entity(all_accounts, account.get_entity());
-				
-				std::cout 
-					<< std::put_time(&localTime, language_pack.at("timepoint").c_str()) << '\n'
-					<< "Time saved." 
-					<< std::endl;
 
-				succesfull = true;
+				found_alias = true;
 
 				break;	
 			}
 		}
-		if(!succesfull){
+		
+		if(found_alias){
+			std::cout 
+				<< std::put_time(&localTime, language_pack.at("timepoint").c_str()) << '\n'
+				<< "Time saved." 
+				<< std::endl;
+		}else{
+		
 			throw std::runtime_error{str_error.at(error::not_found)};
 		}
 	}
@@ -783,10 +784,14 @@ private:
 		set_table_width(all_accounts, max_length);
 		
 		int index{0};
+
+		bool alias_found = false;
 		
 		for(const auto& account : all_accounts){
 
-			if(account.get_alias() == str_argv[2] || account.get_entity() == str_argv[2]){
+			if(account.get_alias() == str_argv[2]){
+				alias_found = true;
+			
 				std::cout << std::left 
 					<< std::setw(max_length[0]) << "index"
 					<< std::setw(max_length[1]) << "Alias"
@@ -843,11 +848,12 @@ private:
 					++index;
 				}
 				break;
-
-			}else{
-			
-				throw std::runtime_error{str_error.at(error::unknown_alias)};
 			}
+		}
+		
+		if(!alias_found){
+					
+			throw std::runtime_error{str_error.at(error::unknown_alias)};
 		}
 	}
 
