@@ -16,9 +16,11 @@ std/
 │   └── std.exe
 │
 ├── win_32/
+│ 	├── std.bat
 │   └── std_win32.exe
-│ 
+│
 ├── win_64/
+│ 	├── std.bat
 │   └── std_win64.exe
 │
 ├── main.cpp
@@ -32,12 +34,19 @@ std/
 ```
 std/
 ├── bin/
+│ 	+Linux:
+│   ├── std.exe
 │   ├── install.sh
-│   ├── uninstall.sh
-│   └── std.exe // std_win<..>.exe
+│   └── uninstall.sh
+│ 
+│ 	+Windows:
+│ 	├─ std.bat
+│ 	└─ std_win<..>.exe
+│
 ├── files/
 │   ├── accounts.json
 │   └── <entity>.json (einzelne Entitätsdateien)
+│
 └── config.json
 ```
 
@@ -70,10 +79,14 @@ chmod +x uninstall.sh
 
 ## Install on Windows
 ```bash
-Copy  std_win<..>.exe File to std/bin/
-do in Terminal:
-	 `std_win<..>.exe -cf C:/<path>/<to>/<std>/config.json C:/<path>/<to>/<std>/files/ C:/<path>/<to>/<std>/files/accounts.json`
-std/config.json should be written.
+Copy  'std_win<..>.exe' and 'std.bat' File to 'std/bin/'
+do:
+	 'std_win<..>.exe -cf C:/std/config.json C:/std/files/ C:/std/files/accounts.json'
+ → std/config.json should be written.
+ 
+	SYSTEM PATH 'C:\std\bin' in PATH adden.
+ → std is callable over cmd
+ 
 Installation Completed.
 ```
 
