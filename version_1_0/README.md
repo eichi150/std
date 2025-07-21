@@ -2,7 +2,17 @@
 
 ---
 
-## Install / Uninstall
+### 📄 Console Based Application
+
+---
+
+## 🔧 Build
+
+### Linux
+
+- bin/std.exe Build with g++ 12.2.0 (Debian System) for Linux.
+
+## Install / Uninstall on Linux
 ```bash
 ./install.sh
 ./uninstall.sh
@@ -12,6 +22,22 @@
 ```bash
 chmod +x install.sh
 chmod +x uninstall.sh
+```
+
+---
+
+### Windows 32bit or Windows 64bit
+
+- win_32/std_win32.exe static Build with mingw32 for Window 32bit.
+- win_64/std_win64.exe static Build with mingw32 for Window 64bit.
+
+##Install on Windows
+```bash
+Copy the std_win<..>.exe File in std/bin/
+do in Terminal:
+	 `std_win<..>.exe -cf C:\<path>\<to>\<std>\config.json C:\<path>\<to>\<std>\files\ C:\<path>\<to>\<std>\files\accounts.json`
+std/config.json should be written.
+Installation Completed.
 ```
 
 ---
@@ -169,9 +195,9 @@ std/
 - Zeit kann in Stunden (`-h`) oder Minuten (`-m`) eingegeben werden.
 - Kommentare sind optional.
 - Aliase vereinfachen die Eingabe und Verwaltung.
-- Build with g++ 12.2.0 (Debian System)
 
 ---
+
 
 ## Lizenz und Haftung
 
