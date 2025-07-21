@@ -71,7 +71,6 @@ std del <alias>
 ```bash
 std del MJ
 # → MJ aus Minijob entfernt.
-Die Entitätsdatei bleibt erhalten, der Alias wird gelöscht.
 ```
 
 ---
