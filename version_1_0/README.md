@@ -34,7 +34,7 @@ std/
 ├── bin/
 │   ├── install.sh
 │   ├── uninstall.sh
-│   └── std.exe
+│   └── std.exe // std_win<..>.exe
 ├── files/
 │   ├── accounts.json
 │   └── <entity>.json (einzelne Entitätsdateien)
