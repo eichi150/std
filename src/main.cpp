@@ -37,6 +37,9 @@ enum class error{
 	, double_entity
 	, double_alias
 	, unknown_alias
+	, unknown_alias_or_entity
+	, alias_equal_entity
+	, user_input_is_command
 };
 enum class command{
 	  help = 0
@@ -213,18 +216,22 @@ public:
 		}
 	}
 	
-	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
-	
-		
-		// 1. Sammle alle Accounts mit dieser Entity
+	//Sammle alle Accounts mit dieser Entity
+	std::vector<Time_Account> collect_accounts_with_entity(const std::vector<Time_Account>& search_in, const std::string& search_for_entity){
 		std::vector<Time_Account> matching_accounts;
 		std::copy_if(
-			all_accounts.begin(), all_accounts.end(),
+			search_in.begin(), search_in.end(),
 			std::back_inserter(matching_accounts),
-			[&entity_to_save](const Time_Account& acc) {
-				return acc.get_entity() == entity_to_save;
+			[&search_for_entity](const Time_Account& acc) {
+				return acc.get_entity() == search_for_entity;
 			}
 		);
+		return matching_accounts;
+	}
+	
+	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
+	
+		std::vector<Time_Account> matching_accounts = collect_accounts_with_entity(all_accounts, entity_to_save);
 
 		// Keine passenden Accounts?
 		if (matching_accounts.empty()) {
@@ -437,6 +444,15 @@ public:
 		return language_pack;
 	}
 
+	std::string get_str_language()const{
+		if(language == Language::english){
+			return "english";
+		}
+		if(language == Language::german){
+			return "german";
+		}
+		return {};
+	}
 private:
 	Language language;
 };
@@ -472,20 +488,21 @@ public:
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
 					
 						std::cout << help << std::endl;
-						
-					}else
-						//Zeige alle Entity und Alias an
-						//show
+						break;
+					}
+					//Zeige alle Entity und Alias an
+					//show
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 					
 						 show_all(all_accounts);
+						 break;
 					}
-					break;
+					throw std::runtime_error{str_error.at(error::synthax)};
 				};
 				
 			case 3:
 				{	
-					//show ++
+					//show Möglichkeiten
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 					
 						//Zeige entity, accounts, config filepaths an
@@ -493,28 +510,43 @@ public:
 						if(std::regex_match(str_argv[2], regex_pattern.at(command::config_filepath))){
 						
 							show_filepaths();
-		
+							break;
+						}
+						//language anzeigen
+						if(std::regex_match(str_argv[2], regex_pattern.at(command::language))){
+												
+							show_language();
+							break;
+						}
 						//Zeige spezifischen Account an
-						//show ALIAS
-						}else{
+						//show <entity> ODER show <alias>	
+												
+						//entity oder alias ?? -> entsprechende accounts erhalten
+						std::vector<Time_Account> matching_accounts;
+						matching_accounts = check_for_alias_or_entity(all_accounts, str_argv[2]);
 						
-							show_specific_entity(all_accounts);
+						if(matching_accounts.empty()){
+							throw std::runtime_error{str_error.at(error::unknown_alias_or_entity)};
 						}
 						
-					}else
-						//Account löschen
-						//del
+						show_specific_table(matching_accounts);
+						break;
+					}
+					//Account löschen
+					//del
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_))){
 					
 						delete_account(all_accounts, str_argv[2]);
-					}else
-						//Language changeTo
-						//-l ger
+						break;
+					}
+					//Language changeTo
+					//-l ger
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
 					
 						change_config_json_language(str_argv[2]);
+						break;
 					}
-					break;
+					throw std::runtime_error{str_error.at(error::synthax)};
 				};
 
 			case 4:
@@ -525,15 +557,15 @@ public:
 						user_change_filepaths(str_argv[2], str_argv[3]);
 						
 						std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
-						
-					}else
+						break;
+					}
 					//Neuen Account hinzufügen
 					//add	
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::add))){
 					
 						add_account(all_accounts);
-						
-					}else
+						break;
+					}
 			
 					//Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
 					//-h -m
@@ -541,12 +573,10 @@ public:
 						 || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
 				 	{
 						add_hours(all_accounts);
-			
-					}else{
-					
-						throw std::runtime_error{str_error.at(error::synthax)};
+						break;
 					}
-					break;
+					
+					throw std::runtime_error{str_error.at(error::synthax)};
 				};
 				
 			case 5:
@@ -557,8 +587,8 @@ public:
 						change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
 						
 						std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
-						
-					}else
+						break;
+					}
 		
 					//Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
 					//-h -m
@@ -566,12 +596,9 @@ public:
 						 || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
 				 	{
 						add_hours(all_accounts);
-						
-					}else{
-					
-						throw std::runtime_error{str_error.at(error::synthax)};
+						break;
 					}
-					break;
+					throw std::runtime_error{str_error.at(error::synthax)};
 				};
 				
 			default:
@@ -615,7 +642,45 @@ private:
 	 	translator.set_language(language);
 		language_pack = translator.which_language_pack();
 	}
+
+	std::vector<Time_Account> check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity){
+		std::vector<Time_Account> matching_accounts;
+		bool alias_found = false;
+		bool entity_found = false;
+		for(auto& account : all_accounts){
 		
+			if(account.get_alias() == alias_or_entity){
+				alias_found = true;
+				matching_accounts = collect_accounts_with_alias(all_accounts, str_argv[2]);
+				break;
+			}
+			if(account.get_entity() == alias_or_entity){
+				entity_found = true;
+				matching_accounts = jsonH->collect_accounts_with_entity(all_accounts, str_argv[2]);
+				break;
+			}
+		}
+
+		if( (!alias_found && !entity_found) || matching_accounts.empty()){
+			throw std::runtime_error{str_error.at(error::unknown_alias_or_entity)};
+		}
+		
+		return matching_accounts;
+	}
+	
+	//Sammle alle Accounts mit diesem Alias
+	std::vector<Time_Account> collect_accounts_with_alias(const std::vector<Time_Account>& search_in, const std::string& search_for_alias){
+		std::vector<Time_Account> matching_accounts;
+		std::copy_if(
+			search_in.begin(), search_in.end(),
+			std::back_inserter(matching_accounts),
+			[&search_for_alias](const Time_Account& acc) {
+				return acc.get_alias() == search_for_alias;
+			}
+		);
+		return matching_accounts;
+	}
+				
 	std::string get_str_config_language(){
 		std::string str_config_language = "english";
 		if(static_cast<int>(jsonH->get_config_language()) == static_cast<int>(Language::english)){
@@ -703,10 +768,30 @@ private:
 		std::string entity = str_argv[2];
 		std::string alias = str_argv[3];
 
+		//Entity or Alias cant be name equal to a command
+		bool is_command = false;
+		for(const auto& pattern : regex_pattern){
+			
+			if(std::regex_match(entity, pattern.second)){
+				is_command = true;
+				break;
+			}	
+			if(std::regex_match(alias, pattern.second)){
+				is_command = true;
+				break;
+			}
+		}
+		if(is_command){
+			throw std::runtime_error{str_error.at(error::user_input_is_command)};
+		}
+			
 		//Entity or Alias already taken?
 		for(const auto& account : all_accounts){
 			if(account.get_alias() == alias){
 				throw std::runtime_error{str_error.at(error::double_alias)};
+			}
+			if(account.get_alias() == entity){
+				throw std::runtime_error{str_error.at(error::alias_equal_entity)};
 			}
 		}
 		
@@ -784,91 +869,93 @@ private:
 			<< language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
 			<< "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
 	}
+
+	void show_language(){
+		std::cout << "Language: " << translator.get_str_language() << std::endl;
+	}
 	
-	
-	void show_specific_entity(const std::vector<Time_Account>& all_accounts) {
+	void show_specific_table(const std::vector<Time_Account>& show_accounts) {
 		
-		set_table_width(all_accounts, max_length);
+		set_table_width(show_accounts, max_length);
 		
 		int index{0};
-
-		bool alias_found = false;
+		int index_entrys = 0;
 		
-		for(const auto& account : all_accounts){
-
-			if(account.get_alias() == str_argv[2]){
-				alias_found = true;
+		//Trennlinie 
+		std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+			<< "=" << std::setfill(' ') << '\n' << std::endl;
 			
-				std::cout << std::left 
-					<< std::setw(max_length[0]) << "index"
-					<< std::setw(max_length[1]) << "Alias"
-					<< std::setw(max_length[2]) << language_pack.at("entity")
-					<< std::setw(max_length[3]) << language_pack.at("total_hours")
-					<< std::endl;
-					
-				//Trennlinie 
-				std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
-					<< "-" << std::setfill(' ') << std::endl;
+		for(const auto& account : show_accounts){
+			
+			std::cout << std::left 
+				<< std::setw(max_length[0]) << "index"
+				<< std::setw(max_length[1]) << "Alias"
+				<< std::setw(max_length[2]) << language_pack.at("entity")
+				<< std::setw(max_length[3]) << language_pack.at("total_hours")
+				<< std::endl;
+				
+			//Trennlinie 
+			std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+				<< "-" << std::setfill(' ') << std::endl;
 
-					
-				//Datenzeilen
-				std::cout << std::left
-					<< std::setw( max_length[0]) << index
-					<< std::setw( max_length[1]) << account.get_alias()
-					<< std::setw( max_length[2]) << account.get_entity()
-					<< std::setprecision(3) << std::setw( max_length[3]) << account.get_hours()
-					<< std::endl;
-					
-				//Trennlinie 
-				std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
-					<< "-" << std::setfill(' ') << '\n' << std::endl;
+				
+			//Datenzeilen
+			std::cout << std::left
+				<< std::setw( max_length[0]) << index
+				<< std::setw( max_length[1]) << account.get_alias()
+				<< std::setw( max_length[2]) << account.get_entity()
+				<< std::setprecision(3) << std::setw( max_length[3]) << account.get_hours()
+				<< std::endl;
+				
+			//Trennlinie 
+			std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+				<< "-" << std::setfill(' ') << '\n' << std::endl;
 
-				if(account.get_entry().empty()){
-					std::cout << "No Entrys available" << std::endl;
-					break;
-				}
+			++index;
+			if(account.get_entry().empty()){
+				std::cout << "No Entrys available" << std::endl;
+				continue;
+			}
+			
+			std::cout << std::left
+				<< std::setw( max_length[0]) << "index"
+				<< std::setw(10) << "Hours"
+				<< std::setw(25) << "Timestamp"
+				<< std::setw(15) << "Comment"
+				<< std::endl;
+				
+			for(const auto& entry : account.get_entry()){
+				std::stringstream ss;
+				
+				std::string time_format = language_pack.at("timepoint");
+				ss << std::put_time(&entry.time_point, time_format.c_str());
+
+				//Trennlinie 
+				std::cout << std::setfill('-') << std::setw( max_length[0] + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
 				
 				std::cout << std::left
-					<< std::setw( max_length[0]) << "index"
-					<< std::setw(10) << "Hours"
-					<< std::setw(25) << "Timestamp"
-					<< std::setw(15) << "Comment"
+					<< std::setw( max_length[0]) << index_entrys
+					<< std::setw(10) << entry.hours
+					<< std::setw(25) << ss.str()
+					<< std::setw(15) << entry.description
 					<< std::endl;
-					
-				index = 0;
-				for(const auto& entry : account.get_entry()){
-					std::stringstream ss;
-					
-					std::string time_format = language_pack.at("timepoint");
-					ss << std::put_time(&entry.time_point, time_format.c_str());
-
-					//Trennlinie 
-					std::cout << std::setfill('-') << std::setw( max_length[0] + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
-					
-					std::cout << std::left
-						<< std::setw( max_length[0]) << index
-						<< std::setw(10) << entry.hours
-						<< std::setw(25) << ss.str()
-						<< std::setw(15) << entry.description
-						<< std::endl;
-										
-					++index;
-				}
-				break;
+									
+				++index_entrys;
 			}
-		}
-		
-		if(!alias_found){
-					
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
+			//Trennlinie 
+			std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+				<< "=" << std::setfill(' ') << '\n' << std::endl;
 		}
 	}
 
 	
 	void show_all(const std::vector<Time_Account>& all_accounts) {
-
-		set_table_width(all_accounts, max_length);
 		
+		set_table_width(all_accounts, max_length);
+		//Trennlinie 
+		std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+			<< "=" << std::setfill(' ') << '\n' << std::endl;
+			
 		std::cout << std::left 
 			<< std::setw( max_length[0]) << "index"
 			<< std::setw( max_length[1]) << "Alias"
@@ -892,8 +979,13 @@ private:
 			
 			++index;
 		}
-	}	
-};
+
+		//Trennlinie 
+		std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+			<< "=" << std::setfill(' ') << '\n' << std::endl;
+	}
+	
+};//Arg_Manager
 
 //Check for valid Arguments
 bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern ){
@@ -935,6 +1027,9 @@ int main(int argc, char* argv[]){
 	std::map<error, std::string> str_error{
 		  {error::double_entity, "Entity already taken"}
 		, {error::double_alias,  "Alias already taken"}
+		, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
+		, {error::unknown_alias_or_entity, "Alias or Entity not found"}
+		, {error::user_input_is_command, "Unalowed Input"}
 		, {error::not_found, 	 "Not found"}
 		, {error::synthax,		 "Synthax wrong"}
 		, {error::untitled_error,"Untitled Error"}
