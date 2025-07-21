@@ -16,11 +16,11 @@ std/
 │   └── std.exe
 │
 ├── win_32/
-│	├── std.bat
+│   ├── std.bat
 │   └── std_win32.exe
 │
 ├── win_64/
-│	├── std.bat
+│   ├── std.bat
 │   └── std_win64.exe
 │
 ├── main.cpp
@@ -34,14 +34,14 @@ std/
 ```
 std/
 ├── bin/
-│ 	+Linux:
+│   +Linux:
 │   ├── std.exe
 │   ├── install.sh
 │   └── uninstall.sh
-│ 
+│
 │ 	+Windows:
-│ 	├─ std.bat
-│ 	└─ std_win<..>.exe
+│   ├─ std.bat
+│   └─ std_win<..>.exe
 │
 ├── files/
 │   ├── accounts.json
