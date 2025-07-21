@@ -13,14 +13,18 @@ std/
 ├── bin/
 │   ├── install.sh
 │   ├── uninstall.sh
-│   ├── std.exe
-│   └── config.json
-├── src/
-│   ├── main.cpp
-│   └── json.hpp
-└── files/
-    ├── accounts.json
-    └── <entity>.json (einzelne Entitätsdateien)
+│   └── std.exe
+│
+├── win_32/
+│   └── std_win32.exe
+│ 
+├── win_64/
+│   └── std_win64.exe
+│
+├── main.cpp
+├── json.hpp
+├── README.md
+└── Makefile
 ```
 
 ## 🗂️ Installierte Ordnerstruktur

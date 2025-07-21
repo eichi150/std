@@ -13,8 +13,8 @@ std/
 ├── bin/
 │   ├── install.sh
 │   ├── uninstall.sh
-│   ├── std.exe
-│   └── config.json
+│   └── std.exe
+│   
 ├── src/
 │   ├── main.cpp
 │   └── json.hpp
