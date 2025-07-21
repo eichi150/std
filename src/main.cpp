@@ -228,10 +228,12 @@ public:
 
 		// Keine passenden Accounts?
 		if (matching_accounts.empty()) {
-			std::cerr << "**Keine Eintr�ge f�r Entity '" << entity_to_save << "' gefunden." << std::endl;
+			std::cerr << "**Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
 			return;
 		}
 
+		std::cout << "**matching accounts: "<< matching_accounts.size() << std::endl;
+		std::cout << "**entrys size: " << matching_accounts[0].get_entry().size() << std::endl;
 		// 2. Struktur aufbauen
 		json eintraege;
 		eintraege["entity"] = entity_to_save;
@@ -269,7 +271,7 @@ public:
 			file_entry.close();
 			std::cout << "**Debug: Entity-Datei gespeichert unter " << entity_filepath_total << std::endl;
 		} else {
-			std::cerr << "**Fehler beim �ffnen der Datei: " << entity_filepath_total << std::endl;
+			std::cerr << "**Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
 		}
 	
 
@@ -300,55 +302,53 @@ public:
 	}
 
 	void read_json_entity(std::vector<Time_Account>& all_accounts) {
-	for (auto& account : all_accounts) {
-		std::string filename = entity_filepath + account.get_entity() + ".json";
-		std::ifstream entry_file(filename);
-		if (!entry_file.is_open()) {
-			std::cerr << "**Eintragsdatei konnte nicht ge�ffnet werden: " << filename << std::endl;
-			continue;
-		}
+		for (auto& account : all_accounts) {
+			std::string filename = entity_filepath + account.get_entity() + ".json";
+			std::ifstream entry_file(filename);
+			if (!entry_file.is_open()) {
+				std::cerr << "**Eintragsdatei konnte nicht geöffnet werden: " << filename << std::endl;
+				continue;
+			}
 
-		json entry_data;
-		try {
-			entry_file >> entry_data;
-		} catch (const json::parse_error& e) {
-			std::cerr << "**JSON-Parse-Fehler: " << e.what() << std::endl;
-			continue;
-		}
+			json entry_data;
+			try {
+				entry_file >> entry_data;
+			} catch (const json::parse_error& e) {
+				std::cerr << "**JSON-Parse-Fehler: " << e.what() << std::endl;
+				continue;
+			}
 
-		if (entry_data.contains("alias")) {
-			for (const auto& alias : entry_data["alias"]) {
-				std::string str_alias = alias.value("alias", "");
-				float total_hours = alias.value("total_hours", 0.0f);
+			if (entry_data.contains("alias")) {
+				for (const auto& alias : entry_data["alias"]) {
+					std::string str_alias = alias.value("alias", "");
+					if (account.get_alias() != str_alias)
+						continue;
 
-				for (auto& acc : all_accounts) {
-					if (acc.get_alias() == str_alias && acc.get_entity() == account.get_entity()) {
-						acc.set_hours(total_hours);
+					float total_hours = alias.value("total_hours", 0.0f);
+					account.set_hours(total_hours);
 
-						if (alias.contains("entries")) {
-							for (const auto& entry_json : alias["entries"]) {
-								float hours = entry_json.value("hours", 0.0f);
-								std::string description = entry_json.value("description", "");
+					if (alias.contains("entries")) {
+						for (const auto& entry_json : alias["entries"]) {
+							float hours = entry_json.value("hours", 0.0f);
+							std::string description = entry_json.value("description", "");
 
-								std::tm time_point{};
-								std::istringstream ss(entry_json.value("timepoint", ""));
-								ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
+							std::tm time_point{};
+							std::istringstream ss(entry_json.value("timepoint", ""));
+							ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
 
-								if (ss.fail()) {
-									std::cerr << "Zeit konnte nicht gelesen werden f�r Alias: " << str_alias << std::endl;
-									time_point = std::tm{};
-								}
-
-								Entry entry{hours, description, time_point};
-								acc.add_json_read_entry(entry);
+							if (ss.fail()) {
+								std::cerr << "Zeit konnte nicht gelesen werden für Alias: " << str_alias << std::endl;
+								time_point = std::tm{};
 							}
+
+							Entry entry{hours, description, time_point};
+							account.add_json_read_entry(entry);
 						}
 					}
 				}
 			}
 		}
 	}
-}
 
 
 
@@ -714,7 +714,11 @@ private:
 	}
 	
 	void add_hours(std::vector<Time_Account>& all_accounts){
+		bool succesfull = false;
+		
 		for(auto& account : all_accounts){
+			std::cout << "before added entrySize: " << account.get_entry().size() << std::endl;
+							
 			if(str_argv[1] == account.get_alias() ){
 				float time_float = stof(str_argv[2]);
 				if (std::regex_match(str_argv[3], regex_pattern.at(command::minutes))){
@@ -728,7 +732,9 @@ private:
 				auto localTime = clock.get_time();
 				Entry entry{time_float, description, localTime};
 				account.add_entry(entry);
-				
+
+				std::cout << "added entrySize: " << account.get_entry().size() << std::endl;
+								
 				jsonH->save_json_accounts(all_accounts);
 				jsonH->save_json_entity(all_accounts, account.get_entity());
 				
@@ -736,11 +742,15 @@ private:
 					<< std::put_time(&localTime, language_pack.at("timepoint").c_str()) << '\n'
 					<< "Time saved." 
 					<< std::endl;
-					
+
+				succesfull = true;
+
 				break;	
 			}
 		}
-		throw std::runtime_error{str_error.at(error::not_found)};
+		if(!succesfull){
+			throw std::runtime_error{str_error.at(error::not_found)};
+		}
 	}
 
 
