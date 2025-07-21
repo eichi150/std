@@ -8,7 +8,7 @@
 ./uninstall.sh
 ```
 
-If cant be executed then:
+**If cant be executed then:**
 ```bash
 chmod +x install.sh
 chmod +x uninstall.sh
@@ -34,24 +34,24 @@ std add Minijob MJ
 
 ---
 
-###  Entität löschen
+###  Alias löschen
 
 ```bash
-std del ENTITY
+std del <alias>
 
 ```
 
 **Beispiel:**
 ```bash
-std del Minijob
-# → Minijob entfernt.
-Die Entitätsdatei bleibt erhalten.
+std del MJ
+# → MJ aus Minijob entfernt.
+Die Entitätsdatei bleibt erhalten, der Alias wird gelöscht.
 ```
 
 ---
 
 ### ⏱️ Zeit eintragen (Stunden oder Minuten)
-
+**Kommentar eintragen möglich, nicht erforderlich.**
 ```bash
 std ALIAS ZEIT EINHEIT "Kommentar"
 std ALIAS ZEIT EINHEIT
