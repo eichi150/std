@@ -39,7 +39,7 @@ std/
 │   ├── install.sh
 │   └── uninstall.sh
 │
-│ 	+Windows:
+│   +Windows:
 │   ├─ std.bat
 │   └─ std_win<..>.exe
 │
