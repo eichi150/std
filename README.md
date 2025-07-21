@@ -2,7 +2,17 @@
 
 ---
 
-## Install / Uninstall
+### 📄 Console Based Application
+
+---
+
+## 🔧 Build
+
+### Linux
+
+- bin/std.exe Build with g++ 12.2.0 (Debian System) for Linux.
+
+## Install / Uninstall on Linux
 ```bash
 ./install.sh
 ./uninstall.sh
@@ -16,6 +26,22 @@ chmod +x uninstall.sh
 
 ---
 
+### Windows 32bit or Windows 64bit
+
+- win_32/std_win32.exe static Build with mingw32 for Window 32bit.
+- win_64/std_win64.exe static Build with mingw32 for Window 64bit.
+
+## Install on Windows
+```bash
+Copy  std_win<..>.exe File to std/bin/
+do in Terminal:
+	 `std_win<..>.exe -cf C:\<path>\<to>\<std>\config.json C:\<path>\<to>\<std>\files\ C:\<path>\<to>\<std>\files\accounts.json`
+std/config.json should be written.
+Installation Completed.
+```
+
+---
+
 ## 🔧 Befehle
 
 ### ➕ Neue Entität mit Alias anlegen
@@ -23,8 +49,6 @@ chmod +x uninstall.sh
 ```bash
 std add ENTITY ALIAS
 ```
-
-> Die Entität wird unter dem Alias angesprochen.
 
 **Beispiel:**
 ```bash
@@ -45,7 +69,6 @@ std del <alias>
 ```bash
 std del MJ
 # → MJ aus Minijob entfernt.
-Die Entitätsdatei bleibt erhalten, der Alias wird gelöscht.
 ```
 
 ---
@@ -169,9 +192,9 @@ std/
 - Zeit kann in Stunden (`-h`) oder Minuten (`-m`) eingegeben werden.
 - Kommentare sind optional.
 - Aliase vereinfachen die Eingabe und Verwaltung.
-- Build with g++ 12.2.0 (Debian System)
 
 ---
+
 
 ## Lizenz und Haftung
 
