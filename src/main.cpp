@@ -661,31 +661,41 @@ private:
 	}
 	
 		
-	void delete_account(std::vector<Time_Account>& all_accounts, const std::string& entity_to_delete){
+	void delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete){
 		if(all_accounts.empty()){
 			throw std::runtime_error{str_error.at(error::untitled_error)};
 		}
 		
+		bool found_alias = false;
+		std::string entity;
+		
+		for(const auto& account : all_accounts){
+			if(account.get_alias() == alias_to_delete){
+				entity = account.get_entity();
+				found_alias = true;
+				break;
+			}
+		}
+		if(!found_alias){
+			throw std::runtime_error{str_error.at(error::unknown_alias)};
+		}
+		
 		std::vector<Time_Account> adjusted_accounts;
 	
-		size_t size_before = all_accounts.size();
-		
+		//remove out of all_accounts
 		std::remove_copy_if(all_accounts.begin(), all_accounts.end(),
 			std::back_inserter(adjusted_accounts),
-			[entity_to_delete](const Time_Account& account){
-				return account.get_entity() == entity_to_delete;
+			[alias_to_delete](const Time_Account& account){
+				return account.get_alias() == alias_to_delete;
 			}
 		);
-		
 		all_accounts = adjusted_accounts;
-		
-		if( all_accounts.size() < size_before){
-			std::cout << entity_to_delete << language_pack.at("deleted_out_of_accounts.json") << std::endl;
-		}else{
-			throw std::runtime_error{str_error.at(error::not_found)};
-		}
 
+		std::cout << alias_to_delete << language_pack.at("deleted_out_of_accounts.json") << std::endl;
+	
+		//update Files
 		jsonH->save_json_accounts(all_accounts);
+		jsonH->save_json_entity(all_accounts, entity);
 		
 	}
 	
@@ -695,9 +705,6 @@ private:
 
 		//Entity or Alias already taken?
 		for(const auto& account : all_accounts){
-			/*if(account.get_entity() == entity){
-				throw std::runtime_error{str_error.at(error::double_entity)};
-			}*/
 			if(account.get_alias() == alias){
 				throw std::runtime_error{str_error.at(error::double_alias)};
 			}
