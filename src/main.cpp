@@ -40,6 +40,7 @@ enum class error{
 	, unknown_alias_or_entity
 	, alias_equal_entity
 	, user_input_is_command
+	, unknown_language
 };
 enum class command{
 	  help = 0
@@ -395,33 +396,43 @@ public:
 
 class Translator{
 public:
-
+	std::map<Language, std::string> dict_language{
+		  {Language::english, "english"}
+		, {Language::german, "german"}
+	};
+	
+	std::map<std::string, std::string> language_pack{};
+	
 	void set_language(const Language& language){
 		this->language = language;
+		language_pack = which_language_pack();
 	}
 	
 	std::map<std::string, std::string> which_language_pack(){
 	
 		std::map<std::string, std::string> english_pack{
-			{"timepoint", "%Y-%m-%d %H:%M:%S"}
+			 {"language", "english"}
+		 	,{"str_language", "Language"}
+			,{"timepoint", "%Y-%m-%d %H:%M:%S"}
 			,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
 			,{"total_hours", "Total Hours"}
 			,{"entity", "Entity"}
 		};
 		
 		std::map<std::string, std::string> german_pack{
-			{"timepoint", "%d-%m-%Y %H:%M:%S"}
+			 {"language", "deutsch"}
+			,{"str_language", "Sprache"}
+			,{"timepoint", "%d-%m-%Y %H:%M:%S"}
 			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren ist weiterhin möglich."}
 			,{"total_hours", "Stunden gesamt"}
 			,{"entity", "Entität"}
 		};
 
 		//Default = English
-		auto language_pack = english_pack;
+		auto lng_pack = english_pack;
 		
 		if(english_pack.size() != german_pack.size()){
-			return english_pack;
-			
+			return  english_pack;
 		}
 		
 		bool same_keys = std::equal(
@@ -438,23 +449,18 @@ public:
 		
 		//Possible to change Language
 		if(static_cast<int>(language) == static_cast<int>(Language::german)){
-			language_pack = german_pack;
+			lng_pack = german_pack;
 		}
 	
-		return language_pack;
+		return lng_pack;
 	}
 
-	std::string get_str_language()const{
-		if(language == Language::english){
-			return "english";
-		}
-		if(language == Language::german){
-			return "german";
-		}
-		return {};
+	std::string get_str_language(){
+		return dict_language.at(language);
 	}
 private:
 	Language language;
+	
 };
 
 class Arg_Manager{
@@ -462,16 +468,15 @@ public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern)
 		 : jsonH(jH), str_argv(argv), argc(argc)
 	 {
+		translator.set_language(jsonH->get_config_language());
 		
 		regex_pattern = pattern;
 
-		init_language();
-				 	
 	 	max_length = {
  			  10 //Index Standard	
  			, 10 //Alias Standard
  			, 15 //Entity Standard
- 			, static_cast<int>(language_pack.at("total_hours").size()) //TotalHours Standard
+ 			, static_cast<int>(translator.language_pack.at("total_hours").size()) //TotalHours Standard
  		};
 	};
 	
@@ -520,8 +525,7 @@ public:
 						}
 						//Zeige spezifischen Account an
 						//show <entity> ODER show <alias>	
-												
-						//entity oder alias ?? -> entsprechende accounts erhalten
+							//entity oder alias ?? -> entsprechende accounts erhalten
 						std::vector<Time_Account> matching_accounts;
 						matching_accounts = check_for_alias_or_entity(all_accounts, str_argv[2]);
 						
@@ -542,10 +546,28 @@ public:
 					//Language changeTo
 					//-l ger
 					if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
-					
+	
+						bool is_possible_language = false;					
+						for(const auto& key : translator.dict_language){
+							if(key.second == str_argv[2]){
+								is_possible_language = true;
+								break;
+							}
+						}
+						
+						if(!is_possible_language){
+							std::cout << "Possible Languages:\n";
+							for(const auto& str : translator.dict_language){
+								std::cout << str.second << '\n';
+							}
+													
+							throw std::runtime_error{str_error.at(error::unknown_language)};
+						}
+
 						change_config_json_language(str_argv[2]);
 						break;
-					}
+					} 
+					
 					throw std::runtime_error{str_error.at(error::synthax)};
 				};
 
@@ -622,8 +644,6 @@ private:
 
 	std::map<command, std::regex> regex_pattern;
 
-	std::map<std::string, std::string> language_pack;
-
 	std::map<error, std::string> str_error;
 		
 	const std::string help = {
@@ -634,14 +654,6 @@ private:
 		"show 'ALIAS' 	show specific Entity's Time Account\n\n"
 		"For more Information have a look at README.md on github.com/eichi150/std\n"
 	 };
-
-	void init_language(){
-		//Set Language_Pack - Standard english
-		Language language = jsonH->get_config_language();
- 			
-	 	translator.set_language(language);
-		language_pack = translator.which_language_pack();
-	}
 
 	std::vector<Time_Account> check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity){
 		std::vector<Time_Account> matching_accounts;
@@ -680,18 +692,6 @@ private:
 		);
 		return matching_accounts;
 	}
-				
-	std::string get_str_config_language(){
-		std::string str_config_language = "english";
-		if(static_cast<int>(jsonH->get_config_language()) == static_cast<int>(Language::english)){
-			str_config_language = "english";
-		}else
-		if(static_cast<int>(jsonH->get_config_language()) == static_cast<int>(Language::german)){
-			str_config_language == "german";
-		}
-		
-		return str_config_language;
-	}
 
 	void change_config_json_language(const std::string& to_language){
 		std::map<std::string, std::string> new_data = {
@@ -710,7 +710,7 @@ private:
 			  {"config_filepath", conf_filepath}
 			, {"entity_filepath", ent_filepath}
 			, {"accounts_filepath", acc_filepath}
-			, {"language", get_str_config_language()}
+			, {"language", translator.get_str_language()}
 		};
 		jsonH->save_config_file(new_data);
 
@@ -756,7 +756,7 @@ private:
 		);
 		all_accounts = adjusted_accounts;
 
-		std::cout << alias_to_delete << language_pack.at("deleted_out_of_accounts.json") << std::endl;
+		std::cout << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 	
 		//update Files
 		jsonH->save_json_accounts(all_accounts);
@@ -768,7 +768,7 @@ private:
 		std::string entity = str_argv[2];
 		std::string alias = str_argv[3];
 
-		//Entity or Alias cant be name equal to a command
+		//Entity or Alias cant be named as a command
 		bool is_command = false;
 		for(const auto& pattern : regex_pattern){
 			
@@ -837,7 +837,7 @@ private:
 		
 		if(found_alias){
 			std::cout 
-				<< std::put_time(&localTime, language_pack.at("timepoint").c_str()) << '\n'
+				<< std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
 				<< "Time saved." 
 				<< std::endl;
 		}else{
@@ -866,12 +866,12 @@ private:
 	void show_filepaths(){
 		std::cout 
 			<< "Config: " << jsonH->get_config_filepath() << '\n'
-			<< language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
+			<< translator.language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
 			<< "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
 	}
 
 	void show_language(){
-		std::cout << "Language: " << translator.get_str_language() << std::endl;
+		std::cout << translator.language_pack.at("str_language")<< ": " << translator.language_pack.at("language") << std::endl;
 	}
 	
 	void show_specific_table(const std::vector<Time_Account>& show_accounts) {
@@ -890,8 +890,8 @@ private:
 			std::cout << std::left 
 				<< std::setw(max_length[0]) << "index"
 				<< std::setw(max_length[1]) << "Alias"
-				<< std::setw(max_length[2]) << language_pack.at("entity")
-				<< std::setw(max_length[3]) << language_pack.at("total_hours")
+				<< std::setw(max_length[2]) << translator.language_pack.at("entity")
+				<< std::setw(max_length[3]) << translator.language_pack.at("total_hours")
 				<< std::endl;
 				
 			//Trennlinie 
@@ -927,7 +927,7 @@ private:
 			for(const auto& entry : account.get_entry()){
 				std::stringstream ss;
 				
-				std::string time_format = language_pack.at("timepoint");
+				std::string time_format = translator.language_pack.at("timepoint");
 				ss << std::put_time(&entry.time_point, time_format.c_str());
 
 				//Trennlinie 
@@ -959,8 +959,8 @@ private:
 		std::cout << std::left 
 			<< std::setw( max_length[0]) << "index"
 			<< std::setw( max_length[1]) << "Alias"
-			<< std::setw( max_length[2]) << language_pack.at("entity")
-			<< std::setw( max_length[3]) << language_pack.at("total_hours")
+			<< std::setw( max_length[2]) << translator.language_pack.at("entity")
+			<< std::setw( max_length[3]) << translator.language_pack.at("total_hours")
 			<< std::endl;
 		
 		int index{0};
@@ -1035,6 +1035,7 @@ int main(int argc, char* argv[]){
 		, {error::untitled_error,"Untitled Error"}
 		, {error::unknown,		 "Unknown Command"}
 		, {error::unknown_alias, "Unknown Alias"}
+		, {error::unknown_language, "Unknown Language"}
 	};
 	
 	if(argc > 1){
