@@ -1008,15 +1008,6 @@ private:
 
 //Check for valid Arguments
 bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern ){
-
-	//strings over 20 charakters are only available for config_filepath or user_filepath
-	for(const auto& str : str_argv){
-		if(str.size() > 20 
-			&& ( !std::regex_match(str, regex_pattern.at(command::config_filepath)) || !std::regex_match(str, regex_pattern.at(command::user_filepath ) )))
-		{
-			throw std::runtime_error{"Argument over 20 signs"};
-		}
-	}
 	
 	for(const auto& pattern : regex_pattern){
 		for(size_t i{1}; i < str_argv.size(); ++i){
