@@ -1,11 +1,11 @@
 compile:
-	g++ ./src/main.cpp -o ./bin/std.exe
+	g++ main.cpp -o ./bin/std.exe
 	
 compile_win64:
-	x86_64-w64-mingw32-g++ -std=c++17 -static -O2 -o ./win_64/std_win64.exe ./src/main.cpp
+	x86_64-w64-mingw32-g++ -std=c++17 -static -O2 -o ./win_64/std_win64.exe main.cpp
 
 compile_win32:
-	i686-w64-mingw32-g++ -std=c++17 -static -O2 -o ./win_32/std_win32.exe ./src/main.cpp
+	i686-w64-mingw32-g++ -std=c++17 -static -O2 -o ./win_32/std_win32.exe main.cpp
 
 main:
 	micro ./src/main.cpp

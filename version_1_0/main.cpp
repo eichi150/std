@@ -1081,7 +1081,7 @@ int main(int argc, char* argv[]){
 		
 	}else{
 	
-		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
+		std::cout << "Simple Time Documentation - Version 1.0 - github.com/eichi150/std" << std::endl;
 	}
 	
 	return 0;
