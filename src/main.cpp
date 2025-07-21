@@ -992,7 +992,7 @@ bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<
 		if(str.size() > 20 
 			&& ( !std::regex_match(str, regex_pattern.at(command::config_filepath)) || !std::regex_match(str, regex_pattern.at(command::user_filepath ) )))
 		{
-			return false;
+			throw std::runtime_error{"Argument over 20 signs"};
 		}
 	}
 	
