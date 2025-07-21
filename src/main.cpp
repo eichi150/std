@@ -1,3 +1,11 @@
+#ifdef _WIN32
+	#include <windows.h>
+
+#else
+	#include <limits.h>
+	#include <unistd.h>
+#endif
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -9,8 +17,7 @@
 #include <memory>
 #include <regex>
 #include <map>
-#include <limits.h>
-#include <unistd.h>
+
 
 #include "json.hpp"
 
@@ -139,27 +146,42 @@ public:
 	
 	//Search Filepath in home Directory
 	std::string getExecutableDir(){
-		char result[PATH_MAX];
-		ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+		char path[PATH_MAX];
+	#ifdef _WIN32
+		
+		DWORD length = GetModuleFileNameA(NULL, path, MAX_PATH);
+		if(length == 0){
+			return "";
+		}
+		std::string exePath(path, length);
+		return exePath.substr(0, exePath.find_last_of("\\/"));
+		
+	#else
+		
+		ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
 		if(count == -1){
 			return "";
 		}
-		std::string path(result, count);
-		return path.substr(0, path.find_last_of('/'));
+		std::string exePath(path, count);
+		return exePath.substr(0, exePath.find_last_of('/'));
+		
+	#endif
 	}
 	
 	std::string getConfigFilePath() {
-		char result[PATH_MAX];
-		ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-		if (count == -1 || count == PATH_MAX) {
+
+		std::string exeDir = getExecutableDir();
+		if(exeDir.empty()){
 			return "";
 		}
+		size_t lastSlash = exeDir.find_last_of("/\\");
+		std::string baseDir = exeDir.substr(0, lastSlash);
 
-		std::string exePath(result, count);                    // /home/eichi/bin/std/bin/std
-		std::string exeDir = exePath.substr(0, exePath.find_last_of('/'));  // ? /home/eichi/bin/std/bin
-		std::string baseDir = exeDir.substr(0, exeDir.find_last_of('/'));   // ? /home/eichi/bin/std
-
-		return baseDir + "/config.json";
+		#ifdef _WIN32
+			return baseDir + "\\config.json";
+		#else
+			return baseDir + "/config.json";
+		#endif
 	}
 
 
@@ -1010,7 +1032,7 @@ bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<
 
 	
 int main(int argc, char* argv[]){
-	
+
 	//Argumente entgegen nehmen und in vector<string> speichern
 	std::vector<std::string> str_argv;
 	for(int i{0}; i < argc; ++i){
@@ -1051,7 +1073,7 @@ int main(int argc, char* argv[]){
 				//Initalize
 				std::vector<Time_Account> all_accounts{};
 				JSON_Handler jsonH{all_accounts};
-			
+
 				//Init Argument Manager
 				Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, regex_pattern};
 			
