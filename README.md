@@ -35,7 +35,7 @@ chmod +x uninstall.sh
 ```bash
 Copy  std_win<..>.exe File to std/bin/
 do in Terminal:
-	 `std_win<..>.exe -cf C:\<path>\<to>\<std>\config.json C:\<path>\<to>\<std>\files\ C:\<path>\<to>\<std>\files\accounts.json`
+	 `std_win<..>.exe -cf C:/<path>/<to>/<std>/config.json C:/<path>/<to>/<std>/files/ C:/<path>/<to>/<std>/files/accounts.json`
 std/config.json should be written.
 Installation Completed.
 ```
