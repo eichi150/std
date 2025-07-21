@@ -16,11 +16,11 @@ std/
 │   └── std.exe
 │
 ├── win_32/
-│ 	├── std.bat
+│	├── std.bat
 │   └── std_win32.exe
 │
 ├── win_64/
-│ 	├── std.bat
+│	├── std.bat
 │   └── std_win64.exe
 │
 ├── main.cpp
