@@ -50,8 +50,6 @@ Installation Completed.
 std add ENTITY ALIAS
 ```
 
-> Die Entität wird unter dem Alias angesprochen.
-
 **Beispiel:**
 ```bash
 std add Minijob MJ
