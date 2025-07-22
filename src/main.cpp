@@ -431,7 +431,7 @@ public:
 	}
 	
 	std::map<std::string, std::string> which_language_pack(){
-	
+		
 		std::map<std::string, std::string> english_pack{
 			 {"language", "english"}
 		 	,{"str_language", "Language"}
@@ -439,6 +439,12 @@ public:
 			,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
 			,{"total_hours", "Total Hours"}
 			,{"entity", "Entity"}
+			,{"hours", "Hours"}
+			,{"timestamp", "Timestamp"}
+			,{"comment", "Comment"}
+			,{"time_saved", "Time saved"}
+			,{"saved", " saved"}
+			,{"No_Entrys_available", "No Entrys available"}
 		};
 		
 		std::map<std::string, std::string> german_pack{
@@ -448,6 +454,12 @@ public:
 			,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren ist weiterhin möglich."}
 			,{"total_hours", "Stunden gesamt"}
 			,{"entity", "Entität"}
+			,{"hours", "Stunden"}
+			,{"timestamp", "Zeitstempel"}
+			,{"comment", "Kommentar"}
+			,{"time_saved", "Zeitstempel gespeichert"}
+			,{"saved", " gespeichert"}
+			,{"No_Entrys_available", "Keine Einträge verfügbar"}
 		};
 
 		std::map<Language, std::map<std::string, std::string>> all_packs{
@@ -495,6 +507,9 @@ public:
  			, 10 //Alias Standard
  			, 15 //Entity Standard
  			, static_cast<int>(translator.language_pack.at("total_hours").size())
+ 			, static_cast<int>(translator.language_pack.at("hours").size())
+ 			, static_cast<int>(translator.language_pack.at("timestamp").size())
+ 			, static_cast<int>(translator.language_pack.at("comment").size())
  		};
 	};
 	
@@ -820,7 +835,7 @@ private:
 		jsonH->save_json_accounts(all_accounts);
 		jsonH->save_json_entity(all_accounts, entity);
 				
-		std::cout << "-> " << alias << " | " << entity << " saved." << std::endl;
+		std::cout << "-> " << alias << " | " << entity << translator.language_pack.at("saved") << std::endl;
 		
 	}
 	
@@ -857,7 +872,7 @@ private:
 		if(found_alias){
 			std::cout 
 				<< std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
-				<< "Time saved." 
+				<< translator.language_pack.at("time_saved")
 				<< std::endl;
 		}else{
 		
@@ -932,15 +947,15 @@ private:
 
 			++index;
 			if(account.get_entry().empty()){
-				std::cout << "No Entrys available" << std::endl;
+				std::cout << translator.language_pack.at("No_Entrys_available") << std::endl;
 				continue;
 			}
 			
 			std::cout << std::left
 				<< std::setw( max_length[0]) << "index"
-				<< std::setw(10) << "Hours"
-				<< std::setw(25) << "Timestamp"
-				<< std::setw(15) << "Comment"
+				<< std::setw(max_length[4]) << translator.language_pack.at("hours")
+				<< std::setw(max_length[5]) << translator.language_pack.at("timestamp")
+				<< std::setw(max_length[6]) << translator.language_pack.at("comment")
 				<< std::endl;
 				
 			for(const auto& entry : account.get_entry()){
@@ -954,9 +969,9 @@ private:
 				
 				std::cout << std::left
 					<< std::setw( max_length[0]) << index_entrys
-					<< std::setw(10) << entry.hours
-					<< std::setw(25) << ss.str()
-					<< std::setw(15) << entry.description
+					<< std::setw(max_length[4]) << entry.hours
+					<< std::setw(max_length[5]) << ss.str()
+					<< std::setw(max_length[6]) << entry.description
 					<< std::endl;
 									
 				++index_entrys;
@@ -1033,15 +1048,15 @@ int main(int argc, char* argv[]){
 	argv = {};
 
 	std::map<command, std::regex> regex_pattern = {
-		{ command::help,      		std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } },
-		{ command::add,       		std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } },
-		{ command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } },
-		{ command::delete_,   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } },
-		{ command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } },
-		{ command::minutes, 		std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} },
-		{ command::config_filepath, std::regex{R"(^--?cf$)", std::regex_constants::icase } },
-		{ command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } },
-		{ command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } },
+		  { command::help,      		std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } }
+		, { command::add,       		std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } }
+		, { command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } }
+		, { command::delete_,   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } }
+		, { command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } }
+		, { command::minutes, 		std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} }
+		, { command::config_filepath, std::regex{R"(^--?cf$)", std::regex_constants::icase } }
+		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
 	};
 
 	std::map<error, std::string> str_error{
