@@ -5,7 +5,7 @@ BIN_DIR="$HOME/bin"
 STD_DIR="$BIN_DIR/std"
 STD_BIN_DIR="$STD_DIR/bin"
 FILES_DIR="$STD_DIR/files"
-EXE_NAME="std.exe"
+EXE_NAME="std"
 
 #2. Sicherstellen, dass ~/bin existiert
 if [ ! -d "$BIN_DIR" ]; then

@@ -3,7 +3,7 @@
 # 1. Zielpfade definieren
 BIN_DIR="$HOME/bin"
 STD_DIR="$BIN_DIR/std"
-EXE_NAME="std.exe"
+EXE_NAME="std"
 ALIAS_NAME="std"
 BASHRC="$HOME/.bashrc"
 
