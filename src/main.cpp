@@ -252,7 +252,7 @@ public:
 		return matching_accounts;
 	}
 	
-	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
+	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save, const std::string& alias){
 	
 		std::vector<Time_Account> matching_accounts = collect_accounts_with_entity(all_accounts, entity_to_save);
 
@@ -271,6 +271,9 @@ public:
 		json alias_list = json::array();
 
 		for (const auto& acc : matching_accounts) {
+			if(!alias.empty() && acc.get_alias() == alias){
+				continue;
+			}
 			json alias_entry;
 			alias_entry["alias"] = acc.get_alias();
 			alias_entry["total_hours"] = acc.get_hours();
@@ -767,10 +770,12 @@ private:
 		
 		bool found_alias = false;
 		std::string entity;
+		std::string alias;
 		
 		for(const auto& account : all_accounts){
 			if(account.get_alias() == alias_to_delete){
 				entity = account.get_entity();
+				alias = account.get_alias();
 				found_alias = true;
 				break;
 			}
@@ -788,14 +793,15 @@ private:
 				return account.get_alias() == alias_to_delete;
 			}
 		);
+		jsonH->save_json_entity(all_accounts, entity, alias);
+		
 		all_accounts = adjusted_accounts;
 
-		std::cout << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
-	
 		//update Files
 		jsonH->save_json_accounts(all_accounts);
-		jsonH->save_json_entity(all_accounts, entity);
+		//jsonH->save_json_entity(all_accounts, entity, alias);
 		
+		std::cout << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 	}
 	
 	void add_account(std::vector<Time_Account>& all_accounts){
@@ -833,7 +839,7 @@ private:
 		all_accounts.push_back(new_account);
 				
 		jsonH->save_json_accounts(all_accounts);
-		jsonH->save_json_entity(all_accounts, entity);
+		jsonH->save_json_entity(all_accounts, entity, {});
 				
 		std::cout << "-> " << alias << " | " << entity << translator.language_pack.at("saved") << std::endl;
 		
@@ -861,7 +867,7 @@ private:
 				account.add_entry(entry);
 
 				jsonH->save_json_accounts(all_accounts);
-				jsonH->save_json_entity(all_accounts, account.get_entity());
+				jsonH->save_json_entity(all_accounts, account.get_entity(), {});
 
 				found_alias = true;
 
