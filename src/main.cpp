@@ -507,9 +507,9 @@ public:
  			, 10 //Alias Standard
  			, 15 //Entity Standard
  			, static_cast<int>(translator.language_pack.at("total_hours").size())
- 			, static_cast<int>(translator.language_pack.at("hours").size())
- 			, static_cast<int>(translator.language_pack.at("timestamp").size())
- 			, static_cast<int>(translator.language_pack.at("comment").size())
+ 			, static_cast<int>(translator.language_pack.at("hours").size() + 5)
+ 			, static_cast<int>(translator.language_pack.at("timestamp").size() + 10)
+ 			, static_cast<int>(translator.language_pack.at("comment").size() + 10)
  		};
 	};
 	
@@ -965,7 +965,7 @@ private:
 				ss << std::put_time(&entry.time_point, time_format.c_str());
 
 				//Trennlinie 
-				std::cout << std::setfill('-') << std::setw( max_length[0] + 10 + 25 + 15) << "-" << std::setfill(' ') << std::endl;
+				std::cout << std::setfill('-') << std::setw( max_length[0] + max_length[4] + max_length[5] + max_length[6]) << "-" << std::setfill(' ') << std::endl;
 				
 				std::cout << std::left
 					<< std::setw( max_length[0]) << index_entrys
