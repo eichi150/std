@@ -1,3 +1,4 @@
+
 compile:
 	g++ ./src/main.cpp -o ./bin/std.exe
 	
@@ -7,6 +8,11 @@ compile_win64:
 compile_win32:
 	i686-w64-mingw32-g++ -std=c++17 -static -O2 -o ./win_32/std_win32.exe ./src/main.cpp
 
+compile_ALL:
+	make compile
+	make compile_win32
+	make compile_win64
+	
 main:
 	micro ./src/main.cpp
 
