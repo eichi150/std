@@ -131,6 +131,7 @@ std::vector<Time_Account> JSON_Handler::collect_accounts_with_entity(const std::
     return matching_accounts;
 }
 
+//wenn der Alias übergeben wird, wird er übersprungen und somit nicht in die Datei geschrieben -> delete Function
 void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save, const std::string& alias){
 	
     std::vector<Time_Account> matching_accounts = collect_accounts_with_entity(all_accounts, entity_to_save);

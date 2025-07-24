@@ -1,7 +1,7 @@
 #include "bme280_sensor.h"
 
 
-    int BME_Sensor::scan_sensor() {
+    int BME_Sensor::scan_sensor(std::string& data_str) {
         const char *i2c_device = "/dev/i2c-1";
         static uint8_t dev_addr = BME280_I2C_ADDR_PRIM; // 0x76
 
@@ -55,24 +55,27 @@
             printf("Sensor Data lesen fehlgeschlagen\n");
             return 1;
         }
-
-        printf("Temperatur: %.2f °C\n", comp_data.temperature);
-        printf("Druck:      %.2f hPa\n", comp_data.pressure / 100.0);
-        printf("Feuchte:    %.2f %%\n", comp_data.humidity);
-
+        
+        std::stringstream ss;
+        ss << "Temperatur: " << std::fixed << std::setprecision(2) << comp_data.temperature << " °C || "
+            << "Druck: " << std::fixed << std::setprecision(2) << comp_data.pressure / 100.0 << " hPa || "
+            << "Feuchte: " << std::fixed << std::setprecision(2) << comp_data.humidity << " %\n";
+        
         close(i2c_fd);
+        
+        data_str = ss.str();
         return 0;
     }
 
 
-
-    // Muss static sein, da Funktionszeiger in C keinen Zugriff auf `this` haben
     BME280_INTF_RET_TYPE BME_Sensor::user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr) {
         int fd = *(int *)intf_ptr;
-        if (write(fd, &reg_addr, 1) != 1)
+        if (write(fd, &reg_addr, 1) != 1){
             return -1;
-        if (read(fd, data, len) != (int)len)
+        }
+        if (read(fd, data, len) != (int)len){
             return -1;
+        }
         return 0;
     }
 
@@ -83,8 +86,9 @@
         for (uint32_t i = 0; i < len; i++) {
             buf[i + 1] = data[i];
         }
-        if (write(fd, buf, len + 1) != (int)(len + 1))
+        if (write(fd, buf, len + 1) != (int)(len + 1)){
             return -1;
+        }
         return 0;
     }
 

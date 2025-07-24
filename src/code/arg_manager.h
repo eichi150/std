@@ -45,6 +45,7 @@ private:
 		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
 		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
 		, { command::sensor, 			std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
+		, { command::save_sensor_data,	std::regex{R"(^--?data$)", std::regex_constants::icase } }
 	};
 
 	std::map<error, std::string> str_error{
@@ -59,7 +60,7 @@ private:
 		, {error::unknown, "Unknown Command"}
 		, {error::unknown_alias, "Unknown Alias"}
 		, {error::unknown_language, "Unknown Language"}
-		, {error::sensor_not_found, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
+		, {error::sensor, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
 	};
 
 };
@@ -75,16 +76,12 @@ private:
 
 	std::shared_ptr<JSON_Handler> jsonH;
 	Translator translator{};
-	Clock clock{};
-		
+	Clock clock{};	
 	std::vector<std::string> str_argv;
 	int argc;
-	
 	//show Tabellen setw(max_length[]) 
 	std::vector<int> max_length;
-
 	std::map<command, std::regex> regex_pattern;
-
 	std::map<error, std::string> str_error;
 		
 	const std::string help = {
@@ -95,6 +92,7 @@ private:
     "show 'ALIAS' 	show specific Entity's Time Account\n\n"
     "For more Information have a look at README.md on github.com/eichi150/std\n"
     };
+	
 
 	std::vector<Time_Account> check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity);
 	
@@ -112,7 +110,8 @@ private:
 	void add_account(std::vector<Time_Account>& all_accounts);
 	
 	void add_hours(std::vector<Time_Account>& all_accounts);
-
+	void add_sensor_data(std::vector<Time_Account>& all_accounts);
+	
 	void set_table_width(const std::vector<Time_Account>& all_accounts, std::vector<int>& max_length);
 
 	void show_filepaths() const;

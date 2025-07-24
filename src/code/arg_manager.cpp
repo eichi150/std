@@ -47,10 +47,13 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                 //i2c Sensor Abfrage
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::sensor))){
                     
+                    std::string output_sensor;
                     BME_Sensor sensor{};
-                    if(sensor.scan_sensor() == 1){
-                        throw std::runtime_error(str_error.at(error::sensor_not_found));
+                    if(sensor.scan_sensor(output_sensor) == 1){
+                        throw std::runtime_error(str_error.at(error::sensor));
                     }
+                    
+                    std::cout << output_sensor << std::endl;
                     break;
 
                 }
@@ -120,6 +123,20 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                     change_config_json_language(str_argv[2]);
                     break;
                 } 
+                
+                //i2c Sensor Abfrage
+                if(std::regex_match(str_argv[2], regex_pattern.at(command::save_sensor_data))){
+                    
+                    std::string output_sensor;
+                    BME_Sensor sensor{};
+                    if(sensor.scan_sensor(output_sensor) == 1){
+                        throw std::runtime_error(str_error.at(error::sensor));
+                    }
+                    
+                    add_sensor_data(all_accounts);
+                    break;
+
+                }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
@@ -373,6 +390,44 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts){
         std::cout 
             << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
             << translator.language_pack.at("time_saved")
+            << std::endl;
+    }else{
+    
+        throw std::runtime_error{str_error.at(error::not_found)};
+    }
+}
+
+void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
+    bool found_alias = false;
+    auto localTime = clock.get_time();
+    std::string output_sensor;
+
+    for(auto& account : all_accounts){
+        if(str_argv[1] == account.get_alias() ){
+            
+            BME_Sensor sensor{};
+            if(sensor.scan_sensor(output_sensor) == 1){
+                throw std::runtime_error(str_error.at(error::sensor));
+            }
+
+            Entry entry{0.f, output_sensor, localTime};
+            account.add_entry(entry);
+
+            jsonH->save_json_accounts(all_accounts);
+            jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+
+            found_alias = true;
+
+            break;	
+        }
+    }
+    
+    if(found_alias){
+        std::cout 
+            << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
+            << translator.language_pack.at("time_saved") << '\n'
+            << output_sensor << '\n'
+            << "BME Sensor Connection closed"
             << std::endl;
     }else{
     

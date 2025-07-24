@@ -9,10 +9,12 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include "bme280.h"
+#include <iomanip>
+#include <sstream>
 
 class BME_Sensor {
 public:
-    int scan_sensor();
+    int scan_sensor(std::string& data_str);
 
 private:
     int i2c_fd;

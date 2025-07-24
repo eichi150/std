@@ -14,7 +14,7 @@ enum class error{
 	, alias_equal_entity
 	, user_input_is_command
 	, unknown_language
-	, sensor_not_found
+	, sensor
 };
 enum class command{
 	  help = 0
@@ -27,6 +27,7 @@ enum class command{
 	, user_filepath
 	, language
 	, sensor
+	, save_sensor_data
 };
 
 enum class Language{
