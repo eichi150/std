@@ -261,7 +261,7 @@ std add ChocoHaze CH (-tag plant)
 	sudo i2c-detect -y 1
 	```
 	
-![Ausgabe](https://github.com/eichi150/std/more_information/sensor_i2c_detect.png)
+![Ausgabe](https://github.com/eichi150/std/blob/dev/more_information/sensor_i2c_detect.png)
 	
 #### 🔹 Zeige aktuelle Messwerte an:
 ```bash
