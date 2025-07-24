@@ -251,16 +251,16 @@ std add ChocoHaze CH (-tag plant)
 ## I2C Sensor Setup:
 ## 🔹 I2C im Betriebsystem aktivieren:
 	RaspberryPi:
-	```bash
-		sudo raspi-config
-		unter 'Interface Options' I2C aktivieren 
-		sudo reboot
-	```
+```bash
+	sudo raspi-config
+	unter 'Interface Options' I2C aktivieren 
+	sudo reboot
+```
 ## 🔹 I2C Port abfragen:
-	```bash
+```bash
 	sudo i2c-detect -y 1
-	```
-	
+```
+Folgene Ausgabe sollte zu sehen sein. Port: x76 sendet
 ![Ausgabe](https://github.com/eichi150/std/blob/dev/more_information/sensor_i2c_detect.png)
 	
 #### 🔹 Zeige aktuelle Messwerte an:
