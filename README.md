@@ -10,21 +10,36 @@
 
 ```
 std/
-├── bin/
+├── linux/
 │   ├── install.sh
 │   ├── uninstall.sh
 │   └── std.exe
 │
 ├── win_32/
 │   ├── std.bat
+│   ├── install.bat
+│   ├── uninstall.bat
 │   └── std_win32.exe
 │
 ├── win_64/
 │   ├── std.bat
+│   ├── install.bat
+│   ├── uninstall.bat
 │   └── std_win64.exe
-│
-├── main.cpp
-├── json.hpp
+├── src/code/
+│   ├── build/
+│   ├── linux/
+│   ├── win_32/
+│   ├── win_64/
+│   ├── main.cpp
+│   ├── arg_manager.cpp
+│   ├── json_Handler.cpp
+│   ├── time_account.cpp
+│   ├── translator.cpp
+│   ├── enum_class.cpp
+│   ├── clock.cpp
+│   └── json.hpp
+│ 
 ├── README.md
 └── Makefile
 ```
