@@ -6,11 +6,13 @@
 - [ ] Datenexport vor dem Löschen anbieten
 - [ ] JSON_Handler Error Strings per throw
 - [ ] `<alias> -r "Ingredients "` Rezepte eintragen können. Einzeln nach Zutaten fragen und als ein string speichern. (evtl. Strukturaufteilung und Kategorien einführen?)
+
 ---
 
 ## ?? Bugs
 
 - [ ] `unalias` nach deinstallation geht nicht zuverlässig
+- [ ] ##DebugAusgabe EntityDatei gespeichert unter fehlt ein '\'
 
 ---
 
