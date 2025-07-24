@@ -11,6 +11,7 @@
 
 ## ?? Bugs
 
+- [ ] windows filepath für files/ funktioniert nicht. speichert in std/ -> Files werden trotzdem gefunden.
 - [ ] `unalias` nach deinstallation geht nicht zuverlässig
 - [ ] ##DebugAusgabe EntityDatei gespeichert unter fehlt ein '\'
 
