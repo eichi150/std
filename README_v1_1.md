@@ -274,6 +274,9 @@ Folgene Ausgabe sollte zu sehen sein. Port: x76 sendet
 std -i2c
 ```
 
+![Ausgabe](https://github.com/eichi150/std/blob/dev/more_information/example_sensor_data.png)
+
+
 #### 🔹 Alias aktuelle Messwerte speichern:
 ```bash
 std ALIAS -data
