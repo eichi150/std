@@ -44,11 +44,11 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                         break;
                 }
                 
+                //i2c Sensor Abfrage
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::sensor))){
                     
-                    BME_Sensor sensor;
-                    int err_code = sensor.scan_sensor();
-                    if(err_code == 1){
+                    BME_Sensor sensor{};
+                    if(sensor.scan_sensor() == 1){
                         throw std::runtime_error(str_error.at(error::sensor_not_found));
                     }
                     break;

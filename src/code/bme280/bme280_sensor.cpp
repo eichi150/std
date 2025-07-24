@@ -91,6 +91,3 @@
     void BME_Sensor::user_delay_us(uint32_t period_us, void *intf_ptr) {
         usleep(period_us);
     }
-
-
-

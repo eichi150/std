@@ -59,7 +59,7 @@ private:
 		, {error::unknown, "Unknown Command"}
 		, {error::unknown_alias, "Unknown Alias"}
 		, {error::unknown_language, "Unknown Language"}
-		, {error::sensor_not_found, "Sensor not found"}
+		, {error::sensor_not_found, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
 	};
 
 };
