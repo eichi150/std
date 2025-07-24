@@ -236,3 +236,31 @@ Die Nutzung erfolgt **auf eigene Gefahr**. Der Autor übernimmt **keine Haftung*
 für etwaige Fehler, Datenverluste oder Schäden, die durch die Verwendung entstehen könnten.
 
 ---
+
+## 🧩 Weitere Anwendungsmöglichkeiten
+
+Obwohl std als einfaches Zeiterfassungstool konzipiert wurde, kann es flexibel für viele andere Zwecke verwendet werden:
+
+🌱 Pflanzenpflege-Tagebuch
+
+	Pflegeaktionen wie Gießen, Düngen oder Beschneiden dokumentieren.
+
+🧪 Laborversuche protokollieren
+
+	Versuchsdauer, Kommentare und Kategorien erfassen.
+
+🧘 Trainingseinheiten aufzeichnen
+
+	Trainingszeiten oder Übungen mit Tags und Kommentaren loggen.
+
+🧠 Lernzeiten und Kapitelverläufe dokumentieren
+
+	Nach Fach oder Thema strukturieren.
+
+🔋 Gerätezustände oder Stromverbrauch erfassen
+
+	Einsatzzeiten oder Messwerte speichern.
+
+Hinweis: Durch die Unterstützung mehrerer Aliase pro Entität kannst du logisch gruppieren – z. B. verschiedene Quartale, Geräte oder Pflanzen. Das Tool ist bewusst offen gehalten und nicht auf reine Zeiterfassung begrenzt.
+
+---
