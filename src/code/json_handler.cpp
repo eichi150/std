@@ -156,6 +156,7 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
         }
         json alias_entry;
         alias_entry["alias"] = acc.get_alias();
+        alias_entry["tag"] = acc.get_tag();
         alias_entry["total_hours"] = acc.get_hours();
         alias_entry["entries"] = json::array();
 
@@ -235,9 +236,12 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
         if (entry_data.contains("alias")) {
             for (const auto& alias : entry_data["alias"]) {
                 std::string str_alias = alias.value("alias", "");
-                if (account.get_alias() != str_alias)
-                    continue;
-
+                if (account.get_alias() != str_alias){
+               		continue;
+                }
+				std::string tag = alias.value("tag", "");
+				account.set_tag(tag);
+				
                 float total_hours = alias.value("total_hours", 0.0f);
                 account.set_hours(total_hours);
 

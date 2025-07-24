@@ -22,6 +22,7 @@ std/
 │   ├── install.bat
 │   ├── uninstall.bat
 │   └── std_win64.exe
+│
 ├── src/code/
 │   ├── linux/
 │   ├── win_32/
@@ -63,12 +64,33 @@ Darüber hinaus kann absofort ein 'tag' angebracht werden, das Kategorisiert die
 
 > 'tag's steuern den Zugang zu speziellen Tools
 
+Mögliche Tags:
+- none
+- plant
+
+#### 🔹 Entität mit tag anlegen:
+```bash
+std add <entity> <alias> -tag <tag>
+```
 **Beispiel:**
 ```bash
-std add ChocoHaze CH (-tag plant)
+std add ChocoHaze CH -tag plant
 ```
 
-## 🔧 Befehle
+#### 🔹 Tag nachträglich verändern:
+```bash
+std <alias> -tag <tag>  
+```
+**Beispiel**
+```bash
+std CH -tag plant
+```
+
+---
+
+## 🤖 Sensor Connection
+
+#### 🔧 I2C im Betriebsystem aktivieren:
 
 ---
 
@@ -80,6 +102,7 @@ sudo raspi-config
 unter 'Interface Options' I2C aktivieren 
 sudo reboot
 ```
+
 #### 🔹 I2C Port abfragen:
 ```bash
 sudo i2c-detect -y 1
@@ -147,5 +170,23 @@ Obwohl std als einfaches Zeiterfassungstool konzipiert wurde, kann es flexibel f
 	Einsatzzeiten oder Messwerte speichern.
 
 Hinweis: Durch die Unterstützung mehrerer Aliase pro Entität kannst du logisch gruppieren – z. B. verschiedene Quartale, Geräte oder Pflanzen. Das Tool ist bewusst offen gehalten und nicht auf reine Zeiterfassung begrenzt.
+
+---
+
+## 🤖 Automatisierung über Shell & Skripte
+
+Da `std` vollständig terminalbasiert arbeitet, lässt es sich hervorragend in **Shell-Skripte**, **Cronjobs** oder andere **automatisierte Abläufe** integrieren.
+
+**Beispiele:** (nicht getestet)
+
+- **Tägliche Zeitbuchung per Cronjob:** 
+
+```bash
+echo "std HomeOffice 8 -h 'automatische Eintragung'" >> /var/log/std.log
+
+some_sensor_tool | grep "ON" && std ServerWartung 30 -m "Automatisch erkannt"
+
+tar -czf std_backup_$(date +%F).tar.gz ~/std/files/
+```
 
 ---

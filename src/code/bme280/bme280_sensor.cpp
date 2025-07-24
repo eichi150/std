@@ -1,7 +1,7 @@
 #include "bme280_sensor.h"
 
 
-    int BME_Sensor::scan_sensor(std::string& data_str) {
+    int BME_Sensor::scan_sensor(std::vector<float>& float_data) {
         const char *i2c_device = "/dev/i2c-1";
         static uint8_t dev_addr = BME280_I2C_ADDR_PRIM; // 0x76
 
@@ -55,15 +55,15 @@
             printf("Sensor Data lesen fehlgeschlagen\n");
             return 1;
         }
+
+
+        float_data.push_back(comp_data.temperature);
+        float_data.push_back(comp_data.pressure / 100.0f);
+        float_data.push_back(comp_data.humidity);
         
-        std::stringstream ss;
-        ss << "Temperatur: " << std::fixed << std::setprecision(2) << comp_data.temperature << " °C || "
-            << "Druck: " << std::fixed << std::setprecision(2) << comp_data.pressure / 100.0 << " hPa || "
-            << "Feuchte: " << std::fixed << std::setprecision(2) << comp_data.humidity << " %\n";
         
         close(i2c_fd);
         
-        data_str = ss.str();
         return 0;
     }
 

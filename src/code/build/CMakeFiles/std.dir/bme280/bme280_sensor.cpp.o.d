@@ -188,4 +188,8 @@ CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o: \
  /usr/include/c++/12/bits/basic_ios.tcc /usr/include/c++/12/ostream \
  /usr/include/c++/12/bits/ostream.tcc \
  /usr/include/c++/12/bits/istream.tcc \
- /usr/include/c++/12/bits/sstream.tcc
+ /usr/include/c++/12/bits/sstream.tcc /usr/include/c++/12/vector \
+ /usr/include/c++/12/bits/stl_uninitialized.h \
+ /usr/include/c++/12/bits/stl_vector.h \
+ /usr/include/c++/12/bits/stl_bvector.h \
+ /usr/include/c++/12/bits/vector.tcc

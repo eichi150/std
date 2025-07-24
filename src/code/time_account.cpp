@@ -1,5 +1,12 @@
 #include "time_account.h"
 
+void Time_Account::set_tag(const std::string& new_tag){
+	tag = new_tag;
+}
+std::string Time_Account::get_tag() const {
+	return tag;
+}
+
 void Time_Account::set_hours(const float& amount){
     hours = amount;
 }

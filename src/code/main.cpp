@@ -42,6 +42,10 @@ int main(int argc, char* argv[]){
 		str_argv.push_back(arg);
 	}
 	argv = {};
+	if(static_cast<size_t>(argc) != str_argv.size()){
+		std::cout << "!!Argument Error" << std::endl;
+		return 1;
+	}
 	
 	if(argc > 1){
 		try{

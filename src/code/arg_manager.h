@@ -46,6 +46,7 @@ private:
 		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
 		, { command::sensor, 			std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 		, { command::save_sensor_data,	std::regex{R"(^--?data$)", std::regex_constants::icase } }
+		, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
 	};
 
 	std::map<error, std::string> str_error{
@@ -61,6 +62,7 @@ private:
 		, {error::unknown_alias, "Unknown Alias"}
 		, {error::unknown_language, "Unknown Language"}
 		, {error::sensor, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
+		, {error::tag_not_found, "Unknown Tag"}
 	};
 
 };
@@ -83,7 +85,8 @@ private:
 	std::vector<int> max_length;
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
-		
+	std::map<Tag, std::string> all_tags;
+	
 	const std::string help = {
     "add 			Add new Entity give it a Alias\n"
     "-h -m  		Time to save in Hours or Minutes\n"
@@ -107,9 +110,11 @@ private:
 	
 	void delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete);
 	
-	void add_account(std::vector<Time_Account>& all_accounts);
+	void add_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
+
+	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 	
-	void add_hours(std::vector<Time_Account>& all_accounts);
+	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);
 	void add_sensor_data(std::vector<Time_Account>& all_accounts);
 	
 	void set_table_width(const std::vector<Time_Account>& all_accounts, std::vector<int>& max_length);

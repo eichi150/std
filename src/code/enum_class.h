@@ -15,6 +15,7 @@ enum class error{
 	, user_input_is_command
 	, unknown_language
 	, sensor
+	, tag_not_found
 };
 enum class command{
 	  help = 0
@@ -28,11 +29,17 @@ enum class command{
 	, language
 	, sensor
 	, save_sensor_data
+	, tag
 };
 
 enum class Language{
 	  english = 0
 	, german 
+};
+
+enum class Tag{
+	  none = 0
+	, plant
 };
 
 #endif //ENUM_CLASS_H

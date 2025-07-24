@@ -13,6 +13,9 @@ std::map<std::string, std::string> Translator::english_pack = {
     ,{"time_saved", "Time saved"}
     ,{"saved", " saved"}
     ,{"No_Entrys_available", "No Entrys available"}
+    ,{"Temperature", "Temperature"}
+    ,{"Pressure", "Pressure"}
+    ,{"Humidity", "Humidity"}
 };
 
 std::map<std::string, std::string> Translator::german_pack = {
@@ -28,6 +31,9 @@ std::map<std::string, std::string> Translator::german_pack = {
     ,{"time_saved", "Zeitstempel gespeichert"}
     ,{"saved", " gespeichert"}
     ,{"No_Entrys_available", "Keine Einträge verfügbar"}
+    ,{"Temperature", "Temperatur"}
+    ,{"Pressure", "Druck"}
+    ,{"Humidity", "Feuchte"}
 };
 
 std::map<Language, std::map<std::string, std::string>> Translator::all_packs = {
