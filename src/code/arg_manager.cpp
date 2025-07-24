@@ -35,12 +35,24 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                     std::cout << help << std::endl;
                     break;
                 }
+                
                 //Zeige alle Entity und Alias an
                 //show
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
                 
                         show_all(all_accounts);
                         break;
+                }
+                
+                if(std::regex_match(str_argv[1], regex_pattern.at(command::sensor))){
+                    
+                    BME_Sensor sensor;
+                    int err_code = sensor.scan_sensor();
+                    if(err_code == 1){
+                        throw std::runtime_error(str_error.at(error::sensor_not_found));
+                    }
+                    break;
+
                 }
                 throw std::runtime_error{str_error.at(error::synthax)};
             };

@@ -10,6 +10,8 @@ set(SOURCES
 	json_handler.cpp
 	translator.cpp
 	arg_manager.cpp
+	bme280/bme280_sensor.cpp
+	bme280/bme280.c
 	main.cpp
 )
 # Default build (compile): für Host-System (z. B. Linux)

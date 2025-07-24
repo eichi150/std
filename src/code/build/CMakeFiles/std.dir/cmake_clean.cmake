@@ -3,6 +3,10 @@ file(REMOVE_RECURSE
   "/home/eichi/Dev/Projekte/std/src/code/linux/std.pdb"
   "CMakeFiles/std.dir/arg_manager.cpp.o"
   "CMakeFiles/std.dir/arg_manager.cpp.o.d"
+  "CMakeFiles/std.dir/bme280/bme280.c.o"
+  "CMakeFiles/std.dir/bme280/bme280.c.o.d"
+  "CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o"
+  "CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o.d"
   "CMakeFiles/std.dir/enum_class.cpp.o"
   "CMakeFiles/std.dir/enum_class.cpp.o.d"
   "CMakeFiles/std.dir/json_handler.cpp.o"
@@ -16,6 +20,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
+foreach(lang C CXX)
   include(CMakeFiles/std.dir/cmake_clean_${lang}.cmake OPTIONAL)
 endforeach()

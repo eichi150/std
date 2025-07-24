@@ -1,15 +1,16 @@
 #ifndef ARG_MANAGER_H
 #define ARG_MANAGER_H
 
-#include "json_handler.h"
-#include "translator.h"
-#include "clock.h"
-
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include <memory>
 #include <regex>
+
+#include "json_handler.h"
+#include "translator.h"
+#include "clock.h"
+#include "bme280/bme280_sensor.h"
 
 class Cmd_Ctrl{
 public:
@@ -43,6 +44,7 @@ private:
 		, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
 		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
 		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
+		, { command::sensor, 			std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 	};
 
 	std::map<error, std::string> str_error{
@@ -57,6 +59,7 @@ private:
 		, {error::unknown, "Unknown Command"}
 		, {error::unknown_alias, "Unknown Alias"}
 		, {error::unknown_language, "Unknown Language"}
+		, {error::sensor_not_found, "Sensor not found"}
 	};
 
 };

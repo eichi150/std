@@ -192,6 +192,54 @@ arg_manager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/arg_manager.cpp.s
 .PHONY : arg_manager.cpp.s
 
+bme280/bme280.o: bme280/bme280.c.o
+.PHONY : bme280/bme280.o
+
+# target to build an object file
+bme280/bme280.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280.c.o
+.PHONY : bme280/bme280.c.o
+
+bme280/bme280.i: bme280/bme280.c.i
+.PHONY : bme280/bme280.i
+
+# target to preprocess a source file
+bme280/bme280.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280.c.i
+.PHONY : bme280/bme280.c.i
+
+bme280/bme280.s: bme280/bme280.c.s
+.PHONY : bme280/bme280.s
+
+# target to generate assembly for a file
+bme280/bme280.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280.c.s
+.PHONY : bme280/bme280.c.s
+
+bme280/bme280_sensor.o: bme280/bme280_sensor.cpp.o
+.PHONY : bme280/bme280_sensor.o
+
+# target to build an object file
+bme280/bme280_sensor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o
+.PHONY : bme280/bme280_sensor.cpp.o
+
+bme280/bme280_sensor.i: bme280/bme280_sensor.cpp.i
+.PHONY : bme280/bme280_sensor.i
+
+# target to preprocess a source file
+bme280/bme280_sensor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280_sensor.cpp.i
+.PHONY : bme280/bme280_sensor.cpp.i
+
+bme280/bme280_sensor.s: bme280/bme280_sensor.cpp.s
+.PHONY : bme280/bme280_sensor.s
+
+# target to generate assembly for a file
+bme280/bme280_sensor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280_sensor.cpp.s
+.PHONY : bme280/bme280_sensor.cpp.s
+
 enum_class.o: enum_class.cpp.o
 .PHONY : enum_class.o
 
@@ -327,6 +375,12 @@ help:
 	@echo "... arg_manager.o"
 	@echo "... arg_manager.i"
 	@echo "... arg_manager.s"
+	@echo "... bme280/bme280.o"
+	@echo "... bme280/bme280.i"
+	@echo "... bme280/bme280.s"
+	@echo "... bme280/bme280_sensor.o"
+	@echo "... bme280/bme280_sensor.i"
+	@echo "... bme280/bme280_sensor.s"
 	@echo "... enum_class.o"
 	@echo "... enum_class.i"
 	@echo "... enum_class.s"
