@@ -11,11 +11,62 @@
 #include <memory>
 #include <regex>
 
+class Cmd_Ctrl{
+public:
+
+	//Check for valid Arguments
+	bool is_argument_valid(const std::vector<std::string>& str_argv){
+		
+		for(const auto& pattern : regex_pattern){
+			for(size_t i{1}; i < str_argv.size(); ++i){
+				if(std::regex_match(str_argv[i], pattern.second)){
+				
+					return  true;
+				}	
+			}
+		}
+		
+		return false;
+	}
+
+	std::map<error, std::string> get_str_error() const { return str_error; }
+	std::map<command, std::regex> get_regex_pattern() const { return regex_pattern; }
+private:
+	
+	std::map<command, std::regex> regex_pattern = {
+		  { command::help,      		std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } }
+		, { command::add,       		std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } }
+		, { command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } }
+		, { command::delete_,   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } }
+		, { command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } }
+		, { command::minutes, 			std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} }
+		, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
+		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
+	};
+
+	std::map<error, std::string> str_error{
+		  {error::double_entity, "Entity already taken"}
+		, {error::double_alias, "Alias already taken"}
+		, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
+		, {error::unknown_alias_or_entity, "Alias or Entity not found"}
+		, {error::user_input_is_command, "Rejected Input"}
+		, {error::not_found, "Not found"}
+		, {error::synthax, "Synthax wrong"}
+		, {error::untitled_error,"Untitled Error"}
+		, {error::unknown, "Unknown Command"}
+		, {error::unknown_alias, "Unknown Alias"}
+		, {error::unknown_language, "Unknown Language"}
+	};
+
+};
+
+
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern);
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl, const std::vector<std::string>& argv, const int& argc);
 	
-	void proceed_inputs(std::vector<Time_Account>& all_accounts, const std::map<error, std::string>& str_error);
+	void proceed_inputs(std::vector<Time_Account>& all_accounts);
 	
 private:
 

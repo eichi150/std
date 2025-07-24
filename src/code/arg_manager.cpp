@@ -2,14 +2,17 @@
 // ============= //
 // == PUBLIC ==  //
 // ============= //
-Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern)
-    : jsonH(jH), str_argv(argv), argc(argc), regex_pattern(pattern)
+Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl, const std::vector<std::string>& argv, const int& argc)
+    : jsonH(jH), str_argv(argv), argc(argc)
 {
+
+    regex_pattern = ctrl->get_regex_pattern();
+    str_error = ctrl->get_str_error();
     
     translator.set_language(jsonH->get_config_language());
     
     max_length = {
-            10 //Index Standard	
+        10 //Index Standard
         , 10 //Alias Standard
         , 15 //Entity Standard
         , static_cast<int>(translator.language_pack.at("total_hours").size())
@@ -19,9 +22,7 @@ Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vec
     };
 };
 
-void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const std::map<error, std::string>& str_error){
-	
-    this->str_error = str_error;
+void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
     
     switch(argc){
     
