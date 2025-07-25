@@ -248,9 +248,12 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
        			){
        				std::vector<std::string> automation_config = {
-       					{"i2c", "ChocoHaze", "CH", "15", "minutes", "true"}
+       					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
        				};
        				jsonH->save_automation_config_file(automation_config);
+       				
+       				Device_Ctrl device{str_error.at(error::sensor)};
+       				device.write_Crontab(str_argv[1], true);
        				break;
        			}
        			
@@ -326,6 +329,7 @@ void Arg_Manager::change_config_json_language(const std::string& to_language){
         , {"entity_filepath", jsonH->get_entity_filepath()}
         , {"accounts_filepath", jsonH->get_accounts_filepath()}
         , {"language", to_language}
+        , {"automation_filepath", jsonH->get_automatic_config_filepath()}
     };
     jsonH->save_config_file(new_data);
     
@@ -338,6 +342,7 @@ void Arg_Manager::change_config_json_file(const std::string& conf_filepath, cons
         , {"entity_filepath", ent_filepath}
         , {"accounts_filepath", acc_filepath}
         , {"language", translator.get_str_language()}
+        , {"automation_filepath", std::string{ent_filepath + "automation_config.json"}}
     };
     jsonH->save_config_file(new_data);
 

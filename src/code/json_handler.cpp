@@ -67,6 +67,8 @@ std::string JSON_Handler::getConfigFilePath() {
 
 std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
 
+	read_config_file();
+	
 	std::ifstream file(automation_config_filepath);
 	if(!file.is_open()){
 		throw std::runtime_error{"##Couldn't Open Automation Config"};
@@ -121,7 +123,7 @@ void JSON_Handler::save_automation_config_file(const std::vector<std::string>& a
     if(config_file.is_open()){
         config_file << config.dump(4);
         config_file.close();
-        std::cout << "##Config_File saved" << std::endl;
+        std::cout << "##Automation Config File saved" << std::endl;
     }else{
         throw std::runtime_error{"##Cant open Config_File!"};
     }
@@ -169,6 +171,7 @@ void JSON_Handler::read_config_file(){
     entity_filepath = config_data.value("entity_filepath", "");
     accounts_filepath = config_data.value("accounts_filepath", "");
     std::string str_config_language = config_data.value("language", "");
+    automation_config_filepath = config_data.value("automation_filepath", "");
 
     if(!str_config_language.empty()){
         if(str_config_language == "english"){

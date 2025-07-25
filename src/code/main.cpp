@@ -100,7 +100,7 @@ int main(int argc, char* argv[]){
 						do{
 							//New Inputs parsen
 							std::string input;
-							std::cout << "> ";
+							std::cout << "@std > ";
 							std::getline(std::cin, input);
 												
 							if(input == "exit"){
@@ -116,12 +116,13 @@ int main(int argc, char* argv[]){
 						
 						str_argv = new_argv;
 						argc = static_cast<int>(str_argv.size());
-						std::cout << argc << " ";
-						for(const auto& str : new_argv){
-							std::cout << str << '\n';
-						}
 
 						try{
+							
+							std::vector<Time_Account> accounts;
+							jsonH->read_all_accounts(accounts);
+							arg_man.set_all_accounts(accounts);
+							
 							arg_man.proceed_inputs(argc, str_argv);
 						}catch(const std::runtime_error& rt){
 							std::cout << "**" << rt.what() << std::endl;

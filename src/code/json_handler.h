@@ -32,7 +32,8 @@ public:
 	std::string get_accounts_filepath() const;
 
 	Language get_config_language() const;
-	
+
+	std::string get_automatic_config_filepath() const { return automation_config_filepath; }
 	//Search Filepath in home Directory
 	std::string getExecutableDir();
 	
@@ -64,11 +65,12 @@ private:
 		, "entity_filepath"
 		, "accounts_filepath"
 		, "language"
+		, "automation_filepath"
 	};
 	
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
-	std::string automation_config_filepath{"../files/automation_config.json"};
+	std::string automation_config_filepath{"../automation_config.json"};
 	
 	Language config_language = Language::english;
 };

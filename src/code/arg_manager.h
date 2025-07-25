@@ -6,6 +6,8 @@
 #include <vector>
 #include <memory>
 #include <regex>
+#include <cstdlib>
+#include <fstream>
 
 #include "json_handler.h"
 #include "translator.h"
@@ -79,13 +81,6 @@ public:
 	
 	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
 	
-		std::cout << "Process Automation...\n" 
-			/*<< "automation_config.json lesen\n"
-			<< "sensor daten für die accounts speichern\n"
-			<< "accounts aktualisieren\n"
-			<< "Ende..."*/
-			<< std::endl;
-
 		//auto Accounts lesen
 		all_automations = jsonH->read_automation_config_file();
 		
@@ -104,9 +99,9 @@ public:
 			throw std::runtime_error{"§§ No Sensor Output"};
 		}
 		std::stringstream ss;
-		ss << "Temp: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || \n"
-			<< "Druck: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || \n"
-			<< "Feuchte: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+		ss << "Temp: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+			<< "Druck: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+			<< "Feuchte: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
 			
 		std::tm localTime = clock.get_time();
 		
@@ -122,7 +117,7 @@ public:
 
 		std::cout 
 			<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << '\n'
-			<< ss.str() 
+			<< ss.str() << '\n' 
 			<< std::endl;
 	}
 	
@@ -138,6 +133,30 @@ public:
 	}
 
 	
+	void write_Crontab(const std::string& alias, bool logfile){
+		std::string cronLine = "*/15 * * * * /home/eichi/bin/std/bin/std -auto " + alias + " -mes";
+		std::string logLine = " >> /home/eichi/bin/std/bin/std.log 2>&1";
+
+		//alte Crontab sichern
+		system("crontab -l > /tmp/mycron");
+
+		//neue Zeile anhängen
+		std::ofstream out("/tmp/mycron", std::ios::app);
+		out << cronLine;
+		if(logfile){
+			out << logLine;
+		}
+		out << '\n';
+		out.close();
+
+		//Neue Crontab setzen
+		system("crontab /tmp/mycron");
+
+		//aufräumen
+		system("rm /tmp/mycron");
+
+		std::cout << "Crontab written" << std::endl;
+	}
 	
 private:
 	Clock clock{};
@@ -145,6 +164,8 @@ private:
 	std::string error_prompt;
 	std::vector<Automation_Config> all_automations;
 	std::vector<Time_Account> all_accounts;
+
+	
 };
 
 
@@ -155,6 +176,15 @@ public:
 	void proceed_inputs(const int& argc, const std::vector<std::string>& argv);
 
 	bool run_environment() const { return run_env; }
+	
+	std::vector<Time_Account> get_all_accounts() const { return all_accounts; }
+	void clear_all_accounts(){
+		all_accounts.clear();
+	}
+	void set_all_accounts(std::vector<Time_Account>& all_accounts){
+		this->all_accounts = all_accounts;
+	}
+	
 private:
 	bool run_env = false;
 	
