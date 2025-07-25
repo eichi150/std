@@ -1,217 +1,82 @@
-# 📘 std – Simple Time Documentation - Zeiterfassungstool
+# 📘 std – Simple Time Documentation
+
+Ein **terminalbasiertes Zeiterfassungstool** mit optionaler Sensoranbindung (BME280) und Unterstützung für Pflanzenpflege-Tagebuch, Crontab-Automatisierung und flexibler Dokumentation.
 
 ---
 
-### 📄 Console Based Application
+## 📄 Inhaltsverzeichnis
+
+- [🗂️ Projektstruktur](#-projektstruktur)
+- [🔧 Installation](#-installation)
+  - [Linux](#linux)
+  - [Windows 32/64-bit](#windows-3264-bit)
+- [⚙️ Konfiguration](#️-konfiguration)
+- [💡 Befehle](#-befehle)
+- [🌱 Pflanzenpflege-Tools](#-pflanzenpflege-tools)
+- [🤖 Sensor-Verbindung (BME280)](#-sensor-verbindung-bme280)
+- [⏳ Automatisierung mit Crontab](#-automatisierung-mit-crontab)
+- [🐚 std Environment](#-std-environment)
+- [🧩 Weitere Anwendungsmöglichkeiten](#-weitere-anwendungsmöglichkeiten)
+- [📄 Lizenz & Haftung](#-lizenz--haftung)
 
 ---
 
-## 🗂️ Projekt Ordnerstruktur
+## 🗂️ Projektstruktur
 
 ```
 std/
-├── linux/
-│   ├── install.sh
-│   ├── uninstall.sh
-│   └── std.exe
-│
-├── win_32/
-│   ├── std.bat
-│   ├── install.bat
-│   ├── uninstall.bat
-│   └── std_win32.exe
-│
-├── win_64/
-│   ├── std.bat
-│   ├── install.bat
-│   ├── uninstall.bat
-│   └── std_win64.exe
-├── src/code/
-│   ├── build/
-│   ├── linux/
-│   ├── win_32/
-│   ├── win_64/
-│   ├── main.cpp
-│   ├── arg_manager.cpp
-│   ├── json_Handler.cpp
-│   ├── time_account.cpp
-│   ├── translator.cpp
-│   ├── enum_class.cpp
-│   ├── clock.cpp
-│   └── json.hpp
-│ 
-├── README.md
-└── Makefile
-```
-
-## 🗂️ Installierte Ordnerstruktur
-
-```
-std/
-├── bin/
-│   +Linux:
-│   ├── std.exe
-│   ├── install.sh
-│   └── uninstall.sh
-│
-│   +Windows:
-│   ├─ std.bat
-│   └─ std_win<..>.exe
-│
-├── files/
-│   ├── accounts.json
-│   └── <entity>.json (einzelne Entitätsdateien)
-│
-└── config.json
+├── linux/                  # Linux Binaries und Scripts
+├── win_32/                 # Windows 32bit Version
+├── win_64/                 # Windows 64bit Version
+├── src/code/               # C++ Sourcecode
+│   ├── bme280/             # Sensor-Treiber
+├── README.md               # Diese Datei
+├── Makefile
+├── LICENSE
 ```
 
 ---
 
-## 🔧 Build
+## 🔧 Installation
 
 ### Linux
 
-- bin/std.exe Build with g++ 12.2.0 (Debian System) for Linux.
-
-## Install / Uninstall on Linux
-```bash
-./install.sh
-./uninstall.sh
-```
-
-**If cant be executed then:**
 ```bash
 chmod +x install.sh
-chmod +x uninstall.sh
+./install.sh
 ```
+
+> Nutzt `g++ 12.2.0` (Debian). Binary: `bin/std.exe`
+
+### Windows 32/64-bit
+
+1. Kopiere `std_win<..>.exe` & `std.bat` nach `std/bin/`
+2. Führe Initialkonfiguration aus:
+```bash
+std_win<..>.exe -cf C:/std/config.json C:/std/files/ C:/std/files/accounts.json
+```
+3. Füge `C:\std\bin` zur PATH-Umgebungsvariable hinzu.
 
 ---
 
-### Windows 32bit or Windows 64bit
+## ⚙️ Konfiguration
 
-- win_32/std_win32.exe static Build with mingw32 for Window 32bit.
-- win_64/std_win64.exe static Build with mingw32 for Window 64bit.
-
-## Install on Windows
-```bash
-Copy  'std_win<..>.exe' and 'std.bat' File to 'std/bin/'
-do:
-	 'std_win<..>.exe -cf C:/std/config.json C:/std/files/ C:/std/files/accounts.json'
- → std/config.json should be written.
- 
-	SYSTEM PATH 'C:\std\bin' in PATH adden.
- → std is callable over cmd
- 
-Installation Completed.
-```
-
----
-
-## 🔧 Befehle
-
-### ➕ Neue Entität mit Alias anlegen
-
-```bash
-std add ENTITY ALIAS
-```
-
-**Beispiel:**
-```bash
-std add Minijob MJ
-# → Minijob mit Alias MJ erstellt.
-```
-
----
-
-###  Alias löschen
-
-```bash
-std del <alias>
-
-```
-
-**Beispiel:**
-```bash
-std del MJ
-# → MJ aus Minijob entfernt.
-```
-
----
-
-### ⏱️ Zeit eintragen (Stunden oder Minuten)
-**Kommentar eintragen möglich, nicht erforderlich.**
-```bash
-std ALIAS ZEIT EINHEIT "Kommentar"
-std ALIAS ZEIT EINHEIT
-```
-
-**Beispiele:**
-
-```bash
-std MJ 1 -h "Kommentar"
-# → Minijob +1 Stunde eingetragen
-
-std MJ 60 -m "Kommentar"
-# → 60min / 60 = 1 Stunde → Minijob +1 Stunde eingetragen
-```
-
----
-
-### 📄 Accounts anzeigen
-
-#### 🔹 Alle gespeicherten Accounts:
-```bash
-std show
-std sh
-```
-
-#### 🔹 Spezifischen Account anzeigen:
-```bash
-std show ALIAS
-std show ENTITY
-```
-
-**Beispiele:**
-```bash
-std show MJ
-std show Minijob
-```
-
-#### 🔹 Config Filepaths anzeigen:
+### Config-Pfade anzeigen:
 ```bash
 std show -cf
 ```
 
----
-
-#### 🔹 Config Filepaths ändern:
+### Config manuell setzen:
 ```bash
-std -cf <config_path> <entity_path> <accounts_path> 
+std -cf <config_path> <entity_path> <accounts_path>
 ```
 
-**Beispiel:**
+### Nur Dateiordner setzen:
 ```bash
-std -cf /home/eichi/bin/std/config.json /home/eichi/bin/std/files/ /home/eichi/bin/std/files/accounts.json
+std -f <entity_path> <accounts_path>
 ```
 
-#### 🔹 Filepaths ändern:
-```bash
-std -f <entity_path> <accounts_path> 
-```
-
-**Beispiel:**
-```bash
-std -f /home/eichi/bin/std/files/ /home/eichi/bin/std/files/accounts.json
-```
-
----
-
-#### 🔹 Sprache ändern:
-```bash
-std -l <sprache>  
-```
-
-**Beispiel:**
+### Sprache ändern:
 ```bash
 std -l german
 std -l english
@@ -219,48 +84,157 @@ std -l english
 
 ---
 
+## 💡 Befehle
 
-## 📝 Hinweise
+### ➕ Neue Entität mit Alias
+```bash
+std add <entity> <alias>
+```
 
-- Zeit kann in Stunden (`-h`) oder Minuten (`-m`) eingegeben werden.
-- Kommentare sind optional.
-- Aliase vereinfachen die Eingabe und Verwaltung.
+### ❌ Alias löschen
+```bash
+std del <alias>
+```
+
+### ⏱️ Zeit eintragen (Stunden oder Minuten)
+```bash
+std <alias> <zeit> -h/-m ["Kommentar"]
+```
+
+### 📄 Accounts anzeigen
+```bash
+std show
+std show <alias>
+std show <entity>
+```
 
 ---
 
+## 🌱 Pflanzenpflege-Tools
 
-## Lizenz und Haftung
+> Nutzt Tags zur Kategorisierung wie `plant`, `receipe`, etc.
 
-Dieses Projekt steht unter der [MIT-Lizenz](./LICENSE).
-Die Nutzung erfolgt **auf eigene Gefahr**. Der Autor übernimmt **keine Haftung**
-für etwaige Fehler, Datenverluste oder Schäden, die durch die Verwendung entstehen könnten.
+### ➕ Entität mit Tag anlegen
+```bash
+std add <entity> <alias> -tag <tag>
+```
+
+### 🏷️ Tag nachträglich setzen
+```bash
+std <alias> -tag <tag>
+```
+
+Beispiel:
+```bash
+std add ChocoHaze CH -tag plant
+std CH -tag plant
+```
+
+---
+
+## 🤖 Sensor-Verbindung (BME280)
+
+### Setup (Linux)
+```bash
+sudo apt install i2c-tools
+sudo raspi-config     # I2C aktivieren
+sudo reboot
+sudo i2cdetect -y 1   # Adresse prüfen (z. B. 0x76)
+```
+
+![Ausgabe](https://github.com/eichi150/std/blob/dev/more_information/sensor_i2c_detect.png)
+
+
+### Sensor abfragen
+```bash
+std -touch i2c            # Aktuelle Daten anzeigen
+std CH -mes               # Messwerte für CH speichern
+```
+
+---
+
+## ⏳ Automatisierung mit Crontab
+
+### Aktivierung der Automatisierung
+```bash
+std <alias> -activate -mes <time_config>
+```
+
+> Erstellt `automation_config.json` und trägt Task in `crontab` ein.
+
+### Test-Trigger manuell
+```bash
+std -auto <alias> -mes
+```
+
+### Crontab anzeigen:
+```bash
+crontab -e
+systemctl status cron
+```
+
+---
+
+## 🐚 std Environment
+
+> Konsolenmodus mit interaktiven Befehlen
+
+### Start:
+```bash
+std -env
+```
+
+### Beenden:
+```bash
+@std> exit
+```
 
 ---
 
 ## 🧩 Weitere Anwendungsmöglichkeiten
 
-Obwohl std als einfaches Zeiterfassungstool konzipiert wurde, kann es flexibel für viele andere Zwecke verwendet werden:
+`std` ist flexibel und unterstützt viele Anwendungsfelder:
 
-🌱 Pflanzenpflege-Tagebuch
-
-	Pflegeaktionen wie Gießen, Düngen oder Beschneiden dokumentieren.
-
-🧪 Laborversuche protokollieren
-
-	Versuchsdauer, Kommentare und Kategorien erfassen.
-
-🧘 Trainingseinheiten aufzeichnen
-
-	Trainingszeiten oder Übungen mit Tags und Kommentaren loggen.
-
-🧠 Lernzeiten und Kapitelverläufe dokumentieren
-
-	Nach Fach oder Thema strukturieren.
-
-🔋 Gerätezustände oder Stromverbrauch erfassen
-
-	Einsatzzeiten oder Messwerte speichern.
-
-Hinweis: Durch die Unterstützung mehrerer Aliase pro Entität kannst du logisch gruppieren – z. B. verschiedene Quartale, Geräte oder Pflanzen. Das Tool ist bewusst offen gehalten und nicht auf reine Zeiterfassung begrenzt.
+- 🌱 **Pflanzenpflege-Tagebuch**  
+  Pflegeaktionen wie Gießen, Düngen oder Beschneiden dokumentieren.
+  
+- 🧪 **Laborprotokolle**  
+  Versuchsdauer, Kommentare und Kategorien erfassen.
+  
+- 🧘 **Trainingseinheiten**  
+  Dauer & Kommentare zu Übungen speichern.
+  
+- 🧠 **Lernzeiten**  
+  Lernzeit nach Thema oder Fach aufzeichnen.
+  
+- 🔋 **Gerätezustände & Stromverbrauch**  
+  Gerätebetrieb & -ereignisse erfassen.
 
 ---
+
+## 📄 Lizenz & Haftung
+
+Dieses Projekt steht unter der **[MIT-Lizenz](./LICENSE)**.
+
+> ⚠️ **Haftungsausschluss:**  
+Die Nutzung erfolgt auf eigene Gefahr. Der Autor übernimmt **keine Haftung** für etwaige Fehler, Datenverluste oder Schäden.
+
+---
+
+## 🙌 Beispiel Automatisierung (Linux Shell)
+
+```bash
+# Täglich 8 Stunden HomeOffice eintragen
+echo "std HomeOffice 8 -h 'automatische Eintragung'" >> /var/log/std.log
+
+# Sensorwert auswerten und automatisch buchen
+some_sensor_tool | grep "ON" && std ServerWartung 30 -m "Automatisch erkannt"
+
+# Tägliches Backup
+tar -czf std_backup_$(date +%F).tar.gz ~/std/files/
+```
+
+---
+
+**Autor:** Johannes Eichhorn  
+**GitHub:** [eichi150](https://github.com/eichi150)
