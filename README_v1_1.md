@@ -53,6 +53,31 @@ std/
 
 ## 🧩 Neue Tools
 
+🤖 std - Environment
+
+🌱 Pflanzenpflege-Tagebuch
+
+🤖 Sensor Connection
+
+🧠 Automatische Sensorabfrage (Crontab)
+
+---
+
+# 🤖 std - Environment
+
+## 📝 Instruktion
+
+Nach dem Start des Environment können Commands nacheinander eingegeben werden.
+
+Start Environment
+```bash
+std -env
+``` 
+Beende Environment
+```bash
+@std> exit
+```
+
 ---
 
 # 🌱 Pflanzenpflege-Tagebuch Tools
@@ -123,7 +148,7 @@ Folgene Ausgabe sollte zu sehen sein. Port: x76 sendet
 	
 #### 🔹 Zeige aktuelle Messwerte an:
 ```bash
-std -i2c
+std -touch i2c
 ```
 
 ![Ausgabe](https://github.com/eichi150/std/blob/dev/more_information/example_sensor_data.png)
@@ -131,16 +156,33 @@ std -i2c
 
 #### 🔹 Alias aktuelle Messwerte speichern:
 ```bash
-std ALIAS -data
+std ALIAS -mes
 ```
 **Beispiel:**
 ```bash
-std CH -data
+std CH -mes
+
 # → Aktueller Zeitstempel und Sensor Daten für CH gespeichert.
 ```
 
 ---
 
+# 🧠 Automatische Sensorabfrage (Crontab)
+
+### Alias zu Crontab hinzufügen und std konfigurieren
+```bash
+std <alias> -activate -mes <time_config>
+
+# → automation_config.json gespeichert
+# → Command in Crontab eingetragen
+```
+
+###Testaufruf der automatisierung:
+```bash
+std -auto CH -mes
+```
+
+---
 
 ## Lizenz und Haftung
 
