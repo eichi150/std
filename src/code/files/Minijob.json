@@ -1,0 +1,17 @@
+{
+    "alias": [
+        {
+            "alias": "MJ",
+            "entries": [],
+            "tag": "",
+            "total_hours": 0.0
+        },
+        {
+            "alias": "MJ_2",
+            "entries": [],
+            "tag": "",
+            "total_hours": 0.0
+        }
+    ],
+    "entity": "Minijob"
+}

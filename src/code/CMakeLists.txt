@@ -10,12 +10,23 @@ set(SOURCES
 	json_handler.cpp
 	translator.cpp
 	arg_manager.cpp
-	bme280/bme280_sensor.cpp
-	bme280/bme280.c
 	main.cpp
 )
+
+if(UNIX AND NOT APPLE)
+	message(STATUS "Compiling for Linux")
+	list(APPEND SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280_sensor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280.c
+	)
+endif()
+
 # Default build (compile): für Host-System (z. B. Linux)
 add_executable(std ${SOURCES})
+
+if(UNIX AND NOT APPLE)
+	target_include_directories(std PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/bme280)
+endif()
 
 set_target_properties(std PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/linux)
 
@@ -43,3 +54,4 @@ add_custom_target(compile_ALL
     DEPENDS std compile_win32 compile_win64
     COMMENT "Building all targets"
 )
+

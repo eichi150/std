@@ -5,13 +5,13 @@
 # compile CXX with /usr/bin/c++
 C_DEFINES = 
 
-C_INCLUDES = 
+C_INCLUDES = -I/home/eichi/Dev/Projekte/std/src/code/bme280
 
 C_FLAGS = 
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = 
+CXX_INCLUDES = -I/home/eichi/Dev/Projekte/std/src/code/bme280
 
 CXX_FLAGS = -std=gnu++17
 

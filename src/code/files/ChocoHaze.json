@@ -1,0 +1,17 @@
+{
+    "alias": [
+        {
+            "alias": "HZ",
+            "entries": [
+                {
+                    "description": "Temperature: 27.35 °C || Pressure: 1002.36 hPa || Humidity: 40.15 %\n",
+                    "hours": 0.0,
+                    "timepoint": "2025-07-25 16:22:53"
+                }
+            ],
+            "tag": "",
+            "total_hours": 0.0
+        }
+    ],
+    "entity": "ChocoHaze"
+}

@@ -283,12 +283,6 @@ CMakeFiles/std.dir/arg_manager.cpp.o: \
  /home/eichi/Dev/Projekte/std/src/code/translator.h \
  /home/eichi/Dev/Projekte/std/src/code/clock.h \
  /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.h \
- /usr/include/c++/12/stdlib.h /usr/include/fcntl.h \
- /usr/include/aarch64-linux-gnu/bits/fcntl.h \
- /usr/include/aarch64-linux-gnu/bits/fcntl-linux.h \
- /usr/include/aarch64-linux-gnu/bits/types/struct_iovec.h \
- /usr/include/linux/falloc.h /usr/include/aarch64-linux-gnu/bits/stat.h \
- /usr/include/aarch64-linux-gnu/bits/struct_stat.h \
  /usr/include/linux/i2c-dev.h /usr/include/linux/types.h \
  /usr/lib/linux/uapi/arm64/asm/types.h /usr/include/asm-generic/types.h \
  /usr/include/asm-generic/int-ll64.h \
@@ -303,5 +297,11 @@ CMakeFiles/std.dir/arg_manager.cpp.o: \
  /usr/include/asm-generic/ioctl.h \
  /usr/include/aarch64-linux-gnu/bits/ioctl-types.h \
  /usr/include/aarch64-linux-gnu/sys/ttydefaults.h \
+ /usr/include/c++/12/stdlib.h /usr/include/fcntl.h \
+ /usr/include/aarch64-linux-gnu/bits/fcntl.h \
+ /usr/include/aarch64-linux-gnu/bits/fcntl-linux.h \
+ /usr/include/aarch64-linux-gnu/bits/types/struct_iovec.h \
+ /usr/include/linux/falloc.h /usr/include/aarch64-linux-gnu/bits/stat.h \
+ /usr/include/aarch64-linux-gnu/bits/struct_stat.h \
  /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.h \
  /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_defs.h

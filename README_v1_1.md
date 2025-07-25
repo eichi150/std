@@ -1,3 +1,4 @@
+﻿
 # 📘 std – Simple Time Documentation - Zeiterfassungstool
 
 ---
@@ -58,13 +59,13 @@ std/
  ### 1. 🐚 std - Environment
  ### 2. 🌱 Pflanzenpflege-Tagebuch
  ### 3. 🤖 Sensor Connection
- ### 4. 🧠 Automatische Sensorabfrage (Crontab)
+ ### 4. ⏳ Automatische Sensorabfrage (Crontab)
  
 ---
 
 ---
 
-# 🤖 std - Environment
+# 🐚 std - Environment
 
 ## 📋 Instruktion
 
@@ -114,9 +115,9 @@ std CH -tag plant
 
 ---
 
-## 🤖 Sensor Connection
+# 🤖 Sensor Connection
 
-### 🔧 I2C Sensor Setup for Linux:
+## 🔧 I2C Sensor Setup for Linux:
 
 ---
 
@@ -168,12 +169,9 @@ std CH -mes
 
 ---
 
-# 🧠 Automatische Sensorabfrage (Crontab)
+# ⏳ Automatische Sensorabfrage (Crontab)
 
 ### Alias zu Crontab hinzufügen und std konfigurieren
-
-:exclamation: Vor der ersten Verwendung wirst du von Cron nach deinem bevorzugten Editor gefragt. 
-Anschließend verläuft es reibunglos.
 
 ```bash
 std <alias> -activate -mes <time_config>

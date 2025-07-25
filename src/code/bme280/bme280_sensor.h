@@ -1,12 +1,17 @@
 #ifndef BME280_SENSOR_H
 #define BME280_SENSOR_H
 
+#ifdef __linux__
+	#include <linux/i2c-dev.h>
+	#include <sys/ioctl.h>
+	#include <unistd.h>
+	
+#endif // __linux__
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <linux/i2c-dev.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include "bme280.h"
 #include <iomanip>

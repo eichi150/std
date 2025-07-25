@@ -1,0 +1,17 @@
+[
+    {
+        "alias": "HZ",
+        "entity": "ChocoHaze",
+        "total_hours": 0.0
+    },
+    {
+        "alias": "MJ",
+        "entity": "Minijob",
+        "total_hours": 0.0
+    },
+    {
+        "alias": "MJ_2",
+        "entity": "Minijob",
+        "total_hours": 0.0
+    }
+]

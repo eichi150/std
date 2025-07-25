@@ -137,12 +137,15 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
                     change_config_json_language(str_argv[2]);
                     break;
-                } 
+                }
+                
 
                 //i2c Sensor Messwert abfrage
 				//-touch i2c
 				if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
-
+				
+		#ifdef __linux__
+		
 				    Device_Ctrl device{str_error.at(error::sensor)};
 				    std::vector<float> output_sensor = device.check_device();
 
@@ -152,20 +155,31 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
 				        
 				    std::cout << output_str.str() << std::endl;
+		#else
+			std::cout << "Not available in this Version" << std::endl;
+			
+		#endif // __linux__
+		
 				    break;
-
 				}
                                 
                 //i2c Sensor Messwerte für <alias> speichern
                 // <alias> -mes
                 if(std::regex_match(str_argv[2], regex_pattern.at(command::messure_sensor))){
                 
+        #ifdef __linux__
+                
                     Device_Ctrl device{str_error.at(error::sensor)};
                     add_sensor_data(all_accounts);
-                    break;
-
+                    
+		#else
+			std::cout << "Not available in this Version" << std::endl;
+		#endif // __linux__
+		
+					break;
                 }
-                
+
+             
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
 
@@ -247,6 +261,9 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
 					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
        			){
+       			
+       	#ifdef __linux__		
+       	
        				std::vector<std::string> automation_config = {
        					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
        				};
@@ -254,9 +271,13 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        				
        				Device_Ctrl device{str_error.at(error::sensor)};
        				device.write_Crontab(jsonH, str_argv[1], true);
+		#else
+			std::cout << "Not available in this Version" << std::endl;
+		#endif // __linux__
+			
        				break;
        			}
-       			
+	
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
 
@@ -490,6 +511,7 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
     }
 }
 
+#ifdef __linux__
 void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
     bool found_alias = false;
     auto localTime = clock.get_time();
@@ -530,6 +552,8 @@ void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
         throw std::runtime_error{str_error.at(error::not_found)};
     }
 }
+#endif // __linux__
+
 
 void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag){
 

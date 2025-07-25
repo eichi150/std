@@ -12,8 +12,9 @@
 #include "json_handler.h"
 #include "translator.h"
 #include "clock.h"
-#include "bme280/bme280_sensor.h"
-
+#ifdef __linux__
+	#include "bme280/bme280_sensor.h"
+#endif
 
 class Cmd_Ctrl{
 public:
@@ -74,7 +75,7 @@ private:
 	
 };
 
-
+#ifdef __linux__
 class Device_Ctrl{
 public:
 	Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
@@ -171,7 +172,7 @@ private:
 
 	
 };
-
+#endif // __linux__
 
 class Arg_Manager{
 public:
@@ -222,7 +223,10 @@ private:
 	void add_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 
 	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
+
+#ifdef __linux__
 	void add_sensor_data(std::vector<Time_Account>& all_accounts);
+#endif // __linux__
 	
 	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);
 	

@@ -4,12 +4,17 @@
 #ifndef BME280_SENSOR_H
 #define BME280_SENSOR_H
 
+#ifdef __linux__
+	#include <linux/i2c-dev.h>
+	#include <sys/ioctl.h>
+	#include <unistd.h>
+	
+#endif // __linux__
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <linux/i2c-dev.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <iomanip>
 #include <sstream>
@@ -34,102 +39,105 @@ private:
 
 
 // -------- /home/eichi/Dev/Projekte/std/src/code//bme280/bme280_sensor.cpp ---------
+#ifdef __linux__
 
 
-    int BME_Sensor::scan_sensor(std::vector<float>& float_data) {
-        const char *i2c_device = "/dev/i2c-1";
-        static uint8_t dev_addr = BME280_I2C_ADDR_PRIM; // 0x76
+int BME_Sensor::scan_sensor(std::vector<float>& float_data) {
+    const char *i2c_device = "/dev/i2c-1";
+    static uint8_t dev_addr = BME280_I2C_ADDR_PRIM; // 0x76
 
-        // I2C öffnen
-        if ((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
-            perror("I2C open");
-            return 1;
-        }
+    // I2C öffnen
+    if ((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
+        perror("I2C open");
+        return 1;
+    }
 
-        if (ioctl(i2c_fd, I2C_SLAVE, dev_addr) < 0) {
-            perror("I2C ioctl");
-            return 1;
-        }
+    if (ioctl(i2c_fd, I2C_SLAVE, dev_addr) < 0) {
+        perror("I2C ioctl");
+        return 1;
+    }
 
-        struct bme280_dev dev;
-        dev.intf = BME280_I2C_INTF;
-        dev.intf_ptr = &i2c_fd;
-        dev.read = user_i2c_read;
-        dev.write = user_i2c_write;
-        dev.delay_us = user_delay_us;
+    struct bme280_dev dev;
+    dev.intf = BME280_I2C_INTF;
+    dev.intf_ptr = &i2c_fd;
+    dev.read = user_i2c_read;
+    dev.write = user_i2c_write;
+    dev.delay_us = user_delay_us;
 
-        if (bme280_init(&dev) != BME280_OK) {
-            printf("Sensorinitialisierung fehlgeschlagen\n");
-            return 1;
-        }
+    if (bme280_init(&dev) != BME280_OK) {
+        printf("Sensorinitialisierung fehlgeschlagen\n");
+        return 1;
+    }
 
-        struct bme280_settings settings;
-        settings.osr_h = BME280_OVERSAMPLING_1X;
-        settings.osr_p = BME280_OVERSAMPLING_16X;
-        settings.osr_t = BME280_OVERSAMPLING_2X;
-        settings.filter = BME280_FILTER_COEFF_16;
-        settings.standby_time = BME280_STANDBY_TIME_1000_MS;
+    struct bme280_settings settings;
+    settings.osr_h = BME280_OVERSAMPLING_1X;
+    settings.osr_p = BME280_OVERSAMPLING_16X;
+    settings.osr_t = BME280_OVERSAMPLING_2X;
+    settings.filter = BME280_FILTER_COEFF_16;
+    settings.standby_time = BME280_STANDBY_TIME_1000_MS;
 
-        uint8_t settings_sel = BME280_SEL_OSR_PRESS | BME280_SEL_OSR_TEMP |
-                               BME280_SEL_OSR_HUM | BME280_SEL_FILTER;
+    uint8_t settings_sel = BME280_SEL_OSR_PRESS | BME280_SEL_OSR_TEMP |
+                           BME280_SEL_OSR_HUM | BME280_SEL_FILTER;
 
-        if (bme280_set_sensor_settings(settings_sel, &settings, &dev) != BME280_OK) {
-            printf("Sensor Settings fehlgeschlagen\n");
-            return 1;
-        }
+    if (bme280_set_sensor_settings(settings_sel, &settings, &dev) != BME280_OK) {
+        printf("Sensor Settings fehlgeschlagen\n");
+        return 1;
+    }
 
-        if (bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &dev) != BME280_OK) {
-            printf("Sensor Mode setzen fehlgeschlagen\n");
-            return 1;
-        }
+    if (bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &dev) != BME280_OK) {
+        printf("Sensor Mode setzen fehlgeschlagen\n");
+        return 1;
+    }
 
-        dev.delay_us(40000, dev.intf_ptr);
+    dev.delay_us(40000, dev.intf_ptr);
 
-        struct bme280_data comp_data;
-        if (bme280_get_sensor_data(BME280_ALL, &comp_data, &dev) != BME280_OK) {
-            printf("Sensor Data lesen fehlgeschlagen\n");
-            return 1;
-        }
-
-
-        float_data.push_back(comp_data.temperature);
-        float_data.push_back(comp_data.pressure / 100.0f);
-        float_data.push_back(comp_data.humidity);
-        
-        
-        close(i2c_fd);
-        
-        return 0;
+    struct bme280_data comp_data;
+    if (bme280_get_sensor_data(BME280_ALL, &comp_data, &dev) != BME280_OK) {
+        printf("Sensor Data lesen fehlgeschlagen\n");
+        return 1;
     }
 
 
-    BME280_INTF_RET_TYPE BME_Sensor::user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr) {
-        int fd = *(int *)intf_ptr;
-        if (write(fd, &reg_addr, 1) != 1){
-            return -1;
-        }
-        if (read(fd, data, len) != (int)len){
-            return -1;
-        }
-        return 0;
-    }
+    float_data.push_back(comp_data.temperature);
+    float_data.push_back(comp_data.pressure / 100.0f);
+    float_data.push_back(comp_data.humidity);
+    
+    
+    close(i2c_fd);
+    
+    return 0;
+}
 
-    BME280_INTF_RET_TYPE BME_Sensor::user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr) {
-        int fd = *(int *)intf_ptr;
-        uint8_t buf[1 + len];
-        buf[0] = reg_addr;
-        for (uint32_t i = 0; i < len; i++) {
-            buf[i + 1] = data[i];
-        }
-        if (write(fd, buf, len + 1) != (int)(len + 1)){
-            return -1;
-        }
-        return 0;
-    }
 
-    void BME_Sensor::user_delay_us(uint32_t period_us, void *intf_ptr) {
-        usleep(period_us);
+BME280_INTF_RET_TYPE BME_Sensor::user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr) {
+    int fd = *(int *)intf_ptr;
+    if (write(fd, &reg_addr, 1) != 1){
+        return -1;
     }
+    if (read(fd, data, len) != (int)len){
+        return -1;
+    }
+    return 0;
+}
+
+BME280_INTF_RET_TYPE BME_Sensor::user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr) {
+    int fd = *(int *)intf_ptr;
+    uint8_t buf[1 + len];
+    buf[0] = reg_addr;
+    for (uint32_t i = 0; i < len; i++) {
+        buf[i + 1] = data[i];
+    }
+    if (write(fd, buf, len + 1) != (int)(len + 1)){
+        return -1;
+    }
+    return 0;
+}
+
+void BME_Sensor::user_delay_us(uint32_t period_us, void *intf_ptr) {
+    usleep(period_us);
+}
+
+#endif // __linux__
 
 
 // -------- /home/eichi/Dev/Projekte/std/src/code/time_account.h ---------
@@ -871,7 +879,8 @@ std::string Translator::get_str_language(){
 #include <cstdlib>
 #include <fstream>
 
-
+#ifdef __linux__
+#endif
 
 class Cmd_Ctrl{
 public:
@@ -932,7 +941,7 @@ private:
 	
 };
 
-
+#ifdef __linux__
 class Device_Ctrl{
 public:
 	Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
@@ -1029,7 +1038,7 @@ private:
 
 	
 };
-
+#endif // __linux__
 
 class Arg_Manager{
 public:
@@ -1080,7 +1089,10 @@ private:
 	void add_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 
 	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
+
+#ifdef __linux__
 	void add_sensor_data(std::vector<Time_Account>& all_accounts);
+#endif // __linux__
 	
 	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);
 	
@@ -1238,12 +1250,15 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
                     change_config_json_language(str_argv[2]);
                     break;
-                } 
+                }
+                
 
                 //i2c Sensor Messwert abfrage
 				//-touch i2c
 				if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
-
+				
+		#ifdef __linux__
+		
 				    Device_Ctrl device{str_error.at(error::sensor)};
 				    std::vector<float> output_sensor = device.check_device();
 
@@ -1253,20 +1268,31 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
 				        
 				    std::cout << output_str.str() << std::endl;
+		#else
+			std::cout << "Not available in this Version" << std::endl;
+			
+		#endif // __linux__
+		
 				    break;
-
 				}
                                 
                 //i2c Sensor Messwerte für <alias> speichern
                 // <alias> -mes
                 if(std::regex_match(str_argv[2], regex_pattern.at(command::messure_sensor))){
                 
+        #ifdef __linux__
+                
                     Device_Ctrl device{str_error.at(error::sensor)};
                     add_sensor_data(all_accounts);
-                    break;
-
+                    
+		#else
+			std::cout << "Not available in this Version" << std::endl;
+		#endif // __linux__
+		
+					break;
                 }
-                
+
+             
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
 
@@ -1348,6 +1374,9 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
 					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
        			){
+       			
+       	#ifdef __linux__		
+       	
        				std::vector<std::string> automation_config = {
        					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
        				};
@@ -1355,9 +1384,13 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        				
        				Device_Ctrl device{str_error.at(error::sensor)};
        				device.write_Crontab(jsonH, str_argv[1], true);
+		#else
+			std::cout << "Not available in this Version" << std::endl;
+		#endif // __linux__
+			
        				break;
        			}
-       			
+	
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
 
@@ -1591,6 +1624,7 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
     }
 }
 
+#ifdef __linux__
 void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
     bool found_alias = false;
     auto localTime = clock.get_time();
@@ -1631,6 +1665,8 @@ void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
         throw std::runtime_error{str_error.at(error::not_found)};
     }
 }
+#endif // __linux__
+
 
 void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag){
 
@@ -1866,7 +1902,8 @@ int main(int argc, char* argv[]){
 			if(ctrl.is_argument_valid(str_argv)){
 			
 				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
-				
+
+		#ifdef __linux__
 				//Vorher Automation ausführen
 				auto regex_pattern = ctrl.get_regex_pattern();
 				if(std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
@@ -1877,6 +1914,8 @@ int main(int argc, char* argv[]){
 					
 					return 0;
 				}
+		#endif //__linux__
+
 			
 				//Init Argument Manager
 				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl)};

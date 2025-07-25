@@ -1,0 +1,12 @@
+{
+    "config": [
+        {
+            "alias": "CH",
+            "einheit": "minutes",
+            "entity": "ChocoHaze",
+            "interval": "15",
+            "log_file": "true"
+        }
+    ],
+    "connection": "i2c"
+}
