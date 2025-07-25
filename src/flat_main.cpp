@@ -1,5 +1,137 @@
 // Auto-generated single-file version of std
 
+// -------- /home/eichi/Dev/Projekte/std/src/code//bme280/bme280_sensor.h ---------
+#ifndef BME280_SENSOR_H
+#define BME280_SENSOR_H
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <linux/i2c-dev.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <iomanip>
+#include <sstream>
+#include <vector>
+
+class BME_Sensor {
+public:
+    int scan_sensor(std::vector<float>& float_data);
+
+private:
+    int i2c_fd;
+	
+    // Muss static sein, da Funktionszeiger in C keinen Zugriff auf `this` haben
+    static BME280_INTF_RET_TYPE user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr);
+
+    static BME280_INTF_RET_TYPE user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr);
+
+    static void user_delay_us(uint32_t period_us, void *intf_ptr);
+};
+
+#endif // BME280_SENSOR_H
+
+
+// -------- /home/eichi/Dev/Projekte/std/src/code//bme280/bme280_sensor.cpp ---------
+
+
+    int BME_Sensor::scan_sensor(std::vector<float>& float_data) {
+        const char *i2c_device = "/dev/i2c-1";
+        static uint8_t dev_addr = BME280_I2C_ADDR_PRIM; // 0x76
+
+        // I2C öffnen
+        if ((i2c_fd = open(i2c_device, O_RDWR)) < 0) {
+            perror("I2C open");
+            return 1;
+        }
+
+        if (ioctl(i2c_fd, I2C_SLAVE, dev_addr) < 0) {
+            perror("I2C ioctl");
+            return 1;
+        }
+
+        struct bme280_dev dev;
+        dev.intf = BME280_I2C_INTF;
+        dev.intf_ptr = &i2c_fd;
+        dev.read = user_i2c_read;
+        dev.write = user_i2c_write;
+        dev.delay_us = user_delay_us;
+
+        if (bme280_init(&dev) != BME280_OK) {
+            printf("Sensorinitialisierung fehlgeschlagen\n");
+            return 1;
+        }
+
+        struct bme280_settings settings;
+        settings.osr_h = BME280_OVERSAMPLING_1X;
+        settings.osr_p = BME280_OVERSAMPLING_16X;
+        settings.osr_t = BME280_OVERSAMPLING_2X;
+        settings.filter = BME280_FILTER_COEFF_16;
+        settings.standby_time = BME280_STANDBY_TIME_1000_MS;
+
+        uint8_t settings_sel = BME280_SEL_OSR_PRESS | BME280_SEL_OSR_TEMP |
+                               BME280_SEL_OSR_HUM | BME280_SEL_FILTER;
+
+        if (bme280_set_sensor_settings(settings_sel, &settings, &dev) != BME280_OK) {
+            printf("Sensor Settings fehlgeschlagen\n");
+            return 1;
+        }
+
+        if (bme280_set_sensor_mode(BME280_POWERMODE_FORCED, &dev) != BME280_OK) {
+            printf("Sensor Mode setzen fehlgeschlagen\n");
+            return 1;
+        }
+
+        dev.delay_us(40000, dev.intf_ptr);
+
+        struct bme280_data comp_data;
+        if (bme280_get_sensor_data(BME280_ALL, &comp_data, &dev) != BME280_OK) {
+            printf("Sensor Data lesen fehlgeschlagen\n");
+            return 1;
+        }
+
+
+        float_data.push_back(comp_data.temperature);
+        float_data.push_back(comp_data.pressure / 100.0f);
+        float_data.push_back(comp_data.humidity);
+        
+        
+        close(i2c_fd);
+        
+        return 0;
+    }
+
+
+    BME280_INTF_RET_TYPE BME_Sensor::user_i2c_read(uint8_t reg_addr, uint8_t *data, uint32_t len, void *intf_ptr) {
+        int fd = *(int *)intf_ptr;
+        if (write(fd, &reg_addr, 1) != 1){
+            return -1;
+        }
+        if (read(fd, data, len) != (int)len){
+            return -1;
+        }
+        return 0;
+    }
+
+    BME280_INTF_RET_TYPE BME_Sensor::user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr) {
+        int fd = *(int *)intf_ptr;
+        uint8_t buf[1 + len];
+        buf[0] = reg_addr;
+        for (uint32_t i = 0; i < len; i++) {
+            buf[i + 1] = data[i];
+        }
+        if (write(fd, buf, len + 1) != (int)(len + 1)){
+            return -1;
+        }
+        return 0;
+    }
+
+    void BME_Sensor::user_delay_us(uint32_t period_us, void *intf_ptr) {
+        usleep(period_us);
+    }
+
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/time_account.h ---------
 #ifndef TIME_ACCOUNT_H
 #define TIME_ACCOUNT_H
@@ -13,26 +145,39 @@ struct Entry{
 	std::string description;
 	std::tm time_point;
 };
-	
+
+struct Automation_Config{
+	std::string connection;
+	std::string entity;
+	std::string alias;
+	int interval;
+	std::string einheit;
+	bool logfile;
+};
 
 class Time_Account{
 public:
 	Time_Account(const std::string& ent, const std::string& al) : entity(ent), alias(al){};
+
+	void set_tag(const std::string& new_tag);
 	
 	void set_hours(const float& amount);
 	
 	std::string get_entity() const;
 	std::string get_alias() const;
 	std::vector<Entry> get_entry() const;
-	
+
+	std::string get_tag() const;
 	float get_hours() const;
 	
 	void add_json_read_entry(const Entry& read_entry);
 	
 	void add_entry(const Entry& new_entry);
+
 private:
 	std::string entity{};
 	std::string alias{};
+	std::string tag{};
 	
 	float hours{0.f};
 	std::vector<Entry> entry;
@@ -40,7 +185,15 @@ private:
 
 #endif // TIME_ACCOUNT_H
 
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/time_account.cpp ---------
+
+void Time_Account::set_tag(const std::string& new_tag){
+	tag = new_tag;
+}
+std::string Time_Account::get_tag() const {
+	return tag;
+}
 
 void Time_Account::set_hours(const float& amount){
     hours = amount;
@@ -93,8 +246,8 @@ void Time_Account::add_entry(const Entry& new_entry){
 class JSON_Handler{
 public:
 
-	JSON_Handler(std::vector<Time_Account>& all_accounts);
-
+	void read_all_accounts(std::vector<Time_Account>& all_accounts);
+	
 	std::string get_config_filepath() const;
 
 	std::string get_entity_filepath() const;
@@ -102,7 +255,8 @@ public:
 	std::string get_accounts_filepath() const;
 
 	Language get_config_language() const;
-	
+
+	std::string get_automatic_config_filepath() const { return automation_config_filepath; }
 	//Search Filepath in home Directory
 	std::string getExecutableDir();
 	
@@ -123,6 +277,9 @@ public:
 
 	void read_json_accounts(std::vector<Time_Account>& all_accounts);
 
+	void save_automation_config_file(const std::vector<std::string>& automation_config);
+	std::vector<Automation_Config> read_automation_config_file();
+	
 private:
 	std::string config_filepath{"../config.json"};
 	
@@ -131,21 +288,24 @@ private:
 		, "entity_filepath"
 		, "accounts_filepath"
 		, "language"
+		, "automation_filepath"
 	};
 	
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
-
+	std::string automation_config_filepath{"../automation_config.json"};
+	
 	Language config_language = Language::english;
 };
 
 #endif // JSON_HANDLER_H
 
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/json_handler.cpp ---------
 
 using json = nlohmann::json;
 
-JSON_Handler::JSON_Handler(std::vector<Time_Account>& all_accounts){
+void JSON_Handler::read_all_accounts(std::vector<Time_Account>& all_accounts){
 
     read_config_file();
     
@@ -207,6 +367,71 @@ std::string JSON_Handler::getConfigFilePath() {
     #endif
 }
 
+
+std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
+
+	read_config_file();
+	
+	std::ifstream file(automation_config_filepath);
+	if(!file.is_open()){
+		throw std::runtime_error{"##Couldn't Open Automation Config"};
+	}
+
+	std::vector<Automation_Config> all_automations;
+	
+	json config_json;
+	file >> config_json;
+
+	std::string connection = config_json.value("connection", "undefined");
+	
+	//config durchlaufen
+	for(const auto& config : config_json["config"]){
+		std::string interval = config.value("interval", "0");
+		std::string logFile = config.value("log_file", "false");
+
+		all_automations.push_back(Automation_Config{
+			connection
+			, config.value("entity", "")
+			, config.value("alias", "")
+			, stoi(interval)
+			, config.value("einheit", "")
+			, (logFile=="true" ? false : true )
+		});
+	}
+
+	return all_automations;
+}
+
+void JSON_Handler::save_automation_config_file(const std::vector<std::string>& automation_config){
+
+	if(automation_config.size() < 6){
+		throw std::runtime_error{"##Automation_Config Error"};
+	}
+	
+	json config;
+	config["connection"] = automation_config[0];
+	
+	//configs
+	config["config"] = {
+		{
+			{"entity", automation_config[1]},
+			{"alias", automation_config[2]},
+			{"interval", automation_config[3]},
+			{"einheit", automation_config[4]},
+			{"log_file", automation_config[5]}
+		}
+	};
+	
+    std::ofstream config_file(automation_config_filepath);
+    if(config_file.is_open()){
+        config_file << config.dump(4);
+        config_file.close();
+        std::cout << "##Automation Config File saved" << std::endl;
+    }else{
+        throw std::runtime_error{"##Cant open Config_File!"};
+    }
+}
+
 void JSON_Handler::save_config_file(std::map<std::string, std::string>& save_to_config){
     json config;
     bool has_data = false;
@@ -249,6 +474,7 @@ void JSON_Handler::read_config_file(){
     entity_filepath = config_data.value("entity_filepath", "");
     accounts_filepath = config_data.value("accounts_filepath", "");
     std::string str_config_language = config_data.value("language", "");
+    automation_config_filepath = config_data.value("automation_filepath", "");
 
     if(!str_config_language.empty()){
         if(str_config_language == "english"){
@@ -274,6 +500,7 @@ std::vector<Time_Account> JSON_Handler::collect_accounts_with_entity(const std::
     return matching_accounts;
 }
 
+//wenn der Alias übergeben wird, wird er übersprungen und somit nicht in die Datei geschrieben -> delete Function
 void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save, const std::string& alias){
 	
     std::vector<Time_Account> matching_accounts = collect_accounts_with_entity(all_accounts, entity_to_save);
@@ -298,6 +525,7 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
         }
         json alias_entry;
         alias_entry["alias"] = acc.get_alias();
+        alias_entry["tag"] = acc.get_tag();
         alias_entry["total_hours"] = acc.get_hours();
         alias_entry["entries"] = json::array();
 
@@ -377,9 +605,12 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
         if (entry_data.contains("alias")) {
             for (const auto& alias : entry_data["alias"]) {
                 std::string str_alias = alias.value("alias", "");
-                if (account.get_alias() != str_alias)
-                    continue;
-
+                if (account.get_alias() != str_alias){
+               		continue;
+                }
+				std::string tag = alias.value("tag", "");
+				account.set_tag(tag);
+				
                 float total_hours = alias.value("total_hours", 0.0f);
                 account.set_hours(total_hours);
 
@@ -439,6 +670,7 @@ void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
     }
 }
 
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/clock.h ---------
 #ifndef CLOCK_H
 #define CLOCK_H
@@ -474,7 +706,10 @@ enum class error{
 	, alias_equal_entity
 	, user_input_is_command
 	, unknown_language
+	, sensor
+	, tag_not_found
 };
+
 enum class command{
 	  help = 0
 	, add
@@ -485,14 +720,29 @@ enum class command{
 	, config_filepath
 	, user_filepath
 	, language
+	, tag
+	, touch_sensor
+	, messure_sensor
+	, activate
+	, i2c
+	, automatic
+	, environment
 };
+
 
 enum class Language{
 	  english = 0
 	, german 
 };
 
+enum class Tag{
+	  none = 0
+	, plant
+};
+
+
 #endif //ENUM_CLASS_H
+
 
 // -------- /home/eichi/Dev/Projekte/std/src/code/translator.h ---------
 #ifndef TRANSLATOR_H
@@ -539,6 +789,9 @@ std::map<std::string, std::string> Translator::english_pack = {
     ,{"time_saved", "Time saved"}
     ,{"saved", " saved"}
     ,{"No_Entrys_available", "No Entrys available"}
+    ,{"Temperature", "Temperature"}
+    ,{"Pressure", "Pressure"}
+    ,{"Humidity", "Humidity"}
 };
 
 std::map<std::string, std::string> Translator::german_pack = {
@@ -554,6 +807,9 @@ std::map<std::string, std::string> Translator::german_pack = {
     ,{"time_saved", "Zeitstempel gespeichert"}
     ,{"saved", " gespeichert"}
     ,{"No_Entrys_available", "Keine Einträge verfügbar"}
+    ,{"Temperature", "Temperatur"}
+    ,{"Pressure", "Druck"}
+    ,{"Humidity", "Feuchte"}
 };
 
 std::map<Language, std::map<std::string, std::string>> Translator::all_packs = {
@@ -602,39 +858,202 @@ std::string Translator::get_str_language(){
     return dict_language.at(language);
 }
 
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/arg_manager.h ---------
 #ifndef ARG_MANAGER_H
 #define ARG_MANAGER_H
-
 
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include <memory>
 #include <regex>
+#include <cstdlib>
+#include <fstream>
+
+
+
+class Cmd_Ctrl{
+public:
+	
+	//Check for valid Arguments
+	bool is_argument_valid(const std::vector<std::string>& str_argv){
+		
+		for(const auto& pattern : regex_pattern){
+			for(size_t i{1}; i < str_argv.size(); ++i){
+				if(std::regex_match(str_argv[i], pattern.second)){
+				
+					return  true;
+				}	
+			}
+		}
+		
+		return false;
+	}
+
+	std::map<error, std::string> get_str_error() const { return str_error; }
+	std::map<command, std::regex> get_regex_pattern() const { return regex_pattern; }
+private:
+
+	std::map<command, std::regex> regex_pattern = {
+		  { command::help,      		std::regex{R"(^--?help$)", std::regex_constants::icase } }
+		, { command::add,       		std::regex{R"(^--?add$)", std::regex_constants::icase } }
+		, { command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } }
+		, { command::delete_,   		std::regex{R"(^(--?del(ete)?)$)", std::regex_constants::icase } }
+		, { command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } }
+		, { command::minutes, 			std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} }
+		, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
+		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
+		, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
+		, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
+		, { command::messure_sensor,	std::regex{R"(^(--?mes(sure)?)$)", std::regex_constants::icase } }
+	    , { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
+	    , { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
+		, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
+		, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
+	};
+
+	std::map<error, std::string> str_error{
+		  {error::double_entity, "Entity already taken"}
+		, {error::double_alias, "Alias already taken"}
+		, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
+		, {error::unknown_alias_or_entity, "Alias or Entity not found"}
+		, {error::user_input_is_command, "Rejected Input"}
+		, {error::not_found, "Not found"}
+		, {error::synthax, "Synthax wrong"}
+		, {error::untitled_error,"Untitled Error"}
+		, {error::unknown, "Unknown Command"}
+		, {error::unknown_alias, "Unknown Alias"}
+		, {error::unknown_language, "Unknown Language"}
+		, {error::sensor, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
+		, {error::tag_not_found, "Unknown Tag"}
+	};
+	
+};
+
+
+class Device_Ctrl{
+public:
+	Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
+	
+	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
+	
+		//auto Accounts lesen
+		all_automations = jsonH->read_automation_config_file();
+		
+		//auto Accounts erstellen
+		for(const auto& data : all_automations){
+			Time_Account new_account{data.entity, data.alias};
+			all_accounts.push_back(new_account);
+		}
+		
+		//auto Accounts <entity>.json lesen
+		jsonH->read_json_entity(all_accounts);
+	
+		//Sensor Werte abfragen
+		std::vector<float> output_sensor = check_device();
+		if(output_sensor.empty()){
+			throw std::runtime_error{"§§ No Sensor Output"};
+		}
+		std::stringstream ss;
+		ss << "Temp: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+			<< "Druck: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+			<< "Feuchte: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
+			
+		std::tm localTime = clock.get_time();
+		
+		//auto Accounts speichern
+		for(auto& account : all_accounts){
+			if(account.get_alias() == alias){
+				Entry entry{0.f, ss.str(), localTime};
+				account.add_entry(entry);
+				jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+				break;
+			}
+		}
+
+		std::cout 
+			<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << '\n'
+			<< ss.str() << '\n' 
+			<< std::endl;
+	}
+	
+	std::vector<float> check_device(){
+		
+		std::vector<float> output_sensor;
+		
+		if(sensor.scan_sensor(output_sensor) == 1){
+			throw std::runtime_error{error_prompt};
+		}
+
+		return output_sensor;
+	}
+
+	
+	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile){
+		
+		std::string exe_filepath = jsonH->getExecutableDir() + "/";
+		std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
+		
+		std::string cronLine = "*/15 * * * * " + exe_filepath + "std -auto " + alias + " -mes";
+		std::string logLine = " >> " + exe_filepath + "std.log 2>&1";
+
+		//alte Crontab sichern
+		system("crontab -l > /tmp/mycron");
+
+		//neue Zeile anhängen
+		std::ofstream out("/tmp/mycron", std::ios::app);
+		out << cronLine;
+		if(logfile){
+			out << logLine;
+		}
+		out << '\n';
+		out.close();
+
+		//Neue Crontab setzen
+		system("crontab /tmp/mycron");
+
+		//aufräumen
+		system("rm /tmp/mycron");
+
+		std::cout << "Crontab written" << std::endl;
+	}
+	
+private:
+	Clock clock{};
+	BME_Sensor sensor{};
+	std::string error_prompt;
+	std::vector<Automation_Config> all_automations;
+	std::vector<Time_Account> all_accounts;
+
+	
+};
+
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern);
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl);
 	
-	void proceed_inputs(std::vector<Time_Account>& all_accounts, const std::map<error, std::string>& str_error);
+	void proceed_inputs(const int& argc, const std::vector<std::string>& argv);
+
+	bool run_environment() const { return run_env; }
 	
 private:
-
+	bool run_env = false;
+	
 	std::shared_ptr<JSON_Handler> jsonH;
+	std::vector<Time_Account> all_accounts;
 	Translator translator{};
-	Clock clock{};
-		
+	Clock clock{};	
 	std::vector<std::string> str_argv;
 	int argc;
-	
 	//show Tabellen setw(max_length[]) 
 	std::vector<int> max_length;
-
 	std::map<command, std::regex> regex_pattern;
-
 	std::map<error, std::string> str_error;
-		
+	std::map<Tag, std::string> all_tags;
+	
 	const std::string help = {
     "add 			Add new Entity give it a Alias\n"
     "-h -m  		Time to save in Hours or Minutes\n"
@@ -643,6 +1062,7 @@ private:
     "show 'ALIAS' 	show specific Entity's Time Account\n\n"
     "For more Information have a look at README.md on github.com/eichi150/std\n"
     };
+	
 
 	std::vector<Time_Account> check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity);
 	
@@ -657,10 +1077,13 @@ private:
 	
 	void delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete);
 	
-	void add_account(std::vector<Time_Account>& all_accounts);
-	
-	void add_hours(std::vector<Time_Account>& all_accounts);
+	void add_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 
+	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
+	void add_sensor_data(std::vector<Time_Account>& all_accounts);
+	
+	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);
+	
 	void set_table_width(const std::vector<Time_Account>& all_accounts, std::vector<int>& max_length);
 
 	void show_filepaths() const;
@@ -675,30 +1098,54 @@ private:
 
 #endif // ARG_MANAGER_H
 
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/arg_manager.cpp ---------
 // ============= //
 // == PUBLIC ==  //
 // ============= //
-Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::vector<std::string>& argv, const int& argc, const std::map<command, std::regex>& pattern)
-    : jsonH(jH), str_argv(argv), argc(argc), regex_pattern(pattern)
+
+Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl): jsonH(jH)
 {
+
+	jsonH->read_all_accounts(all_accounts);
+	
+    regex_pattern = ctrl->get_regex_pattern();
+    str_error = ctrl->get_str_error();
     
     translator.set_language(jsonH->get_config_language());
     
     max_length = {
-            10 //Index Standard	
+        10 //Index Standard
         , 10 //Alias Standard
         , 15 //Entity Standard
         , static_cast<int>(translator.language_pack.at("total_hours").size())
-        , static_cast<int>(translator.language_pack.at("hours").size() + 5)
-        , static_cast<int>(translator.language_pack.at("timestamp").size() + 10)
+        , static_cast<int>(translator.language_pack.at("hours").size() + 3)
+        , 25
         , static_cast<int>(translator.language_pack.at("comment").size() + 10)
     };
+
+    all_tags = {
+	   	  {Tag::none, "none"}
+		, {Tag::plant, "plant"}
+	};
+
 };
 
-void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const std::map<error, std::string>& str_error){
+void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>& argv){
+
+	this->str_argv = argv;
+	this->argc = argc;
 	
-    this->str_error = str_error;
+    /*if(start_environment){
+    	str_argv.push_back("std");
+    	argc = 1;
+    	
+    	//grab new argument INPUTS
+    	if(input == "exit"){
+    		start_environment = false;
+    		return;
+    	}	
+    }*/
     
     switch(argc){
     
@@ -711,13 +1158,20 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const 
                     std::cout << help << std::endl;
                     break;
                 }
-                //Zeige alle Entity und Alias an
+                
+                //Zeige alle <entity> und <alias> an
                 //show
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
                 
-                        show_all(all_accounts);
-                        break;
+                    show_all(all_accounts);
+                    break;
                 }
+
+                if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
+                	run_env = true;
+                	break;
+                }
+                
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
             
@@ -752,8 +1206,9 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const 
                     show_specific_table(matching_accounts);
                     break;
                 }
+                
                 //Account löschen
-                //del
+                //del <alias>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_))){
                 
                     delete_account(all_accounts, str_argv[2]);
@@ -784,6 +1239,33 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const 
                     change_config_json_language(str_argv[2]);
                     break;
                 } 
+
+                //i2c Sensor Messwert abfrage
+				//-touch i2c
+				if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
+
+				    Device_Ctrl device{str_error.at(error::sensor)};
+				    std::vector<float> output_sensor = device.check_device();
+
+				    std::stringstream output_str;
+				    output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+				   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+				    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+				        
+				    std::cout << output_str.str() << std::endl;
+				    break;
+
+				}
+                                
+                //i2c Sensor Messwerte für <alias> speichern
+                // <alias> -mes
+                if(std::regex_match(str_argv[2], regex_pattern.at(command::messure_sensor))){
+                
+                    Device_Ctrl device{str_error.at(error::sensor)};
+                    add_sensor_data(all_accounts);
+                    break;
+
+                }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
@@ -802,17 +1284,39 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const 
                 //add	
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::add))){
                 
-                    add_account(all_accounts);
+                    add_account(all_accounts, {});
                     break;
                 }
         
                 //Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
                 //-h -m
                 if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
-                        || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
+                   || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
                 {
-                    add_hours(all_accounts);
+                    add_hours(all_accounts, str_argv[2]);
                     break;
+                }
+
+                //tag nachträglich hinzufügen
+                //<alias> -tag plant
+				if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
+               	{
+               		if(str_argv[3] == all_tags.at(Tag::none)){
+                		add_tag_to_account(all_accounts, {});
+                	}else
+               		                	
+                	if(str_argv[3] == all_tags.at(Tag::plant)){
+                		add_tag_to_account(all_accounts, all_tags.at(Tag::plant));
+                		
+                	}else{
+                		std::stringstream ss;
+	                    ss << "\nPossible Tag:\n";
+	                    for(const auto& str : all_tags){
+	                        ss << " > " << str.second << '\n';
+	                    }
+	                   	throw std::runtime_error{str_error.at(error::tag_not_found) + ss.str()};
+                	}
+                	break;
                 }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
@@ -832,14 +1336,46 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts, const 
                 //Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
                 //-h -m
                 if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
-                        || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
+                    || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
                 {
-                    add_hours(all_accounts);
+                    add_hours(all_accounts, str_argv[2]);
                     break;
                 }
+
+				//Automation konfigurieren
+				//<alias> -a -mes <time_config>
+       			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
+					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
+       			){
+       				std::vector<std::string> automation_config = {
+       					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
+       				};
+       				jsonH->save_automation_config_file(automation_config);
+       				
+       				Device_Ctrl device{str_error.at(error::sensor)};
+       				device.write_Crontab(jsonH, str_argv[1], true);
+       				break;
+       			}
+       			
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
-            
+
+        case 6:
+        	{	
+       		 	//Neuen Account mit tag hinzufügen
+                //std add <entity> <alias> -tag plant
+                if(std::regex_match(str_argv[1], regex_pattern.at(command::add))
+                	&& std::regex_match(str_argv[4], regex_pattern.at(command::tag)) 
+                	&& str_argv[5] == all_tags.at(Tag::plant))
+               	{
+                
+                    add_account(all_accounts, all_tags.at(Tag::plant));
+                    break;
+                }	
+				
+				throw std::runtime_error{str_error.at(error::synthax)};
+        	};
         default:
             {
                 throw std::runtime_error{str_error.at(error::untitled_error)};
@@ -890,10 +1426,11 @@ std::vector<Time_Account> Arg_Manager::collect_accounts_with_alias(const std::ve
 
 void Arg_Manager::change_config_json_language(const std::string& to_language){
     std::map<std::string, std::string> new_data = {
-            {"config_filepath", jsonH->get_config_filepath()}
+          {"config_filepath", jsonH->get_config_filepath()}
         , {"entity_filepath", jsonH->get_entity_filepath()}
         , {"accounts_filepath", jsonH->get_accounts_filepath()}
         , {"language", to_language}
+        , {"automation_filepath", jsonH->get_automatic_config_filepath()}
     };
     jsonH->save_config_file(new_data);
     
@@ -902,10 +1439,11 @@ void Arg_Manager::change_config_json_language(const std::string& to_language){
 void Arg_Manager::change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
 	
     std::map<std::string, std::string> new_data = {
-            {"config_filepath", conf_filepath}
+          {"config_filepath", conf_filepath}
         , {"entity_filepath", ent_filepath}
         , {"accounts_filepath", acc_filepath}
         , {"language", translator.get_str_language()}
+        , {"automation_filepath", std::string{ent_filepath + "automation_config.json"}}
     };
     jsonH->save_config_file(new_data);
 
@@ -913,7 +1451,7 @@ void Arg_Manager::change_config_json_file(const std::string& conf_filepath, cons
 
 void Arg_Manager::user_change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
     std::map<std::string, std::string> new_filepaths = {
-            {"entity_filepath", ent_filepath}
+          {"entity_filepath", ent_filepath}
         , {"accounts_filepath", acc_filepath}
     };
     jsonH->save_config_file(new_filepaths);
@@ -962,10 +1500,10 @@ void Arg_Manager::delete_account(std::vector<Time_Account>& all_accounts, const 
 }
 
 
-void Arg_Manager::add_account(std::vector<Time_Account>& all_accounts){
+void Arg_Manager::add_account(std::vector<Time_Account>& all_accounts, const std::string& tag){
     std::string entity = str_argv[2];
     std::string alias = str_argv[3];
-
+	std::stringstream ss;
     //Entity or Alias cant be named as a command
     bool is_command = false;
     for(const auto& pattern : regex_pattern){
@@ -994,16 +1532,23 @@ void Arg_Manager::add_account(std::vector<Time_Account>& all_accounts){
     }
     
     Time_Account new_account{entity, alias};
+
+    ss << entity << "-> " << alias;
+    if(!tag.empty()){
+    	new_account.set_tag(tag);
+    	ss <<  " -tag= " << tag;
+    }
+    ss << translator.language_pack.at("saved");
+    
     all_accounts.push_back(new_account);
             
     jsonH->save_json_accounts(all_accounts);
     jsonH->save_json_entity(all_accounts, entity, {});
             
-    std::cout << "-> " << alias << " | " << entity << translator.language_pack.at("saved") << std::endl;
-    
+    std::cout << ss.str() << std::endl;
 }
 
-void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts){
+void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount){
 	
     bool found_alias = false;
     auto localTime = clock.get_time();
@@ -1011,7 +1556,9 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts){
     for(auto& account : all_accounts){
                         
         if(str_argv[1] == account.get_alias() ){
-            float time_float = stof(str_argv[2]);
+        
+            float time_float = stof(amount);
+            
             if (std::regex_match(str_argv[3], regex_pattern.at(command::minutes))){
                 time_float /= 60.f;
             }
@@ -1042,6 +1589,71 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts){
     
         throw std::runtime_error{str_error.at(error::not_found)};
     }
+}
+
+void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
+    bool found_alias = false;
+    auto localTime = clock.get_time();
+	std::stringstream output_str;
+	
+    for(auto& account : all_accounts){
+        if(str_argv[1] == account.get_alias() ){
+
+            Device_Ctrl device{str_error.at(error::sensor)};
+		    std::vector<float> output_sensor = device.check_device();
+            
+            output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+                << translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+                << translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+                
+            Entry entry{0.f, output_str.str(), localTime};
+            account.add_entry(entry);
+
+            jsonH->save_json_accounts(all_accounts);
+            jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+
+            found_alias = true;
+            break;	
+        }
+    }
+    
+                    
+    if(found_alias){
+        std::cout 
+            << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
+            << translator.language_pack.at("time_saved") << '\n'
+            << output_str.str()
+            << "BME Sensor Connection closed"
+            << '\n' << std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n'
+            << std::endl;
+    }else{
+    
+        throw std::runtime_error{str_error.at(error::not_found)};
+    }
+}
+
+void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag){
+
+	bool found_alias = false;
+	std::string entity;
+	for(auto& account : all_accounts){
+		if(account.get_alias() == str_argv[1]){
+			
+			account.set_tag(tag);
+			found_alias = true;
+			entity = account.get_entity();
+			
+			std::cout << "Tag: " << tag << " to " << account.get_alias() << " added" << std::endl;
+			break;
+		}
+	}
+	if(!found_alias){
+       throw std::runtime_error{str_error.at(error::not_found)};
+	}
+	
+	jsonH->save_json_accounts(all_accounts);
+    jsonH->save_json_entity(all_accounts, entity, {});
+    	
 }
 
 void Arg_Manager::set_table_width(const std::vector<Time_Account>& all_accounts, std::vector<int>& max_length){
@@ -1182,8 +1794,8 @@ void Arg_Manager::show_all(const std::vector<Time_Account>& all_accounts) {
         << "=" << std::setfill(' ') << '\n' << std::endl;
 }
 
-// -------- /home/eichi/Dev/Projekte/std/src/code/main.cpp ---------
 
+// -------- /home/eichi/Dev/Projekte/std/src/code/main.cpp ---------
 #ifdef _WIN32
 	#include <windows.h>
 
@@ -1206,26 +1818,33 @@ void Arg_Manager::show_all(const std::vector<Time_Account>& all_accounts) {
 #include <map>
 
 
+
 // SIMPLE TIME DOCUMENTATION /* github.com/eichi150/std */
 
 using json = nlohmann::json;
 
-//Check for valid Arguments
-bool is_argument_valid(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern ){
-	
-	for(const auto& pattern : regex_pattern){
-		for(size_t i{1}; i < str_argv.size(); ++i){
-			if(std::regex_match(str_argv[i], pattern.second)){
-			
-				return  true;
-			}	
-		}
-	}
-	
-	return false;
+#include <vector>
+#include <string>
+#include <sstream>
+#include <regex>
+
+// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen oder Komma
+std::vector<std::string> split_input(const std::string& input) {
+    std::vector<std::string> result;
+    std::regex re(R"([\s]+)"); // regex: trennt an Leerzeichen ODER Kommas
+    std::sregex_token_iterator it(input.begin(), input.end(), re, -1);
+    std::sregex_token_iterator end;
+
+    for (; it != end; ++it) {
+        if (!it->str().empty()) {
+            result.push_back(it->str());
+        }
+    }
+
+    return result;
 }
 
-	
+
 int main(int argc, char* argv[]){
 
 	//Argumente entgegen nehmen und in vector<string> speichern
@@ -1235,48 +1854,74 @@ int main(int argc, char* argv[]){
 		str_argv.push_back(arg);
 	}
 	argv = {};
-
-	std::map<command, std::regex> regex_pattern = {
-		  { command::help,      		std::regex{R"(^(--?h(elp)?|help)$)", std::regex_constants::icase } }
-		, { command::add,       		std::regex{R"(^(--?a(dd)?|add)$)", std::regex_constants::icase } }
-		, { command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } }
-		, { command::delete_,   		std::regex{R"(^(--?d(elete)?|del(ete)?)$)", std::regex_constants::icase } }
-		, { command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } }
-		, { command::minutes, 		std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} }
-		, { command::config_filepath, std::regex{R"(^--?cf$)", std::regex_constants::icase } }
-		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
-		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
-	};
-
-	std::map<error, std::string> str_error{
-		  {error::double_entity, "Entity already taken"}
-		, {error::double_alias, "Alias already taken"}
-		, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
-		, {error::unknown_alias_or_entity, "Alias or Entity not found"}
-		, {error::user_input_is_command, "Rejected Input"}
-		, {error::not_found, "Not found"}
-		, {error::synthax, "Synthax wrong"}
-		, {error::untitled_error,"Untitled Error"}
-		, {error::unknown, "Unknown Command"}
-		, {error::unknown_alias, "Unknown Alias"}
-		, {error::unknown_language, "Unknown Language"}
-	};
+	if(static_cast<size_t>(argc) != str_argv.size()){
+		std::cout << "!!Argument Error" << std::endl;
+		return 1;
+	}
 	
 	if(argc > 1){
 		try{
-			if(is_argument_valid(str_argv, regex_pattern)){
-				//Initalize
-				std::vector<Time_Account> all_accounts{};
-				JSON_Handler jsonH{all_accounts};
-
-				//Init Argument Manager
-				Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), str_argv, argc, regex_pattern};
+			Cmd_Ctrl ctrl{};
 			
-				arg_man.proceed_inputs(all_accounts, str_error);
+			if(ctrl.is_argument_valid(str_argv)){
+			
+				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
+				
+				//Vorher Automation ausführen
+				auto regex_pattern = ctrl.get_regex_pattern();
+				if(std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
+				){
+					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
+					device.process_automation(jsonH, str_argv[2]);
+					
+					return 0;
+				}
+			
+				//Init Argument Manager
+				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl)};
+				
+				arg_man.proceed_inputs(argc, str_argv);
+				
+				if(arg_man.run_environment()){
+					std::cout << "std - Environment started... |-- Close with 'exit'" << std::endl;
+					do{
+						bool arg_valid = false;
+						std::vector<std::string> new_argv{"std"};
+						
+						do{
+							//New Inputs parsen
+							std::string input;
+							std::cout << "@std > ";
+							std::getline(std::cin, input);
+												
+							if(input == "exit"){
+								return 0;
+							}
+							
+							new_argv = split_input(input);
+							new_argv.insert(new_argv.begin(), "std");
+
+							arg_valid = ctrl.is_argument_valid(new_argv);
+							
+						}while(!arg_valid);
+						
+						str_argv = new_argv;
+						argc = static_cast<int>(str_argv.size());
+
+						try{
+				
+							arg_man.proceed_inputs(argc, str_argv);
+							
+						}catch(const std::runtime_error& rt){
+							std::cout << "**" << rt.what() << std::endl;
+						}
+					}while(arg_man.run_environment());
+				}
 				
 			}else{
 			
-				throw std::runtime_error{str_error.at(error::unknown)};
+				throw std::runtime_error{ctrl.get_str_error().at(error::unknown)};
 			}
 		//Error Output	
 		}catch(const std::runtime_error& re){
