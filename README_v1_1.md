@@ -51,21 +51,22 @@ std/
 
 ---
 
+---
+
 # 🧩 Neue Tools
 
-## 🤖 std - Environment
-
-## 🌱 Pflanzenpflege-Tagebuch
-
-## 🤖 Sensor Connection
-
-## 🧠 Automatische Sensorabfrage (Crontab)
+ ### 1. 🐚 std - Environment
+ ### 2. 🌱 Pflanzenpflege-Tagebuch
+ ### 3. 🤖 Sensor Connection
+ ### 4. 🧠 Automatische Sensorabfrage (Crontab)
+ 
+---
 
 ---
 
 # 🤖 std - Environment
 
-## 📝 Instruktion
+## 📋 Instruktion
 
 Nach dem Start des Environment können Commands nacheinander eingegeben werden.
 
@@ -137,7 +138,7 @@ sudo reboot
 ```bash
 sudo i2c-detect -y 1
 ```
-Folgene Ausgabe sollte zu sehen sein. Port: x76 sendet
+🎉 Folgene Ausgabe sollte zu sehen sein. Port: x76 sendet
 
 
 ![Ausgabe](https://github.com/eichi150/std/blob/dev/more_information/sensor_i2c_detect.png)
@@ -171,6 +172,9 @@ std CH -mes
 
 ### Alias zu Crontab hinzufügen und std konfigurieren
 
+:exclamation: Vor der ersten Verwendung wirst du von Cron nach deinem bevorzugten Editor gefragt. 
+Anschließend verläuft es reibunglos.
+
 ```bash
 std <alias> -activate -mes <time_config>
 
@@ -178,10 +182,20 @@ std <alias> -activate -mes <time_config>
 # → Command in Crontab eingetragen
 ```
 
-###Testaufruf der automatisierung:
+### Testaufruf der Automatisierung:
 
 ```bash
 std -auto CH -mes
+```
+### Crontab Tasks einsehen:
+
+```bash
+crontab -e
+Editor öffnet sich, die Task Commands sollten zu finden sein.
+```
+### Crontab Status Abfagen:
+```bash
+systemctl status cron
 ```
 
 ---
@@ -237,5 +251,3 @@ some_sensor_tool | grep "ON" && std ServerWartung 30 -m "Automatisch erkannt"
 
 tar -czf std_backup_$(date +%F).tar.gz ~/std/files/
 ```
-
----
