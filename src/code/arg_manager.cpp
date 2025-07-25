@@ -253,7 +253,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        				jsonH->save_automation_config_file(automation_config);
        				
        				Device_Ctrl device{str_error.at(error::sensor)};
-       				device.write_Crontab(str_argv[1], true);
+       				device.write_Crontab(jsonH, str_argv[1], true);
        				break;
        			}
        			

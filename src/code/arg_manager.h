@@ -133,9 +133,13 @@ public:
 	}
 
 	
-	void write_Crontab(const std::string& alias, bool logfile){
-		std::string cronLine = "*/15 * * * * /home/eichi/bin/std/bin/std -auto " + alias + " -mes";
-		std::string logLine = " >> /home/eichi/bin/std/bin/std.log 2>&1";
+	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile){
+		
+		std::string exe_filepath = jsonH->getExecutableDir() + "/";
+		std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
+		
+		std::string cronLine = "*/15 * * * * " + exe_filepath + "std -auto " + alias + " -mes";
+		std::string logLine = " >> " + exe_filepath + "std.log 2>&1";
 
 		//alte Crontab sichern
 		system("crontab -l > /tmp/mycron");
@@ -176,14 +180,6 @@ public:
 	void proceed_inputs(const int& argc, const std::vector<std::string>& argv);
 
 	bool run_environment() const { return run_env; }
-	
-	std::vector<Time_Account> get_all_accounts() const { return all_accounts; }
-	void clear_all_accounts(){
-		all_accounts.clear();
-	}
-	void set_all_accounts(std::vector<Time_Account>& all_accounts){
-		this->all_accounts = all_accounts;
-	}
 	
 private:
 	bool run_env = false;

@@ -93,6 +93,7 @@ int main(int argc, char* argv[]){
 				arg_man.proceed_inputs(argc, str_argv);
 				
 				if(arg_man.run_environment()){
+					std::cout << "std - Environment started... |-- Close with 'exit'" << std::endl;
 					do{
 						bool arg_valid = false;
 						std::vector<std::string> new_argv{"std"};
@@ -118,12 +119,9 @@ int main(int argc, char* argv[]){
 						argc = static_cast<int>(str_argv.size());
 
 						try{
-							
-							std::vector<Time_Account> accounts;
-							jsonH->read_all_accounts(accounts);
-							arg_man.set_all_accounts(accounts);
-							
+				
 							arg_man.proceed_inputs(argc, str_argv);
+							
 						}catch(const std::runtime_error& rt){
 							std::cout << "**" << rt.what() << std::endl;
 						}
