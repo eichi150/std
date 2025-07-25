@@ -51,6 +51,7 @@ private:
 	    , { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
 	    , { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 		, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
+		, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
 	};
 
 	std::map<error, std::string> str_error{
@@ -149,11 +150,13 @@ private:
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl, const std::vector<std::string>& argv, const int& argc);
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl);
 	
-	void proceed_inputs(std::vector<Time_Account>& all_accounts);
-	
+	void proceed_inputs(const int& argc, const std::vector<std::string>& argv);
+
+	bool run_environment() const { return run_env; }
 private:
+	bool run_env = false;
 	
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::vector<Time_Account> all_accounts;

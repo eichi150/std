@@ -3,8 +3,7 @@
 // == PUBLIC ==  //
 // ============= //
 
-Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl, const std::vector<std::string>& argv, const int& argc)
-    : jsonH(jH), str_argv(argv), argc(argc)
+Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl): jsonH(jH)
 {
 
 	jsonH->read_all_accounts(all_accounts);
@@ -29,11 +28,23 @@ Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::sha
 		, {Tag::plant, "plant"}
 	};
 
-
-	proceed_inputs(all_accounts);    		
 };
 
-void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
+void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>& argv){
+
+	this->str_argv = argv;
+	this->argc = argc;
+	
+    /*if(start_environment){
+    	str_argv.push_back("std");
+    	argc = 1;
+    	
+    	//grab new argument INPUTS
+    	if(input == "exit"){
+    		start_environment = false;
+    		return;
+    	}	
+    }*/
     
     switch(argc){
     
@@ -51,10 +62,14 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                 //show
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
                 
-                        show_all(all_accounts);
-                        break;
+                    show_all(all_accounts);
+                    break;
                 }
-                
+
+                if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
+                	run_env = true;
+                	break;
+                }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
             };

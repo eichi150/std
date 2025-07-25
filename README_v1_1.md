@@ -90,11 +90,16 @@ std CH -tag plant
 
 ## 🤖 Sensor Connection
 
-#### 🔧 I2C im Betriebsystem aktivieren:
+### 🔧 I2C Sensor Setup for Linux:
 
 ---
 
-## 🔧 I2C Sensor Setup:
+#### 🔧 I2C im Betriebsystem aktivieren:
+I2C Tools installieren
+```bash
+sudo apt-get install i2c-tools
+```
+
 #### 🔹 I2C im Betriebsystem aktivieren:
 RaspberryPi:
 ```bash

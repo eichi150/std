@@ -32,7 +32,28 @@
 
 using json = nlohmann::json;
 
-	
+#include <vector>
+#include <string>
+#include <sstream>
+#include <regex>
+
+// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen oder Komma
+std::vector<std::string> split_input(const std::string& input) {
+    std::vector<std::string> result;
+    std::regex re(R"([\s]+)"); // regex: trennt an Leerzeichen ODER Kommas
+    std::sregex_token_iterator it(input.begin(), input.end(), re, -1);
+    std::sregex_token_iterator end;
+
+    for (; it != end; ++it) {
+        if (!it->str().empty()) {
+            result.push_back(it->str());
+        }
+    }
+
+    return result;
+}
+
+
 int main(int argc, char* argv[]){
 
 	//Argumente entgegen nehmen und in vector<string> speichern
@@ -67,7 +88,46 @@ int main(int argc, char* argv[]){
 				}
 			
 				//Init Argument Manager
-				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl), str_argv, argc};
+				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl)};
+				
+				arg_man.proceed_inputs(argc, str_argv);
+				
+				if(arg_man.run_environment()){
+					do{
+						bool arg_valid = false;
+						std::vector<std::string> new_argv{"std"};
+						
+						do{
+							//New Inputs parsen
+							std::string input;
+							std::cout << "> ";
+							std::getline(std::cin, input);
+												
+							if(input == "exit"){
+								return 0;
+							}
+							
+							new_argv = split_input(input);
+							new_argv.insert(new_argv.begin(), "std");
+
+							arg_valid = ctrl.is_argument_valid(new_argv);
+							
+						}while(!arg_valid);
+						
+						str_argv = new_argv;
+						argc = static_cast<int>(str_argv.size());
+						std::cout << argc << " ";
+						for(const auto& str : new_argv){
+							std::cout << str << '\n';
+						}
+
+						try{
+							arg_man.proceed_inputs(argc, str_argv);
+						}catch(const std::runtime_error& rt){
+							std::cout << "**" << rt.what() << std::endl;
+						}
+					}while(arg_man.run_environment());
+				}
 				
 			}else{
 			

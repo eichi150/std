@@ -34,6 +34,7 @@ enum class command{
 	, activate
 	, i2c
 	, automatic
+	, environment
 };
 
 
