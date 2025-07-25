@@ -7,6 +7,8 @@ Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::sha
     : jsonH(jH), str_argv(argv), argc(argc)
 {
 
+	jsonH->read_all_accounts(all_accounts);
+	
     regex_pattern = ctrl->get_regex_pattern();
     str_error = ctrl->get_str_error();
     
@@ -26,7 +28,9 @@ Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::sha
 	   	  {Tag::none, "none"}
 		, {Tag::plant, "plant"}
 	};
-	       		
+
+
+	proceed_inputs(all_accounts);    		
 };
 
 void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
@@ -51,24 +55,7 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                         break;
                 }
                 
-                //i2c Sensor Messwert abfrage
-                if(std::regex_match(str_argv[1], regex_pattern.at(command::sensor))){
-                    
-                    std::vector<float> output_sensor;
-                    BME_Sensor sensor{};
-                    
-                    if(sensor.scan_sensor(output_sensor) == 1){
-                        throw std::runtime_error(str_error.at(error::sensor));
-                    }
-                    std::stringstream output_str;
-                    output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-                   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-                    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
-                        
-                    std::cout << output_str.str() << std::endl;
-                    break;
-
-                }
+                
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
             
@@ -136,11 +123,29 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                     change_config_json_language(str_argv[2]);
                     break;
                 } 
-                
+
+                //i2c Sensor Messwert abfrage
+				//-touch i2c
+				if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
+
+				    Device_Ctrl device{str_error.at(error::sensor)};
+				    std::vector<float> output_sensor = device.check_device();
+
+				    std::stringstream output_str;
+				    output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+				   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+				    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+				        
+				    std::cout << output_str.str() << std::endl;
+				    break;
+
+				}
+                                
                 //i2c Sensor Messwerte für <alias> speichern
-                // <alias> -data
-                if(std::regex_match(str_argv[2], regex_pattern.at(command::save_sensor_data))){
-                    
+                // <alias> -mes
+                if(std::regex_match(str_argv[2], regex_pattern.at(command::messure_sensor))){
+                
+                    Device_Ctrl device{str_error.at(error::sensor)};
                     add_sensor_data(all_accounts);
                     break;
 
@@ -170,7 +175,7 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                 //Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
                 //-h -m
                 if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
-                        || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
+                   || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
                 {
                     add_hours(all_accounts, str_argv[2]);
                     break;
@@ -215,12 +220,25 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                 //Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
                 //-h -m
                 if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
-                        || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
+                    || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
                 {
                     add_hours(all_accounts, str_argv[2]);
                     break;
                 }
-       
+
+				//Automation konfigurieren
+				//<alias> -a -mes <time_config>
+       			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
+					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
+       			){
+       				std::vector<std::string> automation_config = {
+       					{"i2c", "ChocoHaze", "CH", "15", "minutes", "true"}
+       				};
+       				jsonH->save_automation_config_file(automation_config);
+       				break;
+       			}
+       			
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
 
@@ -238,7 +256,7 @@ void Arg_Manager::proceed_inputs(std::vector<Time_Account>& all_accounts){
                 }	
 				
 				throw std::runtime_error{str_error.at(error::synthax)};
-        	}
+        	};
         default:
             {
                 throw std::runtime_error{str_error.at(error::untitled_error)};
@@ -455,16 +473,13 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
 void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
     bool found_alias = false;
     auto localTime = clock.get_time();
-    std::vector<float> output_sensor;
 	std::stringstream output_str;
 	
     for(auto& account : all_accounts){
         if(str_argv[1] == account.get_alias() ){
 
-            BME_Sensor sensor{};
-            if(sensor.scan_sensor(output_sensor) == 1){
-                throw std::runtime_error(str_error.at(error::sensor));
-            }
+            Device_Ctrl device{str_error.at(error::sensor)};
+		    std::vector<float> output_sensor = device.check_device();
             
             output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
                 << translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
@@ -486,8 +501,9 @@ void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
         std::cout 
             << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
             << translator.language_pack.at("time_saved") << '\n'
-            << output_str.str() << '\n'
+            << output_str.str()
             << "BME Sensor Connection closed"
+            << '\n' << std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n'
             << std::endl;
     }else{
     

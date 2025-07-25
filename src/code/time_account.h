@@ -10,7 +10,15 @@ struct Entry{
 	std::string description;
 	std::tm time_point;
 };
-	
+
+struct Automation_Config{
+	std::string connection;
+	std::string entity;
+	std::string alias;
+	int interval;
+	std::string einheit;
+	bool logfile;
+};
 
 class Time_Account{
 public:

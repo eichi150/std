@@ -17,6 +17,7 @@ enum class error{
 	, sensor
 	, tag_not_found
 };
+
 enum class command{
 	  help = 0
 	, add
@@ -27,10 +28,14 @@ enum class command{
 	, config_filepath
 	, user_filepath
 	, language
-	, sensor
-	, save_sensor_data
 	, tag
+	, touch_sensor
+	, messure_sensor
+	, activate
+	, i2c
+	, automatic
 };
+
 
 enum class Language{
 	  english = 0
@@ -41,5 +46,6 @@ enum class Tag{
 	  none = 0
 	, plant
 };
+
 
 #endif //ENUM_CLASS_H

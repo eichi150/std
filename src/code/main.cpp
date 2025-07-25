@@ -50,15 +50,24 @@ int main(int argc, char* argv[]){
 	if(argc > 1){
 		try{
 			Cmd_Ctrl ctrl{};
-			if(ctrl.is_argument_valid(str_argv)){
-				//Initalize
-				std::vector<Time_Account> all_accounts{};
-				JSON_Handler jsonH{all_accounts};
-
-				//Init Argument Manager
-				Arg_Manager arg_man{std::make_shared<JSON_Handler>(jsonH), std::make_shared<Cmd_Ctrl>(ctrl), str_argv, argc};
 			
-				arg_man.proceed_inputs(all_accounts);
+			if(ctrl.is_argument_valid(str_argv)){
+			
+				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
+				
+				//Vorher Automation ausführen
+				auto regex_pattern = ctrl.get_regex_pattern();
+				if(std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
+				){
+					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
+					device.process_automation(jsonH, str_argv[2]);
+					
+					return 0;
+				}
+			
+				//Init Argument Manager
+				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl), str_argv, argc};
 				
 			}else{
 			

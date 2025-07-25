@@ -2,7 +2,7 @@
 
 using json = nlohmann::json;
 
-JSON_Handler::JSON_Handler(std::vector<Time_Account>& all_accounts){
+void JSON_Handler::read_all_accounts(std::vector<Time_Account>& all_accounts){
 
     read_config_file();
     
@@ -62,6 +62,69 @@ std::string JSON_Handler::getConfigFilePath() {
     #else
         return baseDir + "/config.json";
     #endif
+}
+
+
+std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
+
+	std::ifstream file(automation_config_filepath);
+	if(!file.is_open()){
+		throw std::runtime_error{"##Couldn't Open Automation Config"};
+	}
+
+	std::vector<Automation_Config> all_automations;
+	
+	json config_json;
+	file >> config_json;
+
+	std::string connection = config_json.value("connection", "undefined");
+	
+	//config durchlaufen
+	for(const auto& config : config_json["config"]){
+		std::string interval = config.value("interval", "0");
+		std::string logFile = config.value("log_file", "false");
+
+		all_automations.push_back(Automation_Config{
+			connection
+			, config.value("entity", "")
+			, config.value("alias", "")
+			, stoi(interval)
+			, config.value("einheit", "")
+			, (logFile=="true" ? false : true )
+		});
+	}
+
+	return all_automations;
+}
+
+void JSON_Handler::save_automation_config_file(const std::vector<std::string>& automation_config){
+
+	if(automation_config.size() < 6){
+		throw std::runtime_error{"##Automation_Config Error"};
+	}
+	
+	json config;
+	config["connection"] = automation_config[0];
+	
+	//configs
+	config["config"] = {
+		{
+			{"entity", automation_config[1]},
+			{"alias", automation_config[2]},
+			{"interval", automation_config[3]},
+			{"einheit", automation_config[4]},
+			{"log_file", automation_config[5]}
+		}
+	};
+	
+    std::ofstream config_file(automation_config_filepath);
+    if(config_file.is_open()){
+        config_file << config.dump(4);
+        config_file.close();
+        std::cout << "##Config_File saved" << std::endl;
+    }else{
+        throw std::runtime_error{"##Cant open Config_File!"};
+    }
 }
 
 void JSON_Handler::save_config_file(std::map<std::string, std::string>& save_to_config){

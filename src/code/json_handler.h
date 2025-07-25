@@ -23,8 +23,8 @@
 class JSON_Handler{
 public:
 
-	JSON_Handler(std::vector<Time_Account>& all_accounts);
-
+	void read_all_accounts(std::vector<Time_Account>& all_accounts);
+	
 	std::string get_config_filepath() const;
 
 	std::string get_entity_filepath() const;
@@ -53,6 +53,9 @@ public:
 
 	void read_json_accounts(std::vector<Time_Account>& all_accounts);
 
+	void save_automation_config_file(const std::vector<std::string>& automation_config);
+	std::vector<Automation_Config> read_automation_config_file();
+	
 private:
 	std::string config_filepath{"../config.json"};
 	
@@ -65,7 +68,8 @@ private:
 	
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
-
+	std::string automation_config_filepath{"../files/automation_config.json"};
+	
 	Language config_language = Language::english;
 };
 
