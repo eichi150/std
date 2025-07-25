@@ -6,7 +6,9 @@
 - [ ] Datenexport vor dem Löschen anbieten
 - [ ] JSON_Handler Error Strings per throw
 - [ ] `<alias> -r "Ingredients "` Rezepte eintragen können. Einzeln nach Zutaten fragen und als ein string speichern. (evtl. Strukturaufteilung und Kategorien einführen?)
-- [ ] automation_config.json filepath in Installation einbinden. Filepath wird aktuell nur der default genutzt. Funktioniert vorerst auch
+- [ ] mehrere Automationen ermöglichen. 
+- [ ] Crontab Tasks nicht doppelt anlegen
+
 ---
 
 ## ?? Bugs
