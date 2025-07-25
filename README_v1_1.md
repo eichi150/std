@@ -51,15 +51,15 @@ std/
 
 ---
 
-## 🧩 Neue Tools
+# 🧩 Neue Tools
 
-🤖 std - Environment
+## 🤖 std - Environment
 
-🌱 Pflanzenpflege-Tagebuch
+## 🌱 Pflanzenpflege-Tagebuch
 
-🤖 Sensor Connection
+## 🤖 Sensor Connection
 
-🧠 Automatische Sensorabfrage (Crontab)
+## 🧠 Automatische Sensorabfrage (Crontab)
 
 ---
 
@@ -170,6 +170,7 @@ std CH -mes
 # 🧠 Automatische Sensorabfrage (Crontab)
 
 ### Alias zu Crontab hinzufügen und std konfigurieren
+
 ```bash
 std <alias> -activate -mes <time_config>
 
@@ -178,6 +179,7 @@ std <alias> -activate -mes <time_config>
 ```
 
 ###Testaufruf der automatisierung:
+
 ```bash
 std -auto CH -mes
 ```
