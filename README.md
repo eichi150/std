@@ -29,10 +29,10 @@ std/
 ├── win_32/                 # Windows 32bit Version
 ├── win_64/                 # Windows 64bit Version
 ├── src/code/               # C++ Sourcecode
-│   ├── bme280/             # Sensor-Treiber
+│   └── bme280/             # Sensor-Treiber
 ├── README.md               # Diese Datei
 ├── Makefile
-├── LICENSE
+└── LICENSE
 ```
 
 ---
@@ -50,12 +50,12 @@ chmod +x install.sh
 
 ### Windows 32/64-bit
 
-1. Kopiere `std_win<..>.exe` & `std.bat` nach `std/bin/`
-2. Führe Initialkonfiguration aus:
-```bash
-std_win<..>.exe -cf C:/std/config.json C:/std/files/ C:/std/files/accounts.json
-```
-3. Füge `C:\std\bin` zur PATH-Umgebungsvariable hinzu.
+1. Führe `install.bat` aus dem jeweiligen Ordner (`win_32/` oder `win_64/`) aus.
+   Dadurch werden:
+   - Die benötigten Dateien (`std_win<..>.exe`, `std.bat`) nach `C:/std/bin/` kopiert.
+   - Die Konfigurationsstruktur (`config.json`, `files/`, `accounts.json`) erstellt.
+   
+2. Setze den Ordner `C:\std\bin` **manuell** in die PATH-Umgebungsvariable, um `std` global verfügbar zu machen.
 
 ---
 
