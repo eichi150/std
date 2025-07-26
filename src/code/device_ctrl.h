@@ -26,6 +26,21 @@ enum class weekday{
 	, saturday
 };
 
+enum class months{
+	january = 1
+	, february
+	, march
+	, april
+	, may
+	, june
+	, july
+	, august
+	, september
+	, october
+	, november
+	, december
+};
+
 class Device_Ctrl{
 public:
 	Device_Ctrl(const std::string& error_prompt);
@@ -36,7 +51,7 @@ public:
 	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile);
 
 	
-	void get_user_crontag_line(const std::vector<std::string>& str_argv);
+	std::string get_user_crontag_line(const std::vector<std::string>& str_argv);
 	
 	std::vector<float> check_device();
 		

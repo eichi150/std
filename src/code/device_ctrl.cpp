@@ -96,8 +96,7 @@ void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, cons
 }
 
 
-
-void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv){
+std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv){
 
 	std::vector<std::string> crontab = {
 		{
@@ -109,7 +108,6 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 		}
 	};
 	
-	int num;
 	bool with_logfile = false;
 
 	std::map<weekday, std::string> str_weekday = {
@@ -122,20 +120,39 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 		, {weekday::saturday, "saturday"}
 	};
 
+	std::map<months, std::string> str_months = {
+		  {months::january, "january"}
+		, {months::february, "february"}
+		, {months::march, "march"}
+		, {months::april, "april"}
+		, {months::may, "may"}
+		, {months::june, "june"}
+		, {months::july, "july"}
+		, {months::august, "august"}
+		, {months::september, "september"}
+		, {months::october, "october"}
+		, {months::november, "november"}
+		, {months::december, "december"}
+	};
+	
 	std::regex integer_pattern{R"(^\d+$)"};
 
 	bool found_command = false;
 	
 	for(size_t i{1}; i < str_argv.size(); ++i){
 
+		if(std::regex_match(str_argv[i], integer_pattern)){
+			continue;
+		}
+		
 		std::string parameter = str_argv[i - 1];
 		
 		//Logfile aktivieren/ deaktivieren
 		if(str_argv[i] == "-log"){
 			with_logfile = true;
+			continue;
 		}
 
-		
 		//alle X minuten
 		if(str_argv[i] == "-m"){
 			
@@ -145,6 +162,7 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 			
 			crontab[0].append("/" + check_that_between_A_B(parameter, 0, 59, "Minutes"));
 			found_command = true;
+			continue;
 		}
 
 		//alle X stunden
@@ -156,8 +174,8 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 				crontab[0] = "0";
 				continue;
 			}
-			crontab[0] =  check_that_between_A_B(parameter, 0, 23, "Hours");
-			
+			crontab[1].append("/" + check_that_between_A_B(parameter, 0, 23, "Hours"));
+			continue;
 		}
 
 		//zur X uhrzeit
@@ -179,16 +197,21 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 			if( !std::regex_match(hours, integer_pattern) 
 				|| !std::regex_match(minutes, integer_pattern) )
 			{
-				continue;
+				throw std::runtime_error{"Number for time value required"};
 			}
 			
-			crontab[0] = minutes;
-			crontab[1] = hours;
+			if(hours.size() > 2 || minutes.size() > 2){
+				throw std::runtime_error{"Number to big for HH::MM format"};
+			}
+			
+			crontab[0] = check_that_between_A_B(minutes, 0, 59, "Clock Minutes");
+			crontab[1] = check_that_between_A_B(hours, 0, 23, "Clock Hours");
 			
 			found_command = true;
+			continue;
 		}
 
-		//alle X monate
+		//am X.ten Tag im monat
 		if(str_argv[i] == "-month"){
 		
 			if(!std::regex_match(parameter, integer_pattern)){
@@ -196,11 +219,35 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 			}
 			
 			found_command = true;
-			crontab[3] = check_that_between_A_B(parameter, 1, 12, "Months");
+			crontab[2] = check_that_between_A_B(parameter, 1, 31, "Tag im Monat");
+			continue;
 		}
 
+				
+		//alle X monate
+		for(size_t m{0}; m < str_months.size(); ++m){
+
+			std::string pattern = str_months[static_cast<months>(m)];
+			pattern = "\\b(" + pattern + ")\\b";	
+			std::regex month_pattern{pattern};
+			
+			if(std::regex_match(str_argv[i], month_pattern)){
+				for(const auto& key : str_months){
+					if(key.second == str_months[static_cast<months>(m)]){
+						int int_month = static_cast<int>(key.first);
+						crontab[3] = std::to_string(int_month);
+						found_command = true;
+
+						break;
+					}
+				}
+				break;
+			}
+		}
+				
+
 		//alle X wochentage
-		for(int day{0}; day < str_weekday.size(); ++day){
+		for(size_t day{0}; day < str_weekday.size(); ++day){
 
 			std::string pattern = str_weekday[static_cast<weekday>(day)];
 			pattern = "\\b(" + pattern + ")\\b";	
@@ -229,7 +276,11 @@ void Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv
 	for(const auto& c : crontab){
 		crontab_line.append(c + ' ');
 	}
+	crontab_line.pop_back();
+	
 	std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
+	
+	return crontab_line;
 }
 
 std::string Device_Ctrl::check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt){

@@ -9,7 +9,6 @@ set(SOURCES
 	time_account.cpp
 	json_handler.cpp
 	translator.cpp
-	device_ctrl.cpp
 	arg_manager.cpp
 	main.cpp
 )
@@ -19,6 +18,7 @@ if(UNIX AND NOT APPLE)
 	list(APPEND SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280_sensor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280.c
+		${CMAKE_CURRENT_SOURCE_DIR}/device_ctrl.cpp
 	)
 endif()
 
