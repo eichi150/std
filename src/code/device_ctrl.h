@@ -54,7 +54,8 @@ public:
 	std::string get_user_crontag_line(const std::vector<std::string>& str_argv);
 	
 	std::vector<float> check_device();
-		
+
+	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
 private:
 	Clock clock{};
 	BME_Sensor sensor{};

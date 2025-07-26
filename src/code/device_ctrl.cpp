@@ -169,11 +169,12 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 		if(str_argv[i] == "-h"){
 		
 		 	found_command = true;
+		 	crontab[0] = "0";
 		 	
 			if(!std::regex_match(parameter, integer_pattern)){
-				crontab[0] = "0";
 				continue;
 			}
+			
 			crontab[1].append("/" + check_that_between_A_B(parameter, 0, 23, "Hours"));
 			continue;
 		}
@@ -212,7 +213,7 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 		}
 
 		//am X.ten Tag im monat
-		if(str_argv[i] == "-month"){
+		if(str_argv[i] == "-day"){
 		
 			if(!std::regex_match(parameter, integer_pattern)){
 				continue;
@@ -281,6 +282,13 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 	std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
 	
 	return crontab_line;
+}
+
+std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& crontab_line){
+	std::string result;
+	// 0 */1 * * *
+	// Every @1 hour @0 minutes 
+	return result;
 }
 
 std::string Device_Ctrl::check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt){

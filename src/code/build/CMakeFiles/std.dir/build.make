@@ -125,24 +125,10 @@ CMakeFiles/std.dir/translator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/std.dir/translator.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/eichi/Dev/Projekte/std/src/code/translator.cpp -o CMakeFiles/std.dir/translator.cpp.s
 
-CMakeFiles/std.dir/device_ctrl.cpp.o: CMakeFiles/std.dir/flags.make
-CMakeFiles/std.dir/device_ctrl.cpp.o: /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp
-CMakeFiles/std.dir/device_ctrl.cpp.o: CMakeFiles/std.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/std.dir/device_ctrl.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/std.dir/device_ctrl.cpp.o -MF CMakeFiles/std.dir/device_ctrl.cpp.o.d -o CMakeFiles/std.dir/device_ctrl.cpp.o -c /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp
-
-CMakeFiles/std.dir/device_ctrl.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/std.dir/device_ctrl.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp > CMakeFiles/std.dir/device_ctrl.cpp.i
-
-CMakeFiles/std.dir/device_ctrl.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/std.dir/device_ctrl.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp -o CMakeFiles/std.dir/device_ctrl.cpp.s
-
 CMakeFiles/std.dir/arg_manager.cpp.o: CMakeFiles/std.dir/flags.make
 CMakeFiles/std.dir/arg_manager.cpp.o: /home/eichi/Dev/Projekte/std/src/code/arg_manager.cpp
 CMakeFiles/std.dir/arg_manager.cpp.o: CMakeFiles/std.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/std.dir/arg_manager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/std.dir/arg_manager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/std.dir/arg_manager.cpp.o -MF CMakeFiles/std.dir/arg_manager.cpp.o.d -o CMakeFiles/std.dir/arg_manager.cpp.o -c /home/eichi/Dev/Projekte/std/src/code/arg_manager.cpp
 
 CMakeFiles/std.dir/arg_manager.cpp.i: cmake_force
@@ -156,7 +142,7 @@ CMakeFiles/std.dir/arg_manager.cpp.s: cmake_force
 CMakeFiles/std.dir/main.cpp.o: CMakeFiles/std.dir/flags.make
 CMakeFiles/std.dir/main.cpp.o: /home/eichi/Dev/Projekte/std/src/code/main.cpp
 CMakeFiles/std.dir/main.cpp.o: CMakeFiles/std.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/std.dir/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/std.dir/main.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/std.dir/main.cpp.o -MF CMakeFiles/std.dir/main.cpp.o.d -o CMakeFiles/std.dir/main.cpp.o -c /home/eichi/Dev/Projekte/std/src/code/main.cpp
 
 CMakeFiles/std.dir/main.cpp.i: cmake_force
@@ -170,7 +156,7 @@ CMakeFiles/std.dir/main.cpp.s: cmake_force
 CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o: CMakeFiles/std.dir/flags.make
 CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o: /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.cpp
 CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o: CMakeFiles/std.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o -MF CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o.d -o CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o -c /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.cpp
 
 CMakeFiles/std.dir/bme280/bme280_sensor.cpp.i: cmake_force
@@ -184,7 +170,7 @@ CMakeFiles/std.dir/bme280/bme280_sensor.cpp.s: cmake_force
 CMakeFiles/std.dir/bme280/bme280.c.o: CMakeFiles/std.dir/flags.make
 CMakeFiles/std.dir/bme280/bme280.c.o: /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.c
 CMakeFiles/std.dir/bme280/bme280.c.o: CMakeFiles/std.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/std.dir/bme280/bme280.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/std.dir/bme280/bme280.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/std.dir/bme280/bme280.c.o -MF CMakeFiles/std.dir/bme280/bme280.c.o.d -o CMakeFiles/std.dir/bme280/bme280.c.o -c /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.c
 
 CMakeFiles/std.dir/bme280/bme280.c.i: cmake_force
@@ -195,17 +181,31 @@ CMakeFiles/std.dir/bme280/bme280.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/std.dir/bme280/bme280.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.c -o CMakeFiles/std.dir/bme280/bme280.c.s
 
+CMakeFiles/std.dir/device_ctrl.cpp.o: CMakeFiles/std.dir/flags.make
+CMakeFiles/std.dir/device_ctrl.cpp.o: /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp
+CMakeFiles/std.dir/device_ctrl.cpp.o: CMakeFiles/std.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/std.dir/device_ctrl.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/std.dir/device_ctrl.cpp.o -MF CMakeFiles/std.dir/device_ctrl.cpp.o.d -o CMakeFiles/std.dir/device_ctrl.cpp.o -c /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp
+
+CMakeFiles/std.dir/device_ctrl.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/std.dir/device_ctrl.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp > CMakeFiles/std.dir/device_ctrl.cpp.i
+
+CMakeFiles/std.dir/device_ctrl.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/std.dir/device_ctrl.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp -o CMakeFiles/std.dir/device_ctrl.cpp.s
+
 # Object files for target std
 std_OBJECTS = \
 "CMakeFiles/std.dir/enum_class.cpp.o" \
 "CMakeFiles/std.dir/time_account.cpp.o" \
 "CMakeFiles/std.dir/json_handler.cpp.o" \
 "CMakeFiles/std.dir/translator.cpp.o" \
-"CMakeFiles/std.dir/device_ctrl.cpp.o" \
 "CMakeFiles/std.dir/arg_manager.cpp.o" \
 "CMakeFiles/std.dir/main.cpp.o" \
 "CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o" \
-"CMakeFiles/std.dir/bme280/bme280.c.o"
+"CMakeFiles/std.dir/bme280/bme280.c.o" \
+"CMakeFiles/std.dir/device_ctrl.cpp.o"
 
 # External object files for target std
 std_EXTERNAL_OBJECTS =
@@ -214,11 +214,11 @@ std_EXTERNAL_OBJECTS =
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/time_account.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/json_handler.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/translator.cpp.o
-/home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/device_ctrl.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/arg_manager.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/main.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/bme280/bme280.c.o
+/home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/device_ctrl.cpp.o
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/build.make
 /home/eichi/Dev/Projekte/std/src/code/linux/std: CMakeFiles/std.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable /home/eichi/Dev/Projekte/std/src/code/linux/std"
