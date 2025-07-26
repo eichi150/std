@@ -153,7 +153,7 @@ public:
 		
 		return lines;
 	}
-
+	//split string an leerzeichen
 	std::vector<std::string> split_line(const std::string& line){
 		std::vector<std::string> result;
 		std::regex re{R"([\s]+)"};
@@ -168,6 +168,7 @@ public:
 
 		return result;
 	}
+	
 	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar){
 		for(const auto& line : crontabLines){
 			if(line.find(targetLine) != std::string::npos){
@@ -175,6 +176,7 @@ public:
 				if(targetChar.empty()){
 					return true;
 				}
+				//TargetChar in line vorhanden??
 				std::vector<std::string> splitted_line;
 				splitted_line = split_line(line);
 
