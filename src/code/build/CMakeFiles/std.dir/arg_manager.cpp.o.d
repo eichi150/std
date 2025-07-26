@@ -282,6 +282,7 @@ CMakeFiles/std.dir/arg_manager.cpp.o: \
  /home/eichi/Dev/Projekte/std/src/code/time_account.h \
  /home/eichi/Dev/Projekte/std/src/code/translator.h \
  /home/eichi/Dev/Projekte/std/src/code/clock.h \
+ /home/eichi/Dev/Projekte/std/src/code/device_ctrl.h \
  /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.h \
  /usr/include/linux/i2c-dev.h /usr/include/linux/types.h \
  /usr/lib/linux/uapi/arm64/asm/types.h /usr/include/asm-generic/types.h \

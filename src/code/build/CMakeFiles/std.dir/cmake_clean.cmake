@@ -7,6 +7,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/std.dir/bme280/bme280.c.o.d"
   "CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o"
   "CMakeFiles/std.dir/bme280/bme280_sensor.cpp.o.d"
+  "CMakeFiles/std.dir/device_ctrl.cpp.o"
+  "CMakeFiles/std.dir/device_ctrl.cpp.o.d"
   "CMakeFiles/std.dir/enum_class.cpp.o"
   "CMakeFiles/std.dir/enum_class.cpp.o.d"
   "CMakeFiles/std.dir/json_handler.cpp.o"

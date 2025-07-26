@@ -240,6 +240,30 @@ bme280/bme280_sensor.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/bme280/bme280_sensor.cpp.s
 .PHONY : bme280/bme280_sensor.cpp.s
 
+device_ctrl.o: device_ctrl.cpp.o
+.PHONY : device_ctrl.o
+
+# target to build an object file
+device_ctrl.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/device_ctrl.cpp.o
+.PHONY : device_ctrl.cpp.o
+
+device_ctrl.i: device_ctrl.cpp.i
+.PHONY : device_ctrl.i
+
+# target to preprocess a source file
+device_ctrl.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/device_ctrl.cpp.i
+.PHONY : device_ctrl.cpp.i
+
+device_ctrl.s: device_ctrl.cpp.s
+.PHONY : device_ctrl.s
+
+# target to generate assembly for a file
+device_ctrl.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/std.dir/build.make CMakeFiles/std.dir/device_ctrl.cpp.s
+.PHONY : device_ctrl.cpp.s
+
 enum_class.o: enum_class.cpp.o
 .PHONY : enum_class.o
 
@@ -381,6 +405,9 @@ help:
 	@echo "... bme280/bme280_sensor.o"
 	@echo "... bme280/bme280_sensor.i"
 	@echo "... bme280/bme280_sensor.s"
+	@echo "... device_ctrl.o"
+	@echo "... device_ctrl.i"
+	@echo "... device_ctrl.s"
 	@echo "... enum_class.o"
 	@echo "... enum_class.i"
 	@echo "... enum_class.s"

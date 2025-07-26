@@ -9,6 +9,7 @@ set(SOURCES
 	time_account.cpp
 	json_handler.cpp
 	translator.cpp
+	device_ctrl.cpp
 	arg_manager.cpp
 	main.cpp
 )

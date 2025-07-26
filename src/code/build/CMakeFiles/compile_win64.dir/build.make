@@ -68,7 +68,7 @@ include CMakeFiles/compile_win64.dir/progress.make
 
 CMakeFiles/compile_win64:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building Windows 64-bit binary"
-	cd /home/eichi/Dev/Projekte/std/src/code && x86_64-w64-mingw32-g++ -std=c++17 -static -O2 -o /home/eichi/Dev/Projekte/std/src/code/win_64/std_win64.exe enum_class.cpp time_account.cpp json_handler.cpp translator.cpp arg_manager.cpp main.cpp /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.cpp /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.c
+	cd /home/eichi/Dev/Projekte/std/src/code && x86_64-w64-mingw32-g++ -std=c++17 -static -O2 -o /home/eichi/Dev/Projekte/std/src/code/win_64/std_win64.exe enum_class.cpp time_account.cpp json_handler.cpp translator.cpp device_ctrl.cpp arg_manager.cpp main.cpp /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.cpp /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.c
 
 compile_win64: CMakeFiles/compile_win64
 compile_win64: CMakeFiles/compile_win64.dir/build.make
