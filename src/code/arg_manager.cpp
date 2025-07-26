@@ -263,14 +263,18 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        			){
        			
        	#ifdef __linux__		
-       	
+
+       				Device_Ctrl device{str_error.at(error::sensor)};
+
+					device.get_user_crontag_line(str_argv);
+       				
+    				device.write_Crontab(jsonH, str_argv[1], true);
+     				       				
        				std::vector<std::string> automation_config = {
        					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
        				};
        				jsonH->save_automation_config_file(automation_config);
        				
-       				Device_Ctrl device{str_error.at(error::sensor)};
-       				device.write_Crontab(jsonH, str_argv[1], true);
 		#else
 			std::cout << "Not available in this Version" << std::endl;
 		#endif // __linux__
@@ -296,6 +300,8 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				
 				throw std::runtime_error{str_error.at(error::synthax)};
         	};
+
+        
         default:
             {
                 throw std::runtime_error{str_error.at(error::untitled_error)};

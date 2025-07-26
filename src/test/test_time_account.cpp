@@ -22,8 +22,7 @@ TEST_CASE("Set and get hours"){
 	Time_Account acc{"dev", "test"};
 
 	acc.set_hours(5.5f);
-	CHECK(acc.get_hours() == doctest::Approx(5.5f))
-	;
+	CHECK(acc.get_hours() == doctest::Approx(5.5f));
 }
 
 TEST_CASE("Add entry updates hours and entry list"){

@@ -55,18 +55,30 @@ std::vector<std::string> split_input(const std::string& input) {
 
 
 int main(int argc, char* argv[]){
-
+	
 	//Argumente entgegen nehmen und in vector<string> speichern
 	std::vector<std::string> str_argv;
 	for(int i{0}; i < argc; ++i){
+
 		std::string arg = argv[i];
-		str_argv.push_back(arg);
+		auto it = split_input(arg);
+		if(!it.empty()){
+			for(const auto& split : it){
+				str_argv.push_back(split);
+			}
+		}
 	}
 	argv = {};
-	if(static_cast<size_t>(argc) != str_argv.size()){
+	
+	/*for(const auto& str : str_argv){
+		std::cout << str << '\n';
+	}
+	std::cout << argc << std::endl;*/
+	
+	/*if(static_cast<size_t>(argc) != str_argv.size()){
 		std::cout << "!!Argument Error" << std::endl;
 		return 1;
-	}
+	}*/
 	
 	if(argc > 1){
 		try{

@@ -140,6 +140,79 @@ void BME_Sensor::user_delay_us(uint32_t period_us, void *intf_ptr) {
 #endif // __linux__
 
 
+// -------- /home/eichi/Dev/Projekte/std/src/code/clock.h ---------
+#ifndef CLOCK_H
+#define CLOCK_H
+
+#include <ctime>
+
+class Clock{
+public:
+	std::tm get_time(){
+		std::time_t now = std::time(nullptr);
+		std::tm localTime = *std::localtime(&now);
+
+		return localTime;
+	}
+};
+
+#endif // CLOCK_H
+
+// -------- /home/eichi/Dev/Projekte/std/src/code/enum_class.h ---------
+#ifndef ENUM_CLASS_H
+#define ENUM_CLASS_H
+
+enum class error{
+	  ok = 0
+	, unknown
+	, not_found
+	, synthax
+	, untitled_error
+	, double_entity
+	, double_alias
+	, unknown_alias
+	, unknown_alias_or_entity
+	, alias_equal_entity
+	, user_input_is_command
+	, unknown_language
+	, sensor
+	, tag_not_found
+};
+
+enum class command{
+	  help = 0
+	, add
+	, delete_
+	, show
+	, hours
+	, minutes 
+	, config_filepath
+	, user_filepath
+	, language
+	, tag
+	, touch_sensor
+	, messure_sensor
+	, activate
+	, i2c
+	, automatic
+	, environment
+};
+
+
+enum class Language{
+	  english = 0
+	, german 
+};
+
+enum class Tag{
+	  none = 0
+	, plant
+};
+
+
+#endif //ENUM_CLASS_H
+
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/time_account.h ---------
 #ifndef TIME_ACCOUNT_H
 #define TIME_ACCOUNT_H
@@ -679,79 +752,6 @@ void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
 }
 
 
-// -------- /home/eichi/Dev/Projekte/std/src/code/clock.h ---------
-#ifndef CLOCK_H
-#define CLOCK_H
-
-#include <ctime>
-
-class Clock{
-public:
-	std::tm get_time(){
-		std::time_t now = std::time(nullptr);
-		std::tm localTime = *std::localtime(&now);
-
-		return localTime;
-	}
-};
-
-#endif // CLOCK_H
-
-// -------- /home/eichi/Dev/Projekte/std/src/code/enum_class.h ---------
-#ifndef ENUM_CLASS_H
-#define ENUM_CLASS_H
-
-enum class error{
-	  ok = 0
-	, unknown
-	, not_found
-	, synthax
-	, untitled_error
-	, double_entity
-	, double_alias
-	, unknown_alias
-	, unknown_alias_or_entity
-	, alias_equal_entity
-	, user_input_is_command
-	, unknown_language
-	, sensor
-	, tag_not_found
-};
-
-enum class command{
-	  help = 0
-	, add
-	, delete_
-	, show
-	, hours
-	, minutes 
-	, config_filepath
-	, user_filepath
-	, language
-	, tag
-	, touch_sensor
-	, messure_sensor
-	, activate
-	, i2c
-	, automatic
-	, environment
-};
-
-
-enum class Language{
-	  english = 0
-	, german 
-};
-
-enum class Tag{
-	  none = 0
-	, plant
-};
-
-
-#endif //ENUM_CLASS_H
-
-
 // -------- /home/eichi/Dev/Projekte/std/src/code/translator.h ---------
 #ifndef TRANSLATOR_H
 #define TRANSLATOR_H
@@ -879,7 +879,10 @@ std::string Translator::get_str_language(){
 #include <cstdlib>
 #include <fstream>
 
+
 #ifdef __linux__
+	#include <stdexcept>
+	#include <cstdio>
 #endif
 
 class Cmd_Ctrl{
@@ -966,9 +969,9 @@ public:
 			throw std::runtime_error{"§§ No Sensor Output"};
 		}
 		std::stringstream ss;
-		ss << "Temp: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-			<< "Druck: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-			<< "Feuchte: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
+		ss << "Temperature: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+			<< "Pressure: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+			<< "Humidity: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
 			
 		std::tm localTime = clock.get_time();
 		
@@ -999,6 +1002,61 @@ public:
 		return output_sensor;
 	}
 
+	std::vector<std::string> get_current_Crontab(){
+
+		std::vector<std::string> lines;
+		std::string cmd = "crontab -l 2>/dev/null";
+		std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+
+		if(!pipe){
+			throw std::runtime_error{"popen() failed"};
+		}
+
+		char buffer[128];
+		while(fgets(buffer, sizeof(buffer), pipe.get()) != nullptr){
+			lines.push_back(std::string(buffer));
+		}
+		
+		return lines;
+	}
+	//split string an leerzeichen
+	std::vector<std::string> split_line(const std::string& line){
+		std::vector<std::string> result;
+		std::regex re{R"([\s]+)"};
+		std::sregex_token_iterator it(line.begin(), line.end(), re, -1);
+		std::sregex_token_iterator end;
+
+		for(; it != end; ++it){
+			if(!it->str().empty()){
+				result.push_back(it->str());
+			}
+		}
+
+		return result;
+	}
+	
+	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar){
+		for(const auto& line : crontabLines){
+			if(line.find(targetLine) != std::string::npos){
+				// TargetLine = CrontabLine => True
+				if(targetChar.empty()){
+					return true;
+				}
+				//TargetChar in line vorhanden??
+				std::vector<std::string> splitted_line;
+				splitted_line = split_line(line);
+
+				for(const auto& splitted : splitted_line){
+					if(splitted == targetChar){
+						std::cout << splitted << " bereits vorhanden" << std::endl;
+						return true;
+					}
+				}
+				
+			}
+		}
+		return false;
+	}
 	
 	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile){
 		
@@ -1011,6 +1069,14 @@ public:
 		//alte Crontab sichern
 		system("crontab -l > /tmp/mycron");
 
+
+		std::vector<std::string> current_Crontab = get_current_Crontab();
+		
+		if(crontab_contains(current_Crontab, cronLine, alias)){
+			std::cout << "Crontab existiert bereits. Kein neuer Eintrag erforderlich." << std::endl; 
+			return;
+		}
+		
 		//neue Zeile anhängen
 		std::ofstream out("/tmp/mycron", std::ios::app);
 		out << cronLine;
@@ -1035,7 +1101,6 @@ private:
 	std::string error_prompt;
 	std::vector<Automation_Config> all_automations;
 	std::vector<Time_Account> all_accounts;
-
 	
 };
 #endif // __linux__
