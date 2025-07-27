@@ -15,9 +15,8 @@ struct Automation_Config{
 	std::string connection;
 	std::string entity;
 	std::string alias;
-	int interval;
-	std::string einheit;
-	bool logfile;
+	std::string crontab_command;
+	std::string logfile;
 };
 
 class Time_Account{

@@ -54,7 +54,7 @@ public:
 
 	void read_json_accounts(std::vector<Time_Account>& all_accounts);
 
-	void save_automation_config_file(const std::vector<std::string>& automation_config);
+	void save_automation_config_file(const std::vector<Automation_Config>& automation_config);
 	std::vector<Automation_Config> read_automation_config_file();
 	
 private:
@@ -70,7 +70,7 @@ private:
 	
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
-	std::string automation_config_filepath{"../automation_config.json"};
+	std::string automation_config_filepath{"../files/automation_config.json"};
 	
 	Language config_language = Language::english;
 };

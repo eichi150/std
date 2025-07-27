@@ -70,16 +70,6 @@ int main(int argc, char* argv[]){
 	}
 	argv = {};
 	
-	/*for(const auto& str : str_argv){
-		std::cout << str << '\n';
-	}
-	std::cout << argc << std::endl;*/
-	
-	/*if(static_cast<size_t>(argc) != str_argv.size()){
-		std::cout << "!!Argument Error" << std::endl;
-		return 1;
-	}*/
-	
 	if(argc > 1){
 		try{
 			Cmd_Ctrl ctrl{};

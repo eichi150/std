@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <map>
 #include <memory>
 #include <regex>
 #include <cstdlib>
@@ -46,16 +47,11 @@ public:
 	Device_Ctrl(const std::string& error_prompt);
 	
 	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias);
-
 	
-	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
-
-	
-	std::string get_user_crontag_line(const std::vector<std::string>& str_argv);
+	void set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH);
 	
 	std::vector<float> check_device();
-
-	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
+	
 private:
 	Clock clock{};
 	BME_Sensor sensor{};
@@ -90,6 +86,11 @@ private:
 	
 	std::regex integer_pattern{R"(^\d+$)"};
 	
+	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv);
+
+	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
+
+	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
 	
 	std::string check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt);
 

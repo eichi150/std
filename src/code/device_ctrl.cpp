@@ -3,6 +3,36 @@
 
 Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
 
+void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH){
+	
+	//Verarbeite User Arguments
+	std::pair<std::string, bool> crontab_line;
+	crontab_line = get_user_crontag_line(str_argv);
+	
+	//write Command into Crontab
+	write_Crontab(jsonH, crontab_line.first, str_argv[1], crontab_line.second);
+	
+	//in Automation_Config File speichern
+	std::vector<Automation_Config> automation_config;
+    try{
+        automation_config = jsonH->read_automation_config_file();
+    }catch(const std::runtime_error& re){
+		std::cerr << re.what() << std::endl;
+	}
+	automation_config.push_back(
+       	Automation_Config{
+       		  "i2c"
+       		, str_argv[0], str_argv[1]
+       		, crontab_line.first
+       		,(crontab_line.second ? "true" : "false")
+       	}
+     );
+       				
+    jsonH->save_automation_config_file(automation_config);
+	
+	//Print
+	std::cout << '\n' << "Time to execute: " << convert_crontabLine_to_speeking_str(crontab_line.first) << std::endl;
+}
 
 void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
 
@@ -10,7 +40,18 @@ void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH,
 	all_automations = jsonH->read_automation_config_file();
 	
 	//auto Accounts erstellen
+	bool already_taken = false;
 	for(const auto& data : all_automations){
+		//Alias nur einmal hinzufügen
+		for(const auto& account : all_accounts){
+			if(account.get_alias() == alias){
+				already_taken = true;
+				break;
+			}
+		}
+		if(already_taken){
+			continue;
+		}
 		Time_Account new_account{data.entity, data.alias};
 		all_accounts.push_back(new_account);
 	}
@@ -39,7 +80,7 @@ void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH,
 			break;
 		}
 	}
-
+	
 	std::cout 
 		<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << '\n'
 		<< ss.str() << '\n' 
@@ -97,7 +138,7 @@ void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, cons
 }
 
 
-std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv){
+std::pair<std::string, bool> Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv){
 
 	std::vector<std::string> crontab = {
 		{
@@ -255,7 +296,7 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 	
 	//std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
 	
-	return crontab_line;
+	return {crontab_line, with_logfile};
 }
 
 std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& crontab_line){
@@ -267,44 +308,66 @@ std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& 
 	
 	std::vector<std::string> splitted_crontab = split_line(crontab_line, std::regex{R"([\s]+)"});
 
+	
 	for(size_t i{0}; i < splitted_crontab.size(); ++i){
 
 		if(splitted_crontab[i] == "*"){
 			continue;
 		}
-
+		
+		bool every_x = false;
+		
 		if(std::regex_match(splitted_crontab[i], integer_pattern)){
 			result.append("@ ");
 		}else{
-			
-			for(const auto& c : splitted_crontab[i]){
-			
-				if(c == '/'){
 
-					splitted_crontab[i] = splitted_crontab[i].back();
-					
+			std::string temp;
+			bool found = false;
+			for(const auto& c : splitted_crontab[i]){
+				if(found){
+					temp += c;
+				}
+				if(c == '/'){
+					found = true;
 					result.append("Every ");
-					break;
+					if(i == 0 || i == 1){
+						every_x = true;
+					}
 				}
 			}
+			splitted_crontab[i] = temp;
+								
 		}
-		
-		result.append(splitted_crontab[i]);
-		
-		if(i == 0){
-			result.append(" minutes ");			
+		//Uhrzeit //hours : minutes
+		if(i == 1 && !every_x){
+			result = {};	
+			result.append(splitted_crontab[1] + ":" + splitted_crontab[0] + " ");
+
+		//Every or at X minutes
+		}else if(i == 0){
+			result.append(splitted_crontab[i]);
+			result.append(" minutes ");	
 		}
-		if(i == 1){
-			result.append(" hour ");			
+		//Every X hours
+		else if(i == 1){
+			result.append(splitted_crontab[i]);
+			result.append(" hours ");
 		}
+
+		//Every or at X day of month
 		if(i == 2){
+			result.append(splitted_crontab[i]);
 			result.append(" day of month ");			
 		}
+		//Every or at X months
 		if(i == 3){
+			result.append(splitted_crontab[i]);
 			result.append(" month ");			
 		}
+		//Every or at X weekday
 		if(i == 4){
-		
+			result.append(splitted_crontab[i]);
+			
 			int int_day;
 			try{
 				int_day = std::stoi(result.substr(result.size() -1));

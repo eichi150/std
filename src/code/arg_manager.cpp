@@ -256,26 +256,24 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 }
 
 				//Automation konfigurieren
-				//<alias> -a -mes <time_config>
+				//<alias> -a -mes "time_config"
        			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor)) )
        			{
        			
        	#ifdef __linux__		
-
+            
       				Device_Ctrl device{str_error.at(error::sensor)};
-
-					std::string crontab_line = device.get_user_crontag_line(str_argv);
-
-       				std::cout << device.convert_crontabLine_to_speeking_str(crontab_line) << std::endl;
-
-
-    				device.write_Crontab(jsonH, crontab_line, str_argv[1], true);
-     				       				
-       				std::vector<std::string> automation_config = {
-       					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
-       				};
-       				jsonH->save_automation_config_file(automation_config);
+                    
+                    //an den beginn von str_argv die entity speichern -> für automation_config file
+     				for(const auto& account : all_accounts){
+     					if(account.get_alias() == str_argv[1]){
+                            str_argv[0] = account.get_entity();
+     						break;
+     					}
+     				}
+                    
+					device.set_user_automation_crontab(str_argv, jsonH);
        				
 		#else
 			std::cout << "Only available for Linux" << std::endl;
