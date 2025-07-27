@@ -231,9 +231,8 @@ struct Automation_Config{
 	std::string connection;
 	std::string entity;
 	std::string alias;
-	int interval;
-	std::string einheit;
-	bool logfile;
+	std::string crontab_command;
+	std::string logfile;
 };
 
 class Time_Account{
@@ -358,7 +357,7 @@ public:
 
 	void read_json_accounts(std::vector<Time_Account>& all_accounts);
 
-	void save_automation_config_file(const std::vector<std::string>& automation_config);
+	void save_automation_config_file(const std::vector<Automation_Config>& automation_config);
 	std::vector<Automation_Config> read_automation_config_file();
 	
 private:
@@ -374,7 +373,7 @@ private:
 	
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
-	std::string automation_config_filepath{"../automation_config.json"};
+	std::string automation_config_filepath{"../files/automation_config.json"};
 	
 	Language config_language = Language::english;
 };
@@ -385,6 +384,7 @@ private:
 // -------- /home/eichi/Dev/Projekte/std/src/code/json_handler.cpp ---------
 
 using json = nlohmann::json;
+
 
 void JSON_Handler::read_all_accounts(std::vector<Time_Account>& all_accounts){
 
@@ -450,9 +450,8 @@ std::string JSON_Handler::getConfigFilePath() {
 
 
 std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
-
 	read_config_file();
-	
+
 	std::ifstream file(automation_config_filepath);
 	if(!file.is_open()){
 		throw std::runtime_error{"##Couldn't Open Automation Config"};
@@ -463,55 +462,68 @@ std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
 	json config_json;
 	file >> config_json;
 
-	std::string connection = config_json.value("connection", "undefined");
-	
-	//config durchlaufen
-	for(const auto& config : config_json["config"]){
-		std::string interval = config.value("interval", "0");
-		std::string logFile = config.value("log_file", "false");
+	if (!config_json.is_array()) {
+		throw std::runtime_error{"##Invalid JSON format: expected array at root"};
+	}
 
-		all_automations.push_back(Automation_Config{
-			connection
-			, config.value("entity", "")
-			, config.value("alias", "")
-			, stoi(interval)
-			, config.value("einheit", "")
-			, (logFile=="true" ? false : true )
-		});
+	for (const auto& con : config_json) {
+		std::string connection = con.value("connection", "undefined");
+
+		if (!con.contains("config") || !con["config"].is_array())
+			continue;
+
+		for (const auto& cfg : con["config"]) {
+			all_automations.push_back(Automation_Config{
+				connection,
+				cfg.value("entity", ""),
+				cfg.value("alias", ""),
+				cfg.value("crontab_command", "* * * * *"),
+				cfg.value("log_file", "")
+			});
+		}
 	}
 
 	return all_automations;
 }
 
-void JSON_Handler::save_automation_config_file(const std::vector<std::string>& automation_config){
 
-	if(automation_config.size() < 6){
+void JSON_Handler::save_automation_config_file(const std::vector<Automation_Config>& automation_config){
+	if(automation_config.empty()){
 		throw std::runtime_error{"##Automation_Config Error"};
 	}
+
+	json eintrag = json::array();
+	std::map<std::string, json> grouped_configs;
+
+	// Gruppieren nach "connection"
+	for (const auto& auto_config : automation_config) {
+		json cfg = {
+			{"entity", auto_config.entity},
+			{"alias", auto_config.alias},
+			{"crontab_command", auto_config.crontab_command},
+			{"log_file", auto_config.logfile}
+		};
+
+		grouped_configs[auto_config.connection]["connection"] = auto_config.connection;
+		grouped_configs[auto_config.connection]["config"].push_back(cfg);
+	}
+
+	// In Array umwandeln
+	for (const auto& [_, group] : grouped_configs) {
+		eintrag.push_back(group);
+	}
+
 	
-	json config;
-	config["connection"] = automation_config[0];
-	
-	//configs
-	config["config"] = {
-		{
-			{"entity", automation_config[1]},
-			{"alias", automation_config[2]},
-			{"interval", automation_config[3]},
-			{"einheit", automation_config[4]},
-			{"log_file", automation_config[5]}
-		}
-	};
-	
-    std::ofstream config_file(automation_config_filepath);
-    if(config_file.is_open()){
-        config_file << config.dump(4);
-        config_file.close();
-        std::cout << "##Automation Config File saved" << std::endl;
-    }else{
-        throw std::runtime_error{"##Cant open Config_File!"};
-    }
+	std::ofstream config_file(automation_config_filepath);
+	if(config_file.is_open()){
+		config_file << eintrag.dump(4);
+		config_file.close();
+		std::cout << "##Automation Config File saved" << std::endl;
+	} else {
+		throw std::runtime_error{"##Cant open Automation_config_File!"};
+	}
 }
+
 
 void JSON_Handler::save_config_file(std::map<std::string, std::string>& save_to_config){
     json config;
@@ -867,6 +879,575 @@ std::string Translator::get_str_language(){
 }
 
 
+// -------- /home/eichi/Dev/Projekte/std/src/code/device_ctrl.h ---------
+#ifdef __linux__
+#ifndef DEVICE_CTRL_H
+#define DEVICE_CTRL_H
+
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <map>
+#include <memory>
+#include <regex>
+#include <cstdlib>
+#include <fstream>
+#include <stdexcept>
+#include <cstdio>
+
+enum class weekday{
+	sunday = 0
+	, monday
+	, tuesday
+	, wednesday
+	, thursday
+	, friday
+	, saturday
+};
+
+enum class months{
+	january = 1
+	, february
+	, march
+	, april
+	, may
+	, june
+	, july
+	, august
+	, september
+	, october
+	, november
+	, december
+};
+
+class Device_Ctrl{
+public:
+	Device_Ctrl(const std::string& error_prompt);
+	
+	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias);
+	
+	void set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH);
+	
+	std::vector<float> check_device();
+	
+private:
+	Clock clock{};
+	BME_Sensor sensor{};
+	std::string error_prompt;
+	std::vector<Automation_Config> all_automations;
+	std::vector<Time_Account> all_accounts;
+
+	std::map<weekday, std::string> str_weekday = {
+		  {weekday::sunday, "sunday"}
+		, {weekday::monday, "monday"}
+		, {weekday::tuesday, "tuesday"}
+		, {weekday::wednesday, "wednesday"}
+		, {weekday::thursday, "thursday"}
+		, {weekday::friday, "friday"}
+		, {weekday::saturday, "saturday"}
+	};
+
+	std::map<months, std::string> str_months = {
+		  {months::january, "january"}
+		, {months::february, "february"}
+		, {months::march, "march"}
+		, {months::april, "april"}
+		, {months::may, "may"}
+		, {months::june, "june"}
+		, {months::july, "july"}
+		, {months::august, "august"}
+		, {months::september, "september"}
+		, {months::october, "october"}
+		, {months::november, "november"}
+		, {months::december, "december"}
+	};
+	
+	std::regex integer_pattern{R"(^\d+$)"};
+	
+	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv);
+
+	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
+
+	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
+	
+	std::string check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt);
+
+		
+	std::vector<std::string> get_current_Crontab();
+	
+	//split string an leerzeichen
+	std::vector<std::string> split_line(const std::string& line,const std::regex& re);
+	
+	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar);
+};
+
+#endif // DEVICE_CTRL_H
+#endif // __linux__
+
+
+// -------- /home/eichi/Dev/Projekte/std/src/code/device_ctrl.cpp ---------
+#ifdef __linux__
+
+Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
+
+void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH){
+	
+	//Verarbeite User Arguments
+	std::pair<std::string, bool> crontab_line;
+	crontab_line = get_user_crontag_line(str_argv);
+	
+	//write Command into Crontab
+	write_Crontab(jsonH, crontab_line.first, str_argv[1], crontab_line.second);
+	
+	//in Automation_Config File speichern
+	std::vector<Automation_Config> automation_config;
+    try{
+        automation_config = jsonH->read_automation_config_file();
+    }catch(const std::runtime_error& re){
+		std::cerr << re.what() << std::endl;
+	}
+	automation_config.push_back(
+       	Automation_Config{
+       		  "i2c"
+       		, str_argv[0], str_argv[1]
+       		, crontab_line.first
+       		,(crontab_line.second ? "true" : "false")
+       	}
+     );
+       				
+    jsonH->save_automation_config_file(automation_config);
+	
+	//Print
+	std::cout << '\n' << "Time to execute: " << convert_crontabLine_to_speeking_str(crontab_line.first) << std::endl;
+}
+
+void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
+
+	//auto Accounts lesen
+	all_automations = jsonH->read_automation_config_file();
+	
+	//auto Accounts erstellen
+	bool already_taken = false;
+	for(const auto& data : all_automations){
+		//Alias nur einmal hinzufügen
+		for(const auto& account : all_accounts){
+			if(account.get_alias() == alias){
+				already_taken = true;
+				break;
+			}
+		}
+		if(already_taken){
+			continue;
+		}
+		Time_Account new_account{data.entity, data.alias};
+		all_accounts.push_back(new_account);
+	}
+	
+	//auto Accounts <entity>.json lesen
+	jsonH->read_json_entity(all_accounts);
+
+	//Sensor Werte abfragen
+	std::vector<float> output_sensor = check_device();
+	if(output_sensor.empty()){
+		throw std::runtime_error{"§§ No Sensor Output"};
+	}
+	std::stringstream ss;
+	ss << "Temperature: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+		<< "Pressure: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+		<< "Humidity: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
+		
+	std::tm localTime = clock.get_time();
+	
+	//auto Accounts speichern
+	for(auto& account : all_accounts){
+		if(account.get_alias() == alias){
+			Entry entry{0.f, ss.str(), localTime};
+			account.add_entry(entry);
+			jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+			break;
+		}
+	}
+	
+	std::cout 
+		<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << '\n'
+		<< ss.str() << '\n' 
+		<< std::endl;
+}
+
+std::vector<float> Device_Ctrl::check_device(){
+	
+	std::vector<float> output_sensor;
+	
+	if(sensor.scan_sensor(output_sensor) == 1){
+		throw std::runtime_error{error_prompt};
+	}
+
+	return output_sensor;
+}
+
+
+void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile){
+	
+	std::string exe_filepath = jsonH->getExecutableDir() + "/";
+	std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
+	
+	std::string cronLine = command + " " + exe_filepath + "std -auto " + alias + " -mes";
+	std::string logLine = " >> " + exe_filepath + "std.log 2>&1";
+
+	//alte Crontab sichern
+	system("crontab -l > /tmp/mycron");
+
+
+	std::vector<std::string> current_Crontab = get_current_Crontab();
+	
+	if(crontab_contains(current_Crontab, cronLine, alias)){
+		std::cout << cronLine << '\n' 
+			 << "Crontab existiert bereits. Kein neuer Eintrag erforderlich." << std::endl; 
+		return;
+	}
+	
+	//neue Zeile anhängen
+	std::ofstream out("/tmp/mycron", std::ios::app);
+	out << cronLine;
+	if(logfile){
+		out << logLine;
+	}
+	out << '\n';
+	out.close();
+
+	//Neue Crontab setzen
+	system("crontab /tmp/mycron");
+
+	//aufräumen
+	system("rm /tmp/mycron");
+
+	std::cout << "Crontab written" << std::endl;
+}
+
+
+std::pair<std::string, bool> Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv){
+
+	std::vector<std::string> crontab = {
+		{
+		  "*" //minutes
+		, "*" //hours
+		, "*" //day of month
+		, "*" //month
+		, "*" //day of week
+		}
+	};
+	
+	bool with_logfile = false;
+
+	bool found_command = false;
+	
+	for(size_t i{1}; i < str_argv.size(); ++i){
+
+		if(std::regex_match(str_argv[i], integer_pattern)){
+			continue;
+		}
+		
+		std::string parameter = str_argv[i - 1];
+		
+		//Logfile aktivieren/ deaktivieren
+		if(str_argv[i] == "-log"){
+			with_logfile = true;
+			continue;
+		}
+
+		//alle X minuten
+		if(str_argv[i] == "-m"){
+			
+			if(!std::regex_match(parameter, integer_pattern)){
+				throw std::runtime_error{"Number for Minutes required"};			
+			}
+			
+			crontab[0].append("/" + check_that_between_A_B(parameter, 0, 59, "Minutes"));
+			found_command = true;
+			continue;
+		}
+
+		//alle X stunden
+		if(str_argv[i] == "-h"){
+		
+		 	found_command = true;
+		 	crontab[0] = "0";
+		 	
+			if(!std::regex_match(parameter, integer_pattern)){
+				continue;
+			}
+			
+			crontab[1].append("/" + check_that_between_A_B(parameter, 0, 23, "Hours"));
+			continue;
+		}
+
+		//zur X uhrzeit
+		if(str_argv[i] == "-clock"){
+			
+			std::vector<std::string> splitted_line = split_line(parameter, std::regex{R"([:])"});
+
+			std::string hours;
+			std::string minutes;
+			
+			if(splitted_line.size() == 1){
+				hours = splitted_line[0];
+				minutes = "0";
+			}
+			if(splitted_line.size() == 2){
+				hours = splitted_line[0];
+				minutes = splitted_line[1];
+			}
+			if( !std::regex_match(hours, integer_pattern) 
+				|| !std::regex_match(minutes, integer_pattern) )
+			{
+				throw std::runtime_error{"Number for time value required"};
+			}
+			
+			if(hours.size() > 2 || minutes.size() > 2){
+				throw std::runtime_error{"Number to big for HH::MM format"};
+			}
+			
+			crontab[0] = check_that_between_A_B(minutes, 0, 59, "Clock Minutes");
+			crontab[1] = check_that_between_A_B(hours, 0, 23, "Clock Hours");
+			
+			found_command = true;
+			continue;
+		}
+
+		//am X.ten Tag im monat
+		if(str_argv[i] == "-day"){
+		
+			if(!std::regex_match(parameter, integer_pattern)){
+				continue;
+			}
+			
+			found_command = true;
+			crontab[2] = check_that_between_A_B(parameter, 1, 31, "Tag im Monat");
+			continue;
+		}
+
+				
+		//alle X monate
+		for(size_t m{0}; m < str_months.size(); ++m){
+
+			std::string pattern = str_months[static_cast<months>(m)];
+			pattern = "\\b(" + pattern + ")\\b";	
+			std::regex month_pattern{pattern};
+			
+			if(std::regex_match(str_argv[i], month_pattern)){
+				for(const auto& key : str_months){
+					if(key.second == str_months[static_cast<months>(m)]){
+						int int_month = static_cast<int>(key.first);
+						crontab[3] = std::to_string(int_month);
+						found_command = true;
+
+						break;
+					}
+				}
+				break;
+			}
+		}
+				
+
+		//alle X wochentage
+		for(size_t day{0}; day < str_weekday.size(); ++day){
+
+			std::string pattern = str_weekday[static_cast<weekday>(day)];
+			pattern = "\\b(" + pattern + ")\\b";	
+			std::regex day_pattern{pattern};
+			
+			if(std::regex_match(str_argv[i], day_pattern)){
+				for(const auto& key : str_weekday){
+					if(key.second == str_weekday[static_cast<weekday>(day)]){
+						int int_weekday = static_cast<int>(key.first);
+						crontab[4] = std::to_string(int_weekday);
+						found_command = true;
+
+						break;
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	if(!found_command){
+		throw std::runtime_error{"Syntax Error"};
+	}
+	
+	std::string crontab_line;
+	for(const auto& c : crontab){
+		crontab_line.append(c + ' ');
+	}
+	crontab_line.pop_back();
+	
+	//std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
+	
+	return {crontab_line, with_logfile};
+}
+
+std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& crontab_line){
+	std::string result;
+	// 0 */1 * * *
+	// Every @1 hour @0 minutes 
+
+	std::regex integer_pattern{R"(^\d+$)"};
+	
+	std::vector<std::string> splitted_crontab = split_line(crontab_line, std::regex{R"([\s]+)"});
+
+	
+	for(size_t i{0}; i < splitted_crontab.size(); ++i){
+
+		if(splitted_crontab[i] == "*"){
+			continue;
+		}
+		
+		bool every_x = false;
+		
+		if(std::regex_match(splitted_crontab[i], integer_pattern)){
+			result.append("@ ");
+		}else{
+
+			std::string temp;
+			bool found = false;
+			for(const auto& c : splitted_crontab[i]){
+				if(found){
+					temp += c;
+				}
+				if(c == '/'){
+					found = true;
+					result.append("Every ");
+					if(i == 0 || i == 1){
+						every_x = true;
+					}
+				}
+			}
+			splitted_crontab[i] = temp;
+								
+		}
+		//Uhrzeit //hours : minutes
+		if(i == 1 && !every_x){
+			result = {};	
+			result.append(splitted_crontab[1] + ":" + splitted_crontab[0] + " ");
+
+		//Every or at X minutes
+		}else if(i == 0){
+			result.append(splitted_crontab[i]);
+			result.append(" minutes ");	
+		}
+		//Every X hours
+		else if(i == 1){
+			result.append(splitted_crontab[i]);
+			result.append(" hours ");
+		}
+
+		//Every or at X day of month
+		if(i == 2){
+			result.append(splitted_crontab[i]);
+			result.append(" day of month ");			
+		}
+		//Every or at X months
+		if(i == 3){
+			result.append(splitted_crontab[i]);
+			result.append(" month ");			
+		}
+		//Every or at X weekday
+		if(i == 4){
+			result.append(splitted_crontab[i]);
+			
+			int int_day;
+			try{
+				int_day = std::stoi(result.substr(result.size() -1));
+				
+				weekday day = static_cast<weekday>(int_day);
+				result.pop_back();
+				result.append(str_weekday.at(day));
+				
+			}catch(const std::runtime_error& re){
+				std::cerr << re.what();
+			}
+		}
+	}
+	
+	return result;
+}
+
+std::string Device_Ctrl::check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt){
+	int num;
+	
+	try{
+		num = stoi(str);
+		
+	}catch(const std::runtime_error& re){
+		throw std::runtime_error{error_prompt + " isnt a number"};
+	}
+	
+	if(num < A || num > B){
+		throw std::runtime_error{error_prompt + " allowed between " + std::to_string(A) + " - " + std::to_string(B)};
+	}
+	return std::to_string(num);
+}
+
+	
+std::vector<std::string> Device_Ctrl::get_current_Crontab(){
+
+	std::vector<std::string> lines;
+	std::string cmd = "crontab -l 2>/dev/null";
+	std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+
+	if(!pipe){
+		throw std::runtime_error{"popen() failed"};
+	}
+
+	char buffer[128];
+	while(fgets(buffer, sizeof(buffer), pipe.get()) != nullptr){
+		lines.push_back(std::string(buffer));
+	}
+	
+	return lines;
+}
+
+//split string an leerzeichen
+std::vector<std::string> Device_Ctrl::split_line(const std::string& line,const std::regex& re){
+	std::vector<std::string> result;
+	//std::regex re{R"([\s]+)"};
+	std::sregex_token_iterator it(line.begin(), line.end(), re, -1);
+	std::sregex_token_iterator end;
+
+	for(; it != end; ++it){
+		if(!it->str().empty()){
+			result.push_back(it->str());
+		}
+	}
+
+	return result;
+}
+
+bool Device_Ctrl::crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar){
+	for(const auto& line : crontabLines){
+		if(line.find(targetLine) != std::string::npos){
+			// TargetLine = CrontabLine => True
+			if(targetChar.empty()){
+				return true;
+			}
+			//TargetChar in line vorhanden??
+			std::vector<std::string> splitted_line = split_line(line, std::regex{R"([\s]+)"});
+
+			for(const auto& splitted : splitted_line){
+				if(splitted == targetChar){
+					std::cout << splitted << " bereits vorhanden" << std::endl;
+					return true;
+				}
+			}
+			
+		}
+	}
+	return false;
+}
+
+#endif // __linux__
+
+
 // -------- /home/eichi/Dev/Projekte/std/src/code/arg_manager.h ---------
 #ifndef ARG_MANAGER_H
 #define ARG_MANAGER_H
@@ -881,8 +1462,6 @@ std::string Translator::get_str_language(){
 
 
 #ifdef __linux__
-	#include <stdexcept>
-	#include <cstdio>
 #endif
 
 class Cmd_Ctrl{
@@ -944,166 +1523,6 @@ private:
 	
 };
 
-#ifdef __linux__
-class Device_Ctrl{
-public:
-	Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
-	
-	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
-	
-		//auto Accounts lesen
-		all_automations = jsonH->read_automation_config_file();
-		
-		//auto Accounts erstellen
-		for(const auto& data : all_automations){
-			Time_Account new_account{data.entity, data.alias};
-			all_accounts.push_back(new_account);
-		}
-		
-		//auto Accounts <entity>.json lesen
-		jsonH->read_json_entity(all_accounts);
-	
-		//Sensor Werte abfragen
-		std::vector<float> output_sensor = check_device();
-		if(output_sensor.empty()){
-			throw std::runtime_error{"§§ No Sensor Output"};
-		}
-		std::stringstream ss;
-		ss << "Temperature: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-			<< "Pressure: " << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-			<< "Humidity: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
-			
-		std::tm localTime = clock.get_time();
-		
-		//auto Accounts speichern
-		for(auto& account : all_accounts){
-			if(account.get_alias() == alias){
-				Entry entry{0.f, ss.str(), localTime};
-				account.add_entry(entry);
-				jsonH->save_json_entity(all_accounts, account.get_entity(), {});
-				break;
-			}
-		}
-
-		std::cout 
-			<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << '\n'
-			<< ss.str() << '\n' 
-			<< std::endl;
-	}
-	
-	std::vector<float> check_device(){
-		
-		std::vector<float> output_sensor;
-		
-		if(sensor.scan_sensor(output_sensor) == 1){
-			throw std::runtime_error{error_prompt};
-		}
-
-		return output_sensor;
-	}
-
-	std::vector<std::string> get_current_Crontab(){
-
-		std::vector<std::string> lines;
-		std::string cmd = "crontab -l 2>/dev/null";
-		std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-
-		if(!pipe){
-			throw std::runtime_error{"popen() failed"};
-		}
-
-		char buffer[128];
-		while(fgets(buffer, sizeof(buffer), pipe.get()) != nullptr){
-			lines.push_back(std::string(buffer));
-		}
-		
-		return lines;
-	}
-	//split string an leerzeichen
-	std::vector<std::string> split_line(const std::string& line){
-		std::vector<std::string> result;
-		std::regex re{R"([\s]+)"};
-		std::sregex_token_iterator it(line.begin(), line.end(), re, -1);
-		std::sregex_token_iterator end;
-
-		for(; it != end; ++it){
-			if(!it->str().empty()){
-				result.push_back(it->str());
-			}
-		}
-
-		return result;
-	}
-	
-	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar){
-		for(const auto& line : crontabLines){
-			if(line.find(targetLine) != std::string::npos){
-				// TargetLine = CrontabLine => True
-				if(targetChar.empty()){
-					return true;
-				}
-				//TargetChar in line vorhanden??
-				std::vector<std::string> splitted_line;
-				splitted_line = split_line(line);
-
-				for(const auto& splitted : splitted_line){
-					if(splitted == targetChar){
-						std::cout << splitted << " bereits vorhanden" << std::endl;
-						return true;
-					}
-				}
-				
-			}
-		}
-		return false;
-	}
-	
-	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile){
-		
-		std::string exe_filepath = jsonH->getExecutableDir() + "/";
-		std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
-		
-		std::string cronLine = "*/15 * * * * " + exe_filepath + "std -auto " + alias + " -mes";
-		std::string logLine = " >> " + exe_filepath + "std.log 2>&1";
-
-		//alte Crontab sichern
-		system("crontab -l > /tmp/mycron");
-
-
-		std::vector<std::string> current_Crontab = get_current_Crontab();
-		
-		if(crontab_contains(current_Crontab, cronLine, alias)){
-			std::cout << "Crontab existiert bereits. Kein neuer Eintrag erforderlich." << std::endl; 
-			return;
-		}
-		
-		//neue Zeile anhängen
-		std::ofstream out("/tmp/mycron", std::ios::app);
-		out << cronLine;
-		if(logfile){
-			out << logLine;
-		}
-		out << '\n';
-		out.close();
-
-		//Neue Crontab setzen
-		system("crontab /tmp/mycron");
-
-		//aufräumen
-		system("rm /tmp/mycron");
-
-		std::cout << "Crontab written" << std::endl;
-	}
-	
-private:
-	Clock clock{};
-	BME_Sensor sensor{};
-	std::string error_prompt;
-	std::vector<Automation_Config> all_automations;
-	std::vector<Time_Account> all_accounts;
-	
-};
-#endif // __linux__
 
 class Arg_Manager{
 public:
@@ -1334,7 +1753,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				        
 				    std::cout << output_str.str() << std::endl;
 		#else
-			std::cout << "Not available in this Version" << std::endl;
+			std::cout << "Only available for Linux" << std::endl;
 			
 		#endif // __linux__
 		
@@ -1351,7 +1770,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                     add_sensor_data(all_accounts);
                     
 		#else
-			std::cout << "Not available in this Version" << std::endl;
+			std::cout << "Only available for Linux" << std::endl;
 		#endif // __linux__
 		
 					break;
@@ -1434,23 +1853,27 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 }
 
 				//Automation konfigurieren
-				//<alias> -a -mes <time_config>
+				//<alias> -a -mes "time_config"
        			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
-					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
-					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
-       			){
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor)) )
+       			{
        			
        	#ifdef __linux__		
-       	
-       				std::vector<std::string> automation_config = {
-       					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
-       				};
-       				jsonH->save_automation_config_file(automation_config);
+            
+      				Device_Ctrl device{str_error.at(error::sensor)};
+                    
+                    //an den beginn von str_argv die entity speichern -> für automation_config file
+     				for(const auto& account : all_accounts){
+     					if(account.get_alias() == str_argv[1]){
+                            str_argv[0] = account.get_entity();
+     						break;
+     					}
+     				}
+                    
+					device.set_user_automation_crontab(str_argv, jsonH);
        				
-       				Device_Ctrl device{str_error.at(error::sensor)};
-       				device.write_Crontab(jsonH, str_argv[1], true);
 		#else
-			std::cout << "Not available in this Version" << std::endl;
+			std::cout << "Only available for Linux" << std::endl;
 		#endif // __linux__
 			
        				break;
@@ -1474,6 +1897,8 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				
 				throw std::runtime_error{str_error.at(error::synthax)};
         	};
+
+        
         default:
             {
                 throw std::runtime_error{str_error.at(error::untitled_error)};
@@ -1691,6 +2116,7 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
 
 #ifdef __linux__
 void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
+
     bool found_alias = false;
     auto localTime = clock.get_time();
 	std::stringstream output_str;
@@ -1947,18 +2373,20 @@ std::vector<std::string> split_input(const std::string& input) {
 
 
 int main(int argc, char* argv[]){
-
+	
 	//Argumente entgegen nehmen und in vector<string> speichern
 	std::vector<std::string> str_argv;
 	for(int i{0}; i < argc; ++i){
+
 		std::string arg = argv[i];
-		str_argv.push_back(arg);
+		auto it = split_input(arg);
+		if(!it.empty()){
+			for(const auto& split : it){
+				str_argv.push_back(split);
+			}
+		}
 	}
 	argv = {};
-	if(static_cast<size_t>(argc) != str_argv.size()){
-		std::cout << "!!Argument Error" << std::endl;
-		return 1;
-	}
 	
 	if(argc > 1){
 		try{
