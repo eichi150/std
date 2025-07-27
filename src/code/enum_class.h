@@ -43,10 +43,7 @@ enum class Language{
 	, german 
 };
 
-enum class Tag{
-	  none = 0
-	, plant
-};
+
 
 
 #endif //ENUM_CLASS_H

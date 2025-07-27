@@ -23,10 +23,6 @@ Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::sha
         , static_cast<int>(translator.language_pack.at("comment").size() + 10)
     };
 
-    all_tags = {
-	   	  {Tag::none, "none"}
-		, {Tag::plant, "plant"}
-	};
 
 };
 
@@ -203,21 +199,9 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 //<alias> -tag plant
 				if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
                	{
-               		if(str_argv[3] == all_tags.at(Tag::none)){
-                		add_tag_to_account(all_accounts, {});
-                	}else
                		                	
-                	if(str_argv[3] == all_tags.at(Tag::plant)){
-                		add_tag_to_account(all_accounts, all_tags.at(Tag::plant));
+               		add_tag_to_account(all_accounts, str_argv[3]);
                 		
-                	}else{
-                		std::stringstream ss;
-	                    ss << "\nPossible Tag:\n";
-	                    for(const auto& str : all_tags){
-	                        ss << " > " << str.second << '\n';
-	                    }
-	                   	throw std::runtime_error{str_error.at(error::tag_not_found) + ss.str()};
-                	}
                 	break;
                 }
                 
@@ -256,7 +240,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                     
                     //an den beginn von str_argv die entity speichern -> für automation_config file
      				for(const auto& account : all_accounts){
-     					if(account.get_alias() == str_argv[1]){
+     					if( account.get_alias() == str_argv[1] ){
                             str_argv[0] = account.get_entity();
      						break;
      					}
@@ -279,11 +263,10 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        		 	//Neuen Account mit tag hinzufügen
                 //std add <entity> <alias> -tag plant
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::add))
-                	&& std::regex_match(str_argv[4], regex_pattern.at(command::tag)) 
-                	&& str_argv[5] == all_tags.at(Tag::plant))
+                	&& std::regex_match(str_argv[4], regex_pattern.at(command::tag)) )
                	{
                 
-                    add_account(all_accounts, all_tags.at(Tag::plant));
+                    add_account(all_accounts, str_argv[5]);
                     break;
                 }	
 				

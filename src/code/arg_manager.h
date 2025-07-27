@@ -98,7 +98,6 @@ private:
 	std::vector<int> max_length;
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
-	std::map<Tag, std::string> all_tags;
 	
 	const std::string help = {
     "add 			Add new Entity give it a Alias\n"
