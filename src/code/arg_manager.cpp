@@ -34,17 +34,6 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
 	this->str_argv = argv;
 	this->argc = argc;
-	
-    /*if(start_environment){
-    	str_argv.push_back("std");
-    	argc = 1;
-    	
-    	//grab new argument INPUTS
-    	if(input == "exit"){
-    		start_environment = false;
-    		return;
-    	}	
-    }*/
     
     switch(argc){
     

@@ -88,7 +88,7 @@ private:
 	
 	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv);
 
-	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
+	bool write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
 
 	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
 	
@@ -100,7 +100,7 @@ private:
 	//split string an leerzeichen
 	std::vector<std::string> split_line(const std::string& line,const std::regex& re);
 	
-	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar);
+	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::vector<std::string>& searched_targets);
 };
 
 #endif // DEVICE_CTRL_H

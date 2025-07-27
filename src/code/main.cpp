@@ -70,6 +70,10 @@ int main(int argc, char* argv[]){
 	}
 	argv = {};
 	
+	/*for(const auto& str : str_argv){
+		std::cout << argc << " "  << str << std::endl;
+	}*/
+	
 	if(argc > 1){
 		try{
 			Cmd_Ctrl ctrl{};
@@ -79,9 +83,11 @@ int main(int argc, char* argv[]){
 				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
 
 		#ifdef __linux__
+
 				//Vorher Automation ausführen
 				auto regex_pattern = ctrl.get_regex_pattern();
-				if(std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
+				if(	str_argv.size() >= 4 
+					&& std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
 				){
 					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
@@ -89,8 +95,8 @@ int main(int argc, char* argv[]){
 					
 					return 0;
 				}
-		#endif //__linux__
 
+		#endif //__linux__
 			
 				//Init Argument Manager
 				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl)};

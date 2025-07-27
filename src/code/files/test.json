@@ -1,0 +1,17 @@
+{
+    "alias": [
+        {
+            "alias": "t",
+            "entries": [
+                {
+                    "description": "Temperature: 21.62 °C || Pressure: 1000.32 hPa || Humidity: 64.94 %",
+                    "hours": 0.0,
+                    "timepoint": "2025-07-27 23:00:01"
+                }
+            ],
+            "tag": "",
+            "total_hours": 0.0
+        }
+    ],
+    "entity": "test"
+}

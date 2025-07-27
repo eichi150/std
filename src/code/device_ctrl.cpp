@@ -10,15 +10,20 @@ void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& st
 	crontab_line = get_user_crontag_line(str_argv);
 	
 	//write Command into Crontab
-	write_Crontab(jsonH, crontab_line.first, str_argv[1], crontab_line.second);
+	if( !write_Crontab(jsonH, crontab_line.first, str_argv[1], crontab_line.second) ){
+		throw std::runtime_error{"Crontab existiert bereits. Kein neuer Eintrag erforderlich."};
+	};
 	
 	//in Automation_Config File speichern
 	std::vector<Automation_Config> automation_config;
+	
     try{
         automation_config = jsonH->read_automation_config_file();
+        
     }catch(const std::runtime_error& re){
 		std::cerr << re.what() << std::endl;
 	}
+	
 	automation_config.push_back(
        	Automation_Config{
        		  "i2c"
@@ -31,7 +36,7 @@ void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& st
     jsonH->save_automation_config_file(automation_config);
 	
 	//Print
-	std::cout << '\n' << "Time to execute: " << convert_crontabLine_to_speeking_str(crontab_line.first) << std::endl;
+	std::cout << '\n' << "Time to execute: " << convert_crontabLine_to_speeking_str(crontab_line.first) << (crontab_line.second ? "with Logfile\n" : "\n");
 }
 
 void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
@@ -98,44 +103,6 @@ std::vector<float> Device_Ctrl::check_device(){
 	return output_sensor;
 }
 
-
-void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile){
-	
-	std::string exe_filepath = jsonH->getExecutableDir() + "/";
-	std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
-	
-	std::string cronLine = command + " " + exe_filepath + "std -auto " + alias + " -mes";
-	std::string logLine = " >> " + exe_filepath + "std.log 2>&1";
-
-	//alte Crontab sichern
-	system("crontab -l > /tmp/mycron");
-
-
-	std::vector<std::string> current_Crontab = get_current_Crontab();
-	
-	if(crontab_contains(current_Crontab, cronLine, alias)){
-		std::cout << cronLine << '\n' 
-			 << "Crontab existiert bereits. Kein neuer Eintrag erforderlich." << std::endl; 
-		return;
-	}
-	
-	//neue Zeile anhängen
-	std::ofstream out("/tmp/mycron", std::ios::app);
-	out << cronLine;
-	if(logfile){
-		out << logLine;
-	}
-	out << '\n';
-	out.close();
-
-	//Neue Crontab setzen
-	system("crontab /tmp/mycron");
-
-	//aufräumen
-	system("rm /tmp/mycron");
-
-	std::cout << "Crontab written" << std::endl;
-}
 
 
 std::pair<std::string, bool> Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& str_argv){
@@ -294,15 +261,13 @@ std::pair<std::string, bool> Device_Ctrl::get_user_crontag_line(const std::vecto
 	}
 	crontab_line.pop_back();
 	
-	//std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
-	
 	return {crontab_line, with_logfile};
 }
 
 std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& crontab_line){
 	std::string result;
 	// 0 */1 * * *
-	// Every @1 hour @0 minutes 
+	// Every 1 hour @0 minutes 
 
 	std::regex integer_pattern{R"(^\d+$)"};
 	
@@ -341,7 +306,7 @@ std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& 
 		//Uhrzeit //hours : minutes
 		if(i == 1 && !every_x){
 			result = {};	
-			result.append(splitted_crontab[1] + ":" + splitted_crontab[0] + " ");
+			result.append(splitted_crontab[1] + ":" + splitted_crontab[0] + " o'clock");
 
 		//Every or at X minutes
 		}else if(i == 0){
@@ -436,23 +401,68 @@ std::vector<std::string> Device_Ctrl::split_line(const std::string& line,const s
 	return result;
 }
 
-bool Device_Ctrl::crontab_contains(const std::vector<std::string>& crontabLines, const std::string& targetLine, const std::string& targetChar){
+bool Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile){
+	
+	std::string exe_filepath = jsonH->getExecutableDir() + "/";
+	std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
+	
+	std::string cronLine = command + " " + exe_filepath + "std -auto " + alias + " -mes";
+	std::string logLine = " >> " + exe_filepath + alias +  "_std.log 2>&1";
+	
+	//alte Crontab sichern
+	system("crontab -l > /tmp/mycron");
+
+	std::vector<std::string> current_Crontab = get_current_Crontab();
+
+	if(crontab_contains(current_Crontab, {cronLine, alias}) ){
+		return false;
+	}
+	if(logfile){
+		cronLine.append(logLine);
+	}
+	//neue Zeile anhängen
+	std::ofstream out("/tmp/mycron", std::ios::app);
+	out << cronLine;
+	out << '\n';
+	out.close();
+
+	//Neue Crontab setzen
+	system("crontab /tmp/mycron");
+
+	//aufräumen
+	system("rm /tmp/mycron");
+
+	std::cout << "Crontab written" << std::endl;
+	return true;
+}
+
+bool Device_Ctrl::crontab_contains(const std::vector<std::string>& crontabLines, const std::vector<std::string>& searched_targets){
+
 	for(const auto& line : crontabLines){
-		if(line.find(targetLine) != std::string::npos){
-			// TargetLine = CrontabLine => True
-			if(targetChar.empty()){
+		if(line.empty() || line.size() < 8){
+			continue;
+		}
+		if(searched_targets.size() >= 1){
+		
+			//targetLine in crontab?
+			if(line.find(searched_targets[0]) != std::string::npos){
+			
+				//TargetChar in line vorhanden??
+				std::vector<std::string> splitted_line = split_line(line, std::regex{R"([\s]+)"});
+				
+				if(searched_targets.size() >= 2){
+					for(const auto& splitted : splitted_line){
+
+						//alias vergleich
+						if(splitted == searched_targets[1]){
+							std::cout << splitted << " bereits vorhanden" << std::endl;
+							return true;
+						}
+					}
+				}
+				
 				return true;
 			}
-			//TargetChar in line vorhanden??
-			std::vector<std::string> splitted_line = split_line(line, std::regex{R"([\s]+)"});
-
-			for(const auto& splitted : splitted_line){
-				if(splitted == targetChar){
-					std::cout << splitted << " bereits vorhanden" << std::endl;
-					return true;
-				}
-			}
-			
 		}
 	}
 	return false;
