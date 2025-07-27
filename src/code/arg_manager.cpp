@@ -156,7 +156,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				        
 				    std::cout << output_str.str() << std::endl;
 		#else
-			std::cout << "Not available in this Version" << std::endl;
+			std::cout << "Only available for Linux" << std::endl;
 			
 		#endif // __linux__
 		
@@ -173,7 +173,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                     add_sensor_data(all_accounts);
                     
 		#else
-			std::cout << "Not available in this Version" << std::endl;
+			std::cout << "Only available for Linux" << std::endl;
 		#endif // __linux__
 		
 					break;
@@ -258,17 +258,19 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				//Automation konfigurieren
 				//<alias> -a -mes <time_config>
        			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
-					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
-					//&& std::regex_match(str_argv[4], regex_pattern.at(command::))
-       			){
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor)) )
+       			{
        			
        	#ifdef __linux__		
 
-       				Device_Ctrl device{str_error.at(error::sensor)};
+      				Device_Ctrl device{str_error.at(error::sensor)};
 
-					device.get_user_crontag_line(str_argv);
-       				
-    				device.write_Crontab(jsonH, str_argv[1], true);
+					std::string crontab_line = device.get_user_crontag_line(str_argv);
+
+       				std::cout << device.convert_crontabLine_to_speeking_str(crontab_line) << std::endl;
+
+
+    				device.write_Crontab(jsonH, crontab_line, str_argv[1], true);
      				       				
        				std::vector<std::string> automation_config = {
        					{"i2c", "ChocoHaze", str_argv[1], "15", "minutes", "true"}
@@ -276,7 +278,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        				jsonH->save_automation_config_file(automation_config);
        				
 		#else
-			std::cout << "Not available in this Version" << std::endl;
+			std::cout << "Only available for Linux" << std::endl;
 		#endif // __linux__
 			
        				break;
@@ -519,6 +521,7 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
 
 #ifdef __linux__
 void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
+
     bool found_alias = false;
     auto localTime = clock.get_time();
 	std::stringstream output_str;

@@ -48,7 +48,7 @@ public:
 	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias);
 
 	
-	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile);
+	void write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
 
 	
 	std::string get_user_crontag_line(const std::vector<std::string>& str_argv);
@@ -63,6 +63,33 @@ private:
 	std::vector<Automation_Config> all_automations;
 	std::vector<Time_Account> all_accounts;
 
+	std::map<weekday, std::string> str_weekday = {
+		  {weekday::sunday, "sunday"}
+		, {weekday::monday, "monday"}
+		, {weekday::tuesday, "tuesday"}
+		, {weekday::wednesday, "wednesday"}
+		, {weekday::thursday, "thursday"}
+		, {weekday::friday, "friday"}
+		, {weekday::saturday, "saturday"}
+	};
+
+	std::map<months, std::string> str_months = {
+		  {months::january, "january"}
+		, {months::february, "february"}
+		, {months::march, "march"}
+		, {months::april, "april"}
+		, {months::may, "may"}
+		, {months::june, "june"}
+		, {months::july, "july"}
+		, {months::august, "august"}
+		, {months::september, "september"}
+		, {months::october, "october"}
+		, {months::november, "november"}
+		, {months::december, "december"}
+	};
+	
+	std::regex integer_pattern{R"(^\d+$)"};
+	
 	
 	std::string check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt);
 

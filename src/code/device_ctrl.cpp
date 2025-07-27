@@ -58,12 +58,12 @@ std::vector<float> Device_Ctrl::check_device(){
 }
 
 
-void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias, bool logfile){
+void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile){
 	
 	std::string exe_filepath = jsonH->getExecutableDir() + "/";
 	std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
 	
-	std::string cronLine = "*/15 * * * * " + exe_filepath + "std -auto " + alias + " -mes";
+	std::string cronLine = command + " " + exe_filepath + "std -auto " + alias + " -mes";
 	std::string logLine = " >> " + exe_filepath + "std.log 2>&1";
 
 	//alte Crontab sichern
@@ -73,7 +73,8 @@ void Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, cons
 	std::vector<std::string> current_Crontab = get_current_Crontab();
 	
 	if(crontab_contains(current_Crontab, cronLine, alias)){
-		std::cout << "Crontab existiert bereits. Kein neuer Eintrag erforderlich." << std::endl; 
+		std::cout << cronLine << '\n' 
+			 << "Crontab existiert bereits. Kein neuer Eintrag erforderlich." << std::endl; 
 		return;
 	}
 	
@@ -110,33 +111,6 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 	
 	bool with_logfile = false;
 
-	std::map<weekday, std::string> str_weekday = {
-		  {weekday::sunday, "sunday"}
-		, {weekday::monday, "monday"}
-		, {weekday::tuesday, "tuesday"}
-		, {weekday::wednesday, "wednesday"}
-		, {weekday::thursday, "thursday"}
-		, {weekday::friday, "friday"}
-		, {weekday::saturday, "saturday"}
-	};
-
-	std::map<months, std::string> str_months = {
-		  {months::january, "january"}
-		, {months::february, "february"}
-		, {months::march, "march"}
-		, {months::april, "april"}
-		, {months::may, "may"}
-		, {months::june, "june"}
-		, {months::july, "july"}
-		, {months::august, "august"}
-		, {months::september, "september"}
-		, {months::october, "october"}
-		, {months::november, "november"}
-		, {months::december, "december"}
-	};
-	
-	std::regex integer_pattern{R"(^\d+$)"};
-
 	bool found_command = false;
 	
 	for(size_t i{1}; i < str_argv.size(); ++i){
@@ -157,7 +131,7 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 		if(str_argv[i] == "-m"){
 			
 			if(!std::regex_match(parameter, integer_pattern)){
-				continue;
+				throw std::runtime_error{"Number for Minutes required"};			
 			}
 			
 			crontab[0].append("/" + check_that_between_A_B(parameter, 0, 59, "Minutes"));
@@ -279,7 +253,7 @@ std::string Device_Ctrl::get_user_crontag_line(const std::vector<std::string>& s
 	}
 	crontab_line.pop_back();
 	
-	std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
+	//std::cout << "Result: " << crontab_line << " " << (with_logfile ? "withLog" : "noLog") << std::endl;
 	
 	return crontab_line;
 }
@@ -288,6 +262,63 @@ std::string Device_Ctrl::convert_crontabLine_to_speeking_str(const std::string& 
 	std::string result;
 	// 0 */1 * * *
 	// Every @1 hour @0 minutes 
+
+	std::regex integer_pattern{R"(^\d+$)"};
+	
+	std::vector<std::string> splitted_crontab = split_line(crontab_line, std::regex{R"([\s]+)"});
+
+	for(size_t i{0}; i < splitted_crontab.size(); ++i){
+
+		if(splitted_crontab[i] == "*"){
+			continue;
+		}
+
+		if(std::regex_match(splitted_crontab[i], integer_pattern)){
+			result.append("@ ");
+		}else{
+			
+			for(const auto& c : splitted_crontab[i]){
+			
+				if(c == '/'){
+
+					splitted_crontab[i] = splitted_crontab[i].back();
+					
+					result.append("Every ");
+					break;
+				}
+			}
+		}
+		
+		result.append(splitted_crontab[i]);
+		
+		if(i == 0){
+			result.append(" minutes ");			
+		}
+		if(i == 1){
+			result.append(" hour ");			
+		}
+		if(i == 2){
+			result.append(" day of month ");			
+		}
+		if(i == 3){
+			result.append(" month ");			
+		}
+		if(i == 4){
+		
+			int int_day;
+			try{
+				int_day = std::stoi(result.substr(result.size() -1));
+				
+				weekday day = static_cast<weekday>(int_day);
+				result.pop_back();
+				result.append(str_weekday.at(day));
+				
+			}catch(const std::runtime_error& re){
+				std::cerr << re.what();
+			}
+		}
+	}
+	
 	return result;
 }
 
