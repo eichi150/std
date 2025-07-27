@@ -157,8 +157,18 @@ std CH -mes               # Messwerte für CH speichern
 
 ### Aktivierung der Automatisierung
 ```bash
-std <alias> -activate -mes <time_config>
+std <alias> -activate -mes "time_config"
 ```
+
+| Beschreibung               | "time_config"    |
+|----------------------------|------------------|
+| => alle 15min mit Logfile  | "15 -m -log"     |
+| => jede Stunde             | "1 -h"           |
+| => jede Woche am Montag um 5 Uhr mit Logfile  | "5 -clock monday -log"     |
+| => jeden Monat am 1. Tag um 3:00 Uhr  | "3 -clock 1 -day  "      |
+| => jeden Freitag um 22:30 Uhr | "22:30 -clock friday"      |
+| => jeden 24. Dezember  | "24 -day december "    |
+
 
 > Erstellt `automation_config.json` und trägt Task in `crontab` ein.
 
