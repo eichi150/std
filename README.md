@@ -88,12 +88,12 @@ std -l english
 
 ### ➕ Neue Entität mit Alias
 ```bash
-std add <entity> <alias>
+std -add <entity> <alias>
 ```
 
 ### ❌ Alias löschen
 ```bash
-std del <alias>
+std -del <alias>
 ```
 
 ### ⏱️ Zeit eintragen (Stunden oder Minuten)
@@ -116,7 +116,7 @@ std show <entity>
 
 ### ➕ Entität mit Tag anlegen
 ```bash
-std add <entity> <alias> -tag <tag>
+std -add <entity> <alias> -tag <tag>
 ```
 
 ### 🏷️ Tag nachträglich setzen
@@ -126,7 +126,7 @@ std <alias> -tag <tag>
 
 Beispiel:
 ```bash
-std add ChocoHaze CH -tag plant
+std -add ChocoHaze CH -tag plant
 std CH -tag plant
 ```
 
@@ -196,7 +196,7 @@ std -env
 
 ### Beenden:
 ```bash
-@std> exit
+@std > exit
 ```
 
 ---
@@ -235,7 +235,8 @@ Die Nutzung erfolgt auf eigene Gefahr. Der Autor übernimmt **keine Haftung** f�
 
 ```bash
 # Täglich 8 Stunden HomeOffice eintragen
-echo "std HomeOffice 8 -h 'automatische Eintragung'" >> /var/log/std.log
+> Entity: Arbeit | Alias: HomeOffice
+std HomeOffice -a -work "8 -h 'automatischer Eintrag' -log"
 
 # Sensorwert auswerten und automatisch buchen
 some_sensor_tool | grep "ON" && std ServerWartung 30 -m "Automatisch erkannt"
