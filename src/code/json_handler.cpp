@@ -290,7 +290,7 @@ void JSON_Handler::save_json_accounts(const std::vector<Time_Account>& all_accou
     if (file.is_open()) {
         file << daten.dump(4);
         file.close();
-        std::cout << "##Debug: Accounts-Datei gespeichert." << std::endl;
+        std::cout << "Accounts-Datei gespeichert." << std::endl;
     } else {
         std::cerr << "##Fehler beim oeffnen der Datei." << std::endl;
     }

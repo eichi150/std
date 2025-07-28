@@ -1,5 +1,3 @@
-#include "control.h"
-
 #ifdef __linux__ // LINUX ONLY
 #ifndef DEVICE_CTRL_H
 #define DEVICE_CTRL_H
@@ -11,6 +9,8 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdio>
+
+#include "control.h"
 
 enum class weekday{
 	sunday = 0

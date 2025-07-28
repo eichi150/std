@@ -126,23 +126,38 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 }
                 
 
-                //i2c Sensor Messwert abfrage
-				//-touch i2c
+                //Connection abfrage
+				//-touch BME280
 				if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
 				
 		#ifdef __linux__
-		
-				    Device_Ctrl device{str_error.at(error::sensor)};
-				    std::vector<float> output_sensor = device.check_device("BME280");
-
-				    std::stringstream output_str;
 				    
-				    output_str 
-				    	<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-				   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-				    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
-				        
-				    std::cout << output_str.str() << std::endl;
+				    std::string arg = str_argv[2];
+				    auto it = ctrl->device_regex_pattern.find(arg);
+				    if(it == ctrl->device_regex_pattern.end()){
+				    	std::stringstream ss;
+                        ss << "\nPossible Connections:\n";
+                        for(const auto& name : ctrl->device_regex_pattern){
+                            ss << " > " << name.first << '\n';
+                        }
+				    	throw std::runtime_error{str_error.at(error::synthax) + ss.str()};
+				    }
+				    
+				    if(std::regex_match(str_argv[2],  ctrl->device_regex_pattern.at(arg)) ){
+
+						Device_Ctrl device{str_error.at(error::sensor)};
+					    std::vector<float> output_sensor = device.check_device(arg);
+
+					    std::stringstream output_str;
+					    
+					    output_str 
+					    	<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+					   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+					    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+					        
+					    std::cout << output_str.str() << std::endl;
+					    
+				    }
 		#else
             std::cout << "Only available for Linux" << std::endl;
 			
@@ -200,12 +215,11 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
                 //tag nachträglich hinzufügen
                 //<alias> -tag plant
-				if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
+		if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
                	{
                		                	
-               		add_tag_to_account(all_accounts, str_argv[3]);
-                		
-                	break;
+		    add_tag_to_account(all_accounts, str_argv[3]);
+		    break;
                 }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
@@ -233,32 +247,56 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
 				//Automation konfigurieren
 				//<alias> -a -mes "time_config"
-       			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
-					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor)) )
-       			{
+				bool is_true = false;
+				bool cmd_messure = std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor));
+				//-activate
+				if(std::regex_match(str_argv[2], regex_pattern.at(command::activate)) && cmd_messure){
+				
+					std::stringstream ss;
+		            ss << "\nPossible Connections:\n";
+		            for(const auto& name : ctrl->device_regex_pattern){
+		                ss << " > " << name.first << '\n';
+		            }
+					std::cout << ss.str();
+					
+				    str_argv[2] = "BME280";
+				    is_true = true;
+					    	
+				}else{
+				    std::string arg = str_argv[2];
+				    auto it = ctrl->device_regex_pattern.find(arg);
+				    if(it != ctrl->device_regex_pattern.end()){
+					//<device_name>
+						if(std::regex_match(str_argv[2], ctrl->device_regex_pattern.at(str_argv[2])) && cmd_messure){
+					    	is_true = true;
+						}
+				    }
+				}
+			    
+		#ifdef __linux__
+		    
+       			if(is_true){  
                     
-       	#ifdef __linux__		
-                    
-      				Device_Ctrl device{str_error.at(error::sensor)};
-                    
-                    //an den beginn von str_argv die entity speichern -> für automation_config file
-     				for(const auto& account : all_accounts){
-     					if( account.get_alias() == str_argv[1] ){
-                            str_argv[0] = account.get_entity();
-     						break;
-     					}
-     				}
-                    std::vector<command> commands = {
-                        command::logfile
-                        , command::minutes
-                        , command::hours
-                        , command::clock
-                        , command::day
-                    };
-                    
-                    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
-					std::cout << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
-       				
+				    Device_Ctrl device{str_error.at(error::sensor)};
+	                    
+	                    //an den beginn von str_argv die entity speichern -> für automation_config file
+				    for(const auto& account : all_accounts){
+					if( account.get_alias() == str_argv[1] ){
+					    str_argv[0] = account.get_entity();
+					    break;
+					}
+				    }
+				    std::vector<command> commands = {
+					  command::logfile
+					, command::minutes
+					, command::hours
+					, command::clock
+					, command::day
+				    };
+				
+				    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
+				    std::cout << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
+	       				
 		#else
 			std::cout << "Only available for Linux" << std::endl;
 		#endif // __linux__

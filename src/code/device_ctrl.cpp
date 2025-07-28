@@ -33,7 +33,7 @@ Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_p
 std::string Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& str_argv
 	, const std::shared_ptr<JSON_Handler>& jsonH, const std::map<command, std::regex>& regex_pattern)
 {
-	
+
 	//Verarbeite User Arguments
 	std::pair<std::string, bool> crontab_line;
 	crontab_line = get_user_crontag_line(str_argv, regex_pattern);
@@ -54,13 +54,14 @@ std::string Device_Ctrl::set_user_automation_crontab(const std::vector<std::stri
 		std::cerr << re.what() << std::endl;
 	}
 
+	
 	automation_config.push_back(
 		Automation_Config{
     		  "I2C"
-    		, str_argv[0], str_argv[1]
+    		, str_argv[0], str_argv[1] //entity alias
     		, crontab_line.first
     		,(crontab_line.second ? "true" : "false")
-    		, "BME280"
+    		, str_argv[2] //device_name
    		}
  	);
        				

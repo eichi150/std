@@ -56,7 +56,10 @@ public:
 		all_devices = {
 			{"BME280", std::make_shared<BME_Sensor>()}
 		};
-		
+		//regex_pattern für Device_name generieren
+		for(const auto& [name, _] : all_devices){
+			device_regex_pattern[name] = create_regex_outOf_string(name);	
+		}
 	};
 	
 	virtual ~Ctrl(){};
@@ -65,6 +68,12 @@ public:
 		throw std::runtime_error{"Not implemented"};
 	};
 	
+	std::regex create_regex_outOf_string(const std::string& str){
+
+		std::string pat = "\\b(" + str + "$)\\b";
+	
+		return std::regex{pat, std::regex_constants::icase};
+	}
 	
 	//split string an regex_pattern
 	virtual std::vector<std::string> split_line(const std::string& line, const std::regex& re){
@@ -97,7 +106,7 @@ public:
 		return pattern;
 	};
 	
-	
+	std::map<std::string, std::regex> device_regex_pattern;
 protected:
 	std::map<std::string, std::shared_ptr<Sensor>> all_devices;
 	
@@ -106,6 +115,7 @@ protected:
 	
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
+
 	
 	template <typename T>
 	std::shared_ptr<T> get_sensor_with_name(const std::string& name) {
