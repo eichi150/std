@@ -179,7 +179,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 			std::cout << "Only available for Linux" << std::endl;
 		#endif // __linux__
 		
-					break;
+		break;
                 }
 
              
@@ -215,11 +215,11 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
                 //tag nachträglich hinzufügen
                 //<alias> -tag plant
-		if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
+				if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
                	{
                		                	
-		    add_tag_to_account(all_accounts, str_argv[3]);
-		    break;
+				    add_tag_to_account(all_accounts, str_argv[3]);
+				    break;
                 }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
@@ -244,7 +244,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                     add_hours(all_accounts, str_argv[2]);
                     break;
                 }
-
+		
 				//Automation konfigurieren
 				//<alias> -a -mes "time_config"
 				bool is_true = false;
@@ -272,38 +272,39 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 						}
 				    }
 				}
-			    
+				
 		#ifdef __linux__
-		    
+		   
        			if(is_true){  
                     
 				    Device_Ctrl device{str_error.at(error::sensor)};
 	                    
-	                    //an den beginn von str_argv die entity speichern -> für automation_config file
+                    //an den beginn von str_argv die entity speichern -> für automation_config file
 				    for(const auto& account : all_accounts){
-					if( account.get_alias() == str_argv[1] ){
-					    str_argv[0] = account.get_entity();
-					    break;
-					}
+						if( account.get_alias() == str_argv[1] ){
+					    	str_argv[0] = account.get_entity();
+					    	break;
+						}
 				    }
 				    std::vector<command> commands = {
-					  command::logfile
-					, command::minutes
-					, command::hours
-					, command::clock
-					, command::day
+						  command::logfile
+						, command::minutes
+						, command::hours
+						, command::clock
+						, command::day
 				    };
 				
 				    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
 				    std::cout << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
 	       				
+					break;
+				}
 		#else
 			std::cout << "Only available for Linux" << std::endl;
-		#endif // __linux__
+			break;
 			
-       				break;
-       			}
-	
+		#endif // __linux__
+				
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
 
@@ -329,6 +330,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
             };
     };
 }
+
 // ============= //
 // == PRIVATE == //
 // ============= //

@@ -22,9 +22,12 @@ class Sensor{
 public:
     Sensor(){};
     virtual ~Sensor(){};
-    virtual int scan_sensor(std::vector<float>& float_data) = 0;
+    virtual int scan_sensor(std::vector<float>& float_data){
+    	throw std::runtime_error{"Not implemented"};
+    };
 };
 
+#ifdef __linux__
 class BME_Sensor : public Sensor{
 public:
     int scan_sensor(std::vector<float>& float_data) override;
@@ -39,5 +42,17 @@ private:
 
     static void user_delay_us(uint32_t period_us, void *intf_ptr);
 };
+
+
+#else
+class BME_Sensor : public Sensor{
+public:
+    int scan_sensor(std::vector<float>& float_data) override {
+    	throw std::runtime_error{"Not implemented"};
+    };
+
+
+};
+#endif // __linux__
 
 #endif // BME280_SENSOR_H
