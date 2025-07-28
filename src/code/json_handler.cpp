@@ -135,7 +135,7 @@ void JSON_Handler::save_automation_config_file(const std::vector<Automation_Conf
 	if(config_file.is_open()){
 		config_file << eintrag.dump(4);
 		config_file.close();
-		std::cout << "##Automation Config File saved" << std::endl;
+		std::cout << "Automation Config File saved" << std::endl;
 	} else {
 		throw std::runtime_error{"##Cant open Automation_config_File!"};
 	}
@@ -158,7 +158,7 @@ void JSON_Handler::save_config_file(std::map<std::string, std::string>& save_to_
         if(config_file.is_open()){
             config_file << config.dump(4);
             config_file.close();
-            std::cout << "##Config_File saved" << std::endl;
+            std::cout << "Config_File saved" << std::endl;
         }else{
             std::cout << "##Cant open Config_File!" << std::endl;
         }
@@ -221,7 +221,7 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
         return;
     }
 
-    std::cout << "##matching accounts: "<< matching_accounts.size() << std::endl;
+    std::cout << "~~matching accounts: "<< matching_accounts.size() << std::endl;
 
     // 2. Struktur aufbauen
     json eintraege;
@@ -254,7 +254,7 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
         alias_list.push_back(alias_entry);
     }
 
-    eintraege["alias"] = alias_list;  // ACHTUNG: Kein Slash in "alias"
+    eintraege["alias"] = alias_list;
 
     // 3. Datei schreiben
     std::string entity_filepath_total = entity_filepath + entity_to_save + ".json";
@@ -262,7 +262,7 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
     if (file_entry.is_open()) {
         file_entry << eintraege.dump(4);
         file_entry.close();
-        std::cout << "##Debug: Entity-Datei gespeichert unter " << entity_filepath_total << std::endl;
+        std::cout << "Saved" << entity_filepath_total << std::endl;
     } else {
         std::cerr << "##Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
     }

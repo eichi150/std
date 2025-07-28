@@ -56,7 +56,10 @@ int BME_Sensor::scan_sensor(std::vector<float>& float_data) {
         printf("Sensor Data lesen fehlgeschlagen\n");
         return 1;
     }
-
+    
+    if(comp_data.temperature == -40.f || comp_data.humidity == 0.f){
+        throw std::runtime_error{"Messfehler"};
+    }
 
     float_data.push_back(comp_data.temperature);
     float_data.push_back(comp_data.pressure / 100.0f);

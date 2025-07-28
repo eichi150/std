@@ -26,6 +26,7 @@
 #include "time_account.h"
 #include "json_handler.h"
 #include "translator.h"
+#include "cmd_ctrl.h"
 #include "arg_manager.h"
 
 // SIMPLE TIME DOCUMENTATION /* github.com/eichi150/std */
@@ -38,23 +39,23 @@ int main(int argc, char* argv[]){
 		try{
 			Cmd_Ctrl ctrl{};
 			
-			auto regex_pattern = ctrl.get_regex_pattern();
-							
 			//Argumente entgegen nehmen und Parsen
 			std::vector<std::string> str_argv = ctrl.parse_argv(argc, argv);
 			
 			if(ctrl.is_argument_valid(str_argv)){
-			
+				
+				auto regex_pattern = ctrl.get_regex_pattern();
+				
 				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
 
 		#ifdef __linux__
-		
+				
 				//Vorher Automation ausführen
 				if(	str_argv.size() >= 4 
 					&& std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
 				){
-					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
+					Device_Ctrl device{"BME280", ctrl.get_str_error().at(error::unknown)};
 					
 					std::cout << device.process_automation(jsonH, str_argv[2]) << std::endl;
 					
@@ -62,7 +63,7 @@ int main(int argc, char* argv[]){
 				}
 
 		#endif //__linux__
-			
+				
 				//Init Argument Manager
 				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl)};
 				

@@ -24,7 +24,10 @@ enum class command{
 	, delete_
 	, show
 	, hours
-	, minutes 
+	, minutes
+	, day
+	, logfile
+	, clock
 	, config_filepath
 	, user_filepath
 	, language

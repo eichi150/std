@@ -1,11 +1,13 @@
 #include "arg_manager.h"
+
 // ============= //
 // == PUBLIC ==  //
 // ============= //
 
-Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl): jsonH(jH)
+Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl_ptr): jsonH(jH)
 {
 
+    ctrl = ctrl_ptr;
 	jsonH->read_all_accounts(all_accounts);
 	
     regex_pattern = ctrl->get_regex_pattern();
@@ -22,7 +24,6 @@ Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::sha
         , 25
         , static_cast<int>(translator.language_pack.at("comment").size() + 10)
     };
-
 
 };
 
@@ -131,7 +132,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				
 		#ifdef __linux__
 		
-				    Device_Ctrl device{str_error.at(error::sensor)};
+				    Device_Ctrl device{"BME280", str_error.at(error::sensor)};
 				    std::vector<float> output_sensor = device.check_device();
 
 				    std::stringstream output_str;
@@ -143,7 +144,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				        
 				    std::cout << output_str.str() << std::endl;
 		#else
-			std::cout << "Only available for Linux" << std::endl;
+            std::cout << "Only available for Linux" << std::endl;
 			
 		#endif // __linux__
 		
@@ -156,8 +157,8 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 
         #ifdef __linux__
                 
-                    Device_Ctrl device{str_error.at(error::sensor)};
-                    std::cout << add_sensor_data(all_accounts) << std::endl;
+                    Device_Ctrl device{"BME280", str_error.at(error::sensor)};
+                    std::cout << add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) << std::endl;
                     
 		#else
 			std::cout << "Only available for Linux" << std::endl;
@@ -235,10 +236,10 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
        			if( std::regex_match(str_argv[2], regex_pattern.at(command::activate))
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor)) )
        			{
-       			
+                    
        	#ifdef __linux__		
-            
-      				Device_Ctrl device{str_error.at(error::sensor)};
+                    
+      				Device_Ctrl device{"BME280", str_error.at(error::sensor)};
                     
                     //an den beginn von str_argv die entity speichern -> für automation_config file
      				for(const auto& account : all_accounts){
@@ -247,8 +248,16 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
      						break;
      					}
      				}
+                    std::vector<command> commands = {
+                        command::logfile
+                        , command::minutes
+                        , command::hours
+                        , command::clock
+                        , command::day
+                    };
                     
-					std::cout << device.set_user_automation_crontab(str_argv, jsonH) << std::endl;
+                    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
+					std::cout << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
        				
 		#else
 			std::cout << "Only available for Linux" << std::endl;
@@ -288,7 +297,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 
 
 #ifdef __linux__
-std::string Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
+std::string Arg_Manager::add_sensor_data(const std::shared_ptr<Device_Ctrl>& device, std::vector<Time_Account>& all_accounts){
 
     bool found_alias = false;
     auto localTime = clock.get_time();
@@ -297,8 +306,7 @@ std::string Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts
     for(auto& account : all_accounts){
         if(str_argv[1] == account.get_alias() ){
 
-            Device_Ctrl device{str_error.at(error::sensor)};
-		    std::vector<float> output_sensor = device.check_device();
+		    std::vector<float> output_sensor = device->check_device();
             
             output_str 
             	<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
@@ -322,8 +330,8 @@ std::string Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts
             << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
             << translator.language_pack.at("time_saved") << '\n'
             << output_str.str()
-            << "BME Sensor Connection closed"
-            << '\n' << std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n';
+            << device->get_name() << " Connection closed\n"
+            << std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n';
     }else{
     
         throw std::runtime_error{str_error.at(error::not_found)};

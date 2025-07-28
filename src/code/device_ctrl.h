@@ -1,104 +1,48 @@
-#ifdef __linux__
+#include "control.h"
+
+#ifdef __linux__ // LINUX ONLY
 #ifndef DEVICE_CTRL_H
 #define DEVICE_CTRL_H
 
 #include <iostream>
 #include <iomanip>
-#include <vector>
-#include <map>
 #include <memory>
-#include <regex>
 #include <cstdlib>
 #include <fstream>
 #include <stdexcept>
 #include <cstdio>
-#include "bme280/bme280_sensor.h"
-#include "json_handler.h"
-#include "time_account.h"
-#include "clock.h"
 
-enum class weekday{
-	sunday = 0
-	, monday
-	, tuesday
-	, wednesday
-	, thursday
-	, friday
-	, saturday
-};
-
-enum class months{
-	january = 1
-	, february
-	, march
-	, april
-	, may
-	, june
-	, july
-	, august
-	, september
-	, october
-	, november
-	, december
-};
-
-class Device_Ctrl{
+class Device_Ctrl : public Ctrl{
 public:
-	Device_Ctrl(const std::string& error_prompt);
+	Device_Ctrl(const std::string& name, const std::string& error_prompt);
 	
 	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command);
 	
-	std::string set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH);
+	std::string set_user_automation_crontab(const std::vector<std::string>& str_argv
+		, const std::shared_ptr<JSON_Handler>& jsonH
+		, const std::map<command, std::regex>& regex_pattern);
 	
-	std::vector<float> check_device();
+	std::vector<float> check_device() override;
+	
+	std::string get_name() const {
+		return name;
+	}
 	
 private:
-	Clock clock{};
-	BME_Sensor sensor{};
+	std::string name;
 	std::string error_prompt;
 	std::vector<Automation_Config> all_automations;
 	std::vector<Time_Account> all_accounts;
-
-	std::map<weekday, std::string> str_weekday = {
-		  {weekday::sunday, "sunday"}
-		, {weekday::monday, "monday"}
-		, {weekday::tuesday, "tuesday"}
-		, {weekday::wednesday, "wednesday"}
-		, {weekday::thursday, "thursday"}
-		, {weekday::friday, "friday"}
-		, {weekday::saturday, "saturday"}
-	};
-
-	std::map<months, std::string> str_months = {
-		  {months::january, "january"}
-		, {months::february, "february"}
-		, {months::march, "march"}
-		, {months::april, "april"}
-		, {months::may, "may"}
-		, {months::june, "june"}
-		, {months::july, "july"}
-		, {months::august, "august"}
-		, {months::september, "september"}
-		, {months::october, "october"}
-		, {months::november, "november"}
-		, {months::december, "december"}
-	};
 	
-	std::regex integer_pattern{R"(^\d+$)"};
-	
-	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv);
+	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern);
 
 	bool write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command, const std::string& alias, bool logfile);
 
 	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
 	
 	std::string check_that_between_A_B(const std::string& str, int A, int B, const std::string& error_prompt);
-
 		
 	std::vector<std::string> get_current_Crontab();
-	
-	//split string an leerzeichen
-	std::vector<std::string> split_line(const std::string& line,const std::regex& re);
 	
 	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::vector<std::string>& searched_targets);
 };

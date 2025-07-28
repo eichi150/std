@@ -283,7 +283,7 @@ CMakeFiles/std.dir/arg_manager.cpp.o: \
  /home/eichi/Dev/Projekte/std/src/code/translator.h \
  /home/eichi/Dev/Projekte/std/src/code/clock.h \
  /home/eichi/Dev/Projekte/std/src/code/cmd_ctrl.h \
- /home/eichi/Dev/Projekte/std/src/code/device_ctrl.h \
+ /home/eichi/Dev/Projekte/std/src/code/control.h \
  /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_sensor.h \
  /usr/include/linux/i2c-dev.h /usr/include/linux/types.h \
  /usr/lib/linux/uapi/arm64/asm/types.h /usr/include/asm-generic/types.h \
@@ -306,4 +306,5 @@ CMakeFiles/std.dir/arg_manager.cpp.o: \
  /usr/include/linux/falloc.h /usr/include/aarch64-linux-gnu/bits/stat.h \
  /usr/include/aarch64-linux-gnu/bits/struct_stat.h \
  /home/eichi/Dev/Projekte/std/src/code/bme280/bme280.h \
- /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_defs.h
+ /home/eichi/Dev/Projekte/std/src/code/bme280/bme280_defs.h \
+ /home/eichi/Dev/Projekte/std/src/code/device_ctrl.h

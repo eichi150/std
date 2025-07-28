@@ -8,141 +8,42 @@
 #include <regex>
 #include <cstdlib>
 #include <fstream>
+#include <map>
 
 #include "json_handler.h"
 #include "translator.h"
 #include "clock.h"
+#include "cmd_ctrl.h"
+#include "enum_class.h"
 
 #ifdef __linux__
 	#include "device_ctrl.h"
 #endif
 
-class Cmd_Ctrl{
-public:
-	
-	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
-	std::vector<std::string> split_input(const std::string& input) {
-		std::vector<std::string> result;
-		std::regex re(R"([\s]+)"); // regex: trennt an Leerzeichen
-		
-		std::sregex_token_iterator it(input.begin(), input.end(), re, -1);
-		std::sregex_token_iterator end;
-
-		for (; it != end; ++it) {
-			if (!it->str().empty()) {
-				result.push_back(it->str());
-			}
-		}
-
-		return result;
-	}
-	
-	template <typename T>
-	std::vector<std::string> parse_argv(int argc, T& argv){
-		std::vector<std::string> str_argv;
-		for(int i{0}; i < argc; ++i){
-		
-				std::string arg = argv[i];
-
-				//Crontab Command nicht parsen bei automatischer abfrage
-				if( i + 1 <= argc
-					&& std::regex_match(arg, regex_pattern.at(command::automatic)))
-				{
-					str_argv.push_back(arg);
-					
-					std::string crontab_command = argv[i + 1];
-					str_argv.push_back(crontab_command);
-					++i;
-					continue;
-				}
-				
-				auto it = split_input(arg);
-				if(!it.empty()){
-					for(const auto& split : it){
-						str_argv.push_back(split);
-					}
-				}
-			}
-			
-			argv = {};
-			/*for(const auto& str : str_argv){
-				std::cout << argc << " "  << str << std::endl;
-			}*/
-		return str_argv;
-	}
-	
-	//Check for valid Arguments
-	bool is_argument_valid(const std::vector<std::string>& str_argv){
-		
-		for(const auto& pattern : regex_pattern){
-			for(size_t i{1}; i < str_argv.size(); ++i){
-				if(std::regex_match(str_argv[i], pattern.second)){
-				
-					return  true;
-				}	
-			}
-		}
-		
-		return false;
-	}
-
-	std::map<error, std::string> get_str_error() const { return str_error; }
-	std::map<command, std::regex> get_regex_pattern() const { return regex_pattern; }
-private:
-
-	std::map<command, std::regex> regex_pattern = {
-		  { command::help,      		std::regex{R"(^--?help$)", std::regex_constants::icase } }
-		, { command::add,       		std::regex{R"(^--?add$)", std::regex_constants::icase } }
-		, { command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } }
-		, { command::delete_,   		std::regex{R"(^(--?del(ete)?)$)", std::regex_constants::icase } }
-		, { command::hours, 			std::regex{R"(^(--?h(ours)?|h|hours)$)", std::regex_constants::icase } }
-		, { command::minutes, 			std::regex{R"(^(--?m(inutes)?|m|minutes)$)", std::regex_constants::icase} }
-		, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
-		, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
-		, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
-		, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
-		, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
-		, { command::messure_sensor,	std::regex{R"(^(--?mes(sure)?)$)", std::regex_constants::icase } }
-	    , { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
-	    , { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
-		, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
-		, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
-	};
-
-	std::map<error, std::string> str_error{
-		  {error::double_entity, "Entity already taken"}
-		, {error::double_alias, "Alias already taken"}
-		, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
-		, {error::unknown_alias_or_entity, "Alias or Entity not found"}
-		, {error::user_input_is_command, "Rejected Input"}
-		, {error::not_found, "Not found"}
-		, {error::synthax, "Synthax wrong"}
-		, {error::untitled_error,"Untitled Error"}
-		, {error::unknown, "Unknown Command"}
-		, {error::unknown_alias, "Unknown Alias"}
-		, {error::unknown_language, "Unknown Language"}
-		, {error::sensor, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
-		, {error::tag_not_found, "Unknown Tag"}
-	};
-	
-};
-
 
 class Arg_Manager{
 public:
-	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl);
+	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl_ptr);
 	
 	void proceed_inputs(const int& argc, const std::vector<std::string>& argv);
 
 	bool run_environment() const { return run_env; }
 	
 private:
+
+#ifdef __linux__
+	std::string add_sensor_data(const std::shared_ptr<Device_Ctrl>& device, std::vector<Time_Account>& all_accounts);
+#endif // __linux__
+
 	bool run_env = false;
 	
 	std::shared_ptr<JSON_Handler> jsonH;
+	std::shared_ptr<Cmd_Ctrl> ctrl;
+	
 	std::vector<Time_Account> all_accounts;
 	Translator translator{};
-	Clock clock{};	
+	Clock clock{};
+	
 	std::vector<std::string> str_argv;
 	int argc;
 	//show Tabellen setw(max_length[]) 
@@ -158,7 +59,6 @@ private:
     "show 'ALIAS' 	show specific Entity's Time Account\n\n"
     "For more Information have a look at README.md on github.com/eichi150/std\n"
     };
-	
 
 	std::vector<Time_Account> check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity);
 	
@@ -176,10 +76,6 @@ private:
 	void add_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 
 	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
-
-#ifdef __linux__
-	std::string add_sensor_data(std::vector<Time_Account>& all_accounts);
-#endif // __linux__
 	
 	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);
 	

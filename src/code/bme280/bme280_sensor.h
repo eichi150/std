@@ -18,9 +18,16 @@
 #include <sstream>
 #include <vector>
 
-class BME_Sensor {
+class Sensor{
 public:
-    int scan_sensor(std::vector<float>& float_data);
+    Sensor(){};
+    virtual ~Sensor(){};
+    virtual int scan_sensor(std::vector<float>& float_data) = 0;
+};
+
+class BME_Sensor : public Sensor{
+public:
+    int scan_sensor(std::vector<float>& float_data) override;
 
 private:
     int i2c_fd;
