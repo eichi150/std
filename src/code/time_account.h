@@ -38,6 +38,7 @@ public:
 	
 	void add_entry(const Entry& new_entry);
 
+	
 private:
 	std::string entity{};
 	std::string alias{};
@@ -45,6 +46,7 @@ private:
 	
 	float hours{0.f};
 	std::vector<Entry> entry;
+
 };
 
 #endif // TIME_ACCOUNT_H

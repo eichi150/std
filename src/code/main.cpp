@@ -32,66 +32,31 @@
 
 using json = nlohmann::json;
 
-#include <vector>
-#include <string>
-#include <sstream>
-#include <regex>
-
-// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen oder Komma
-std::vector<std::string> split_input(const std::string& input) {
-    std::vector<std::string> result;
-    std::regex re(R"([\s]+)"); // regex: trennt an Leerzeichen ODER Kommas
-    std::sregex_token_iterator it(input.begin(), input.end(), re, -1);
-    std::sregex_token_iterator end;
-
-    for (; it != end; ++it) {
-        if (!it->str().empty()) {
-            result.push_back(it->str());
-        }
-    }
-
-    return result;
-}
-
-
 int main(int argc, char* argv[]){
-	
-	//Argumente entgegen nehmen und in vector<string> speichern
-	std::vector<std::string> str_argv;
-	for(int i{0}; i < argc; ++i){
-
-		std::string arg = argv[i];
-		auto it = split_input(arg);
-		if(!it.empty()){
-			for(const auto& split : it){
-				str_argv.push_back(split);
-			}
-		}
-	}
-	argv = {};
-	
-	/*for(const auto& str : str_argv){
-		std::cout << argc << " "  << str << std::endl;
-	}*/
 	
 	if(argc > 1){
 		try{
 			Cmd_Ctrl ctrl{};
+			
+			auto regex_pattern = ctrl.get_regex_pattern();
+							
+			//Argumente entgegen nehmen und Parsen
+			std::vector<std::string> str_argv = ctrl.parse_argv(argc, argv);
 			
 			if(ctrl.is_argument_valid(str_argv)){
 			
 				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
 
 		#ifdef __linux__
-
+		
 				//Vorher Automation ausführen
-				auto regex_pattern = ctrl.get_regex_pattern();
 				if(	str_argv.size() >= 4 
 					&& std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
 				){
 					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
-					device.process_automation(jsonH, str_argv[2]);
+					
+					std::cout << device.process_automation(jsonH, str_argv[2]) << std::endl;
 					
 					return 0;
 				}
@@ -119,10 +84,14 @@ int main(int argc, char* argv[]){
 								return 0;
 							}
 							
-							new_argv = split_input(input);
+							new_argv = ctrl.split_input(input);
 							new_argv.insert(new_argv.begin(), "std");
-
+							new_argv = ctrl.parse_argv(new_argv.size(), new_argv);
 							arg_valid = ctrl.is_argument_valid(new_argv);
+							
+							for(const auto& arg : new_argv){
+								std::cout << arg << '\n';
+							}
 							
 						}while(!arg_valid);
 						

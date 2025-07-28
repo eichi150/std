@@ -46,9 +46,9 @@ class Device_Ctrl{
 public:
 	Device_Ctrl(const std::string& error_prompt);
 	
-	void process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias);
+	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command);
 	
-	void set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH);
+	std::string set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH);
 	
 	std::vector<float> check_device();
 	

@@ -3,7 +3,8 @@
 
 Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
 
-void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH){
+//std <alias> -a -mes "time"
+std::string Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& str_argv, const std::shared_ptr<JSON_Handler>& jsonH){
 	
 	//Verarbeite User Arguments
 	std::pair<std::string, bool> crontab_line;
@@ -11,7 +12,8 @@ void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& st
 	
 	//write Command into Crontab
 	if( !write_Crontab(jsonH, crontab_line.first, str_argv[1], crontab_line.second) ){
-		throw std::runtime_error{"Crontab existiert bereits. Kein neuer Eintrag erforderlich."};
+
+		std::cout << "Crontab existiert bereits. Kein neuer Eintrag in Crontab erforderlich." << std::endl;
 	};
 	
 	//in Automation_Config File speichern
@@ -23,42 +25,41 @@ void Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& st
     }catch(const std::runtime_error& re){
 		std::cerr << re.what() << std::endl;
 	}
-	
+
 	automation_config.push_back(
-       	Automation_Config{
-       		  "i2c"
-       		, str_argv[0], str_argv[1]
-       		, crontab_line.first
-       		,(crontab_line.second ? "true" : "false")
-       	}
-     );
+		Automation_Config{
+    		  "i2c"
+    		, str_argv[0], str_argv[1]
+    		, crontab_line.first
+    		,(crontab_line.second ? "true" : "false")
+   		}
+ 	);
        				
     jsonH->save_automation_config_file(automation_config);
-	
+
+	std::stringstream output;
+	output 
+		<< '\n' 
+		<< "Time to execute: " 
+		<< convert_crontabLine_to_speeking_str(crontab_line.first) 
+		<< (crontab_line.second ? "with Logfile\n" : "\n");
+		
 	//Print
-	std::cout << '\n' << "Time to execute: " << convert_crontabLine_to_speeking_str(crontab_line.first) << (crontab_line.second ? "with Logfile\n" : "\n");
+	return  output.str();
 }
 
-void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& alias){
+std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command){
 
 	//auto Accounts lesen
 	all_automations = jsonH->read_automation_config_file();
 	
 	//auto Accounts erstellen
-	bool already_taken = false;
-	for(const auto& data : all_automations){
-		//Alias nur einmal hinzufügen
-		for(const auto& account : all_accounts){
-			if(account.get_alias() == alias){
-				already_taken = true;
-				break;
-			}
+	for(const auto& auto_config : all_automations){
+		if(auto_config.crontab_command == command){
+			Time_Account loaded_account{auto_config.entity, auto_config.alias};
+					
+			all_accounts.push_back(loaded_account);
 		}
-		if(already_taken){
-			continue;
-		}
-		Time_Account new_account{data.entity, data.alias};
-		all_accounts.push_back(new_account);
 	}
 	
 	//auto Accounts <entity>.json lesen
@@ -78,18 +79,19 @@ void Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH,
 	
 	//auto Accounts speichern
 	for(auto& account : all_accounts){
-		if(account.get_alias() == alias){
-			Entry entry{0.f, ss.str(), localTime};
-			account.add_entry(entry);
-			jsonH->save_json_entity(all_accounts, account.get_entity(), {});
-			break;
-		}
+		Entry entry{0.f, ss.str(), localTime};
+		account.add_entry(entry);
+		jsonH->save_json_entity(all_accounts, account.get_entity(), {});
 	}
 	
-	std::cout 
-		<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << '\n'
-		<< ss.str() << '\n' 
-		<< std::endl;
+	std::stringstream output;
+	output 
+		<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") 
+		<< '\n' 
+		<<  ss.str() 
+		<< '\n';
+		 
+	return output.str();
 }
 
 std::vector<float> Device_Ctrl::check_device(){
@@ -406,15 +408,16 @@ bool Device_Ctrl::write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, cons
 	std::string exe_filepath = jsonH->getExecutableDir() + "/";
 	std::cout << "Crontab Exe Filepath " << exe_filepath << std::endl;
 	
-	std::string cronLine = command + " " + exe_filepath + "std -auto " + alias + " -mes";
-	std::string logLine = " >> " + exe_filepath + alias +  "_std.log 2>&1";
+	
+	std::string cronLine = command + " " + exe_filepath + "std -auto " + "\"" + command + "\"" + " -mes";
+	std::string logLine = " >> " + exe_filepath + alias + "_std.log 2>&1";
 	
 	//alte Crontab sichern
 	system("crontab -l > /tmp/mycron");
 
 	std::vector<std::string> current_Crontab = get_current_Crontab();
 
-	if(crontab_contains(current_Crontab, {cronLine, alias}) ){
+	if(crontab_contains(current_Crontab, {cronLine, command}) ){
 		return false;
 	}
 	if(logfile){

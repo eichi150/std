@@ -20,6 +20,57 @@
 class Cmd_Ctrl{
 public:
 	
+	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
+	std::vector<std::string> split_input(const std::string& input) {
+		std::vector<std::string> result;
+		std::regex re(R"([\s]+)"); // regex: trennt an Leerzeichen
+		
+		std::sregex_token_iterator it(input.begin(), input.end(), re, -1);
+		std::sregex_token_iterator end;
+
+		for (; it != end; ++it) {
+			if (!it->str().empty()) {
+				result.push_back(it->str());
+			}
+		}
+
+		return result;
+	}
+	
+	template <typename T>
+	std::vector<std::string> parse_argv(int argc, T& argv){
+		std::vector<std::string> str_argv;
+		for(int i{0}; i < argc; ++i){
+		
+				std::string arg = argv[i];
+
+				//Crontab Command nicht parsen bei automatischer abfrage
+				if( i + 1 <= argc
+					&& std::regex_match(arg, regex_pattern.at(command::automatic)))
+				{
+					str_argv.push_back(arg);
+					
+					std::string crontab_command = argv[i + 1];
+					str_argv.push_back(crontab_command);
+					++i;
+					continue;
+				}
+				
+				auto it = split_input(arg);
+				if(!it.empty()){
+					for(const auto& split : it){
+						str_argv.push_back(split);
+					}
+				}
+			}
+			
+			argv = {};
+			/*for(const auto& str : str_argv){
+				std::cout << argc << " "  << str << std::endl;
+			}*/
+		return str_argv;
+	}
+	
 	//Check for valid Arguments
 	bool is_argument_valid(const std::vector<std::string>& str_argv){
 		
@@ -127,7 +178,7 @@ private:
 	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 
 #ifdef __linux__
-	void add_sensor_data(std::vector<Time_Account>& all_accounts);
+	std::string add_sensor_data(std::vector<Time_Account>& all_accounts);
 #endif // __linux__
 	
 	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);

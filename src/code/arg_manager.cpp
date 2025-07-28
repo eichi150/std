@@ -135,7 +135,9 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				    std::vector<float> output_sensor = device.check_device();
 
 				    std::stringstream output_str;
-				    output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+				    
+				    output_str 
+				    	<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
 				   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
 				    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
 				        
@@ -155,7 +157,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
         #ifdef __linux__
                 
                     Device_Ctrl device{str_error.at(error::sensor)};
-                    add_sensor_data(all_accounts);
+                    std::cout << add_sensor_data(all_accounts) << std::endl;
                     
 		#else
 			std::cout << "Only available for Linux" << std::endl;
@@ -246,7 +248,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
      					}
      				}
                     
-					device.set_user_automation_crontab(str_argv, jsonH);
+					std::cout << device.set_user_automation_crontab(str_argv, jsonH) << std::endl;
        				
 		#else
 			std::cout << "Only available for Linux" << std::endl;
@@ -283,6 +285,55 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 // ============= //
 // == PRIVATE == //
 // ============= //
+
+
+#ifdef __linux__
+std::string Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
+
+    bool found_alias = false;
+    auto localTime = clock.get_time();
+	std::stringstream output_str;
+	
+    for(auto& account : all_accounts){
+        if(str_argv[1] == account.get_alias() ){
+
+            Device_Ctrl device{str_error.at(error::sensor)};
+		    std::vector<float> output_sensor = device.check_device();
+            
+            output_str 
+            	<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+                << translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+                << translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+                
+            Entry entry{0.f, output_str.str(), localTime};
+            account.add_entry(entry);
+
+            jsonH->save_json_accounts(all_accounts);
+            jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+
+            found_alias = true;
+            break;	
+        }
+    }
+    
+    std::stringstream output;
+    if(found_alias){
+        output
+            << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
+            << translator.language_pack.at("time_saved") << '\n'
+            << output_str.str()
+            << "BME Sensor Connection closed"
+            << '\n' << std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n';
+    }else{
+    
+        throw std::runtime_error{str_error.at(error::not_found)};
+    }
+
+    return output.str();
+}
+#endif // __linux__
+
+
 
 std::vector<Time_Account> Arg_Manager::check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity){
     std::vector<Time_Account> matching_accounts;
@@ -488,50 +539,6 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
         throw std::runtime_error{str_error.at(error::not_found)};
     }
 }
-
-#ifdef __linux__
-void Arg_Manager::add_sensor_data(std::vector<Time_Account>& all_accounts){
-
-    bool found_alias = false;
-    auto localTime = clock.get_time();
-	std::stringstream output_str;
-	
-    for(auto& account : all_accounts){
-        if(str_argv[1] == account.get_alias() ){
-
-            Device_Ctrl device{str_error.at(error::sensor)};
-		    std::vector<float> output_sensor = device.check_device();
-            
-            output_str << translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-                << translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-                << translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
-                
-            Entry entry{0.f, output_str.str(), localTime};
-            account.add_entry(entry);
-
-            jsonH->save_json_accounts(all_accounts);
-            jsonH->save_json_entity(all_accounts, account.get_entity(), {});
-
-            found_alias = true;
-            break;	
-        }
-    }
-    
-                    
-    if(found_alias){
-        std::cout 
-            << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
-            << translator.language_pack.at("time_saved") << '\n'
-            << output_str.str()
-            << "BME Sensor Connection closed"
-            << '\n' << std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n'
-            << std::endl;
-    }else{
-    
-        throw std::runtime_error{str_error.at(error::not_found)};
-    }
-}
-#endif // __linux__
 
 
 void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag){

@@ -174,7 +174,7 @@ std <alias> -activate -mes "time_config"
 
 ### Test-Trigger manuell
 ```bash
-std -auto <alias> -mes
+std -auto <crontab_command> -mes
 ```
 
 ### Crontab anzeigen:
