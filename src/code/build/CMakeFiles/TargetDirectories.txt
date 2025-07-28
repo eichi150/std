@@ -1,6 +1,0 @@
-/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles/std.dir
-/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles/compile_win32.dir
-/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles/compile_win64.dir
-/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles/compile_ALL.dir
-/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles/edit_cache.dir
-/home/eichi/Dev/Projekte/std/src/code/build/CMakeFiles/rebuild_cache.dir
