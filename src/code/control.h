@@ -10,31 +10,6 @@
 #include "clock.h"
 #include "bme280/bme280_sensor.h"
 
-enum class weekday{
-	sunday = 0
-	, monday
-	, tuesday
-	, wednesday
-	, thursday
-	, friday
-	, saturday
-};
-
-enum class months{
-	january = 1
-	, february
-	, march
-	, april
-	, may
-	, june
-	, july
-	, august
-	, september
-	, october
-	, november
-	, december
-};
-
 class Ctrl{
 public:
 	Ctrl(){
@@ -82,36 +57,12 @@ public:
 			{"BME280", std::make_shared<BME_Sensor>()}
 		};
 		
-		str_weekday = {
-			  {weekday::sunday, 	"sunday"}
-			, {weekday::monday, 	"monday"}
-			, {weekday::tuesday, 	"tuesday"}
-			, {weekday::wednesday, 	"wednesday"}
-			, {weekday::thursday, 	"thursday"}
-			, {weekday::friday, 	"friday"}
-			, {weekday::saturday, 	"saturday"}
-		};
-		
-		str_months = {
-			  {months::january, 	"january"}
-			, {months::february,	"february"}
-			, {months::march, 		"march"}
-			, {months::april, 		"april"}
-			, {months::may, 		"may"}
-			, {months::june, 		"june"}
-			, {months::july, 		"july"}
-			, {months::august, 		"august"}
-			, {months::september, 	"september"}
-			, {months::october, 	"october"}
-			, {months::november, 	"november"}
-			, {months::december, 	"december"}
-		};
 	};
 	
 	virtual ~Ctrl(){};
 		
-	virtual std::vector<float> check_device(){
-		return {};
+	virtual std::vector<float> check_device(const std::string& name){
+		throw std::runtime_error{"Not implemented"};
 	};
 	
 	
@@ -153,12 +104,7 @@ protected:
 	Clock clock{};
 	std::regex integer_pattern{R"(^\d+$)"};
 	
-	std::map<weekday, std::string> str_weekday;
-
-	std::map<months, std::string> str_months;
-	
 	std::map<command, std::regex> regex_pattern;
-
 	std::map<error, std::string> str_error;
 	
 	template <typename T>

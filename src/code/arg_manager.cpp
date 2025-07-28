@@ -132,8 +132,8 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				
 		#ifdef __linux__
 		
-				    Device_Ctrl device{"BME280", str_error.at(error::sensor)};
-				    std::vector<float> output_sensor = device.check_device();
+				    Device_Ctrl device{str_error.at(error::sensor)};
+				    std::vector<float> output_sensor = device.check_device("BME280");
 
 				    std::stringstream output_str;
 				    
@@ -157,7 +157,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 
         #ifdef __linux__
                 
-                    Device_Ctrl device{"BME280", str_error.at(error::sensor)};
+                    Device_Ctrl device{str_error.at(error::sensor)};
                     std::cout << add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) << std::endl;
                     
 		#else
@@ -239,7 +239,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                     
        	#ifdef __linux__		
                     
-      				Device_Ctrl device{"BME280", str_error.at(error::sensor)};
+      				Device_Ctrl device{str_error.at(error::sensor)};
                     
                     //an den beginn von str_argv die entity speichern -> für automation_config file
      				for(const auto& account : all_accounts){
@@ -306,7 +306,7 @@ std::string Arg_Manager::add_sensor_data(const std::shared_ptr<Device_Ctrl>& dev
     for(auto& account : all_accounts){
         if(str_argv[1] == account.get_alias() ){
 
-		    std::vector<float> output_sensor = device->check_device();
+		    std::vector<float> output_sensor = device->check_device("BME280");
             
             output_str 
             	<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "

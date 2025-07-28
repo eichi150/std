@@ -1,7 +1,33 @@
 #ifdef __linux__
 #include "device_ctrl.h"
 
-Device_Ctrl::Device_Ctrl(const std::string& name, const std::string& error_prompt) : name(name), error_prompt(error_prompt){};
+Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt)
+{
+	str_weekday = {
+		  {weekday::sunday, 	"sunday"}
+		, {weekday::monday, 	"monday"}
+		, {weekday::tuesday, 	"tuesday"}
+		, {weekday::wednesday, 	"wednesday"}
+		, {weekday::thursday, 	"thursday"}
+		, {weekday::friday, 	"friday"}
+		, {weekday::saturday, 	"saturday"}
+	};
+		
+	str_months = {
+		  {months::january, 	"january"}
+		, {months::february,	"february"}
+		, {months::march, 		"march"}
+		, {months::april, 		"april"}
+		, {months::may, 		"may"}
+		, {months::june, 		"june"}
+		, {months::july, 		"july"}
+		, {months::august, 		"august"}
+		, {months::september, 	"september"}
+		, {months::october, 	"october"}
+		, {months::november, 	"november"}
+		, {months::december, 	"december"}
+	};	
+};
 
 //std <alias> -a -mes "time"
 std::string Device_Ctrl::set_user_automation_crontab(const std::vector<std::string>& str_argv
@@ -30,10 +56,11 @@ std::string Device_Ctrl::set_user_automation_crontab(const std::vector<std::stri
 
 	automation_config.push_back(
 		Automation_Config{
-    		  get_name()
+    		  "I2C"
     		, str_argv[0], str_argv[1]
     		, crontab_line.first
     		,(crontab_line.second ? "true" : "false")
+    		, "BME280"
    		}
  	);
        				
@@ -56,11 +83,14 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	all_automations = jsonH->read_automation_config_file();
 	
 	//auto Accounts erstellen
+	std::string device_name;
 	for(const auto& auto_config : all_automations){
 		if(auto_config.crontab_command == command){
 			Time_Account loaded_account{auto_config.entity, auto_config.alias};
 					
 			all_accounts.push_back(loaded_account);
+
+			device_name = auto_config.device_name;
 		}
 	}
 	
@@ -68,7 +98,7 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	jsonH->read_json_entity(all_accounts);
 
 	//Sensor Werte abfragen
-	std::vector<float> output_sensor = check_device();
+	std::vector<float> output_sensor = check_device(device_name);
 	if(output_sensor.empty()){
 		throw std::runtime_error{"§§ No Sensor Output"};
 	}
@@ -96,7 +126,9 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	return output.str();
 }
 
-std::vector<float> Device_Ctrl::check_device() {
+std::vector<float> Device_Ctrl::check_device(const std::string& name) {
+
+	this->name = name;
 	
 	std::vector<float> output_sensor;
 

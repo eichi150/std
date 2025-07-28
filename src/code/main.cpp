@@ -55,7 +55,7 @@ int main(int argc, char* argv[]){
 					&& std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
 					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
 				){
-					Device_Ctrl device{"BME280", ctrl.get_str_error().at(error::unknown)};
+					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
 					
 					std::cout << device.process_automation(jsonH, str_argv[2]) << std::endl;
 					

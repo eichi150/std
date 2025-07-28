@@ -12,27 +12,55 @@
 #include <stdexcept>
 #include <cstdio>
 
+enum class weekday{
+	sunday = 0
+	, monday
+	, tuesday
+	, wednesday
+	, thursday
+	, friday
+	, saturday
+};
+
+enum class months{
+	january = 1
+	, february
+	, march
+	, april
+	, may
+	, june
+	, july
+	, august
+	, september
+	, october
+	, november
+	, december
+};
+
+
 class Device_Ctrl : public Ctrl{
 public:
-	Device_Ctrl(const std::string& name, const std::string& error_prompt);
+	Device_Ctrl(const std::string& error_prompt);
 	
 	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command);
 	
 	std::string set_user_automation_crontab(const std::vector<std::string>& str_argv
 		, const std::shared_ptr<JSON_Handler>& jsonH
-		, const std::map<command, std::regex>& regex_pattern);
+		, const std::map<command, std::regex>& regex_pattern
+	);
 	
-	std::vector<float> check_device() override;
-	
-	std::string get_name() const {
-		return name;
-	}
+	std::vector<float> check_device(const std::string& name) override;
+
+	std::string get_name() const { return name; }
 	
 private:
 	std::string name;
 	std::string error_prompt;
 	std::vector<Automation_Config> all_automations;
 	std::vector<Time_Account> all_accounts;
+	
+	std::map<weekday, std::string> str_weekday;
+	std::map<months, std::string> str_months;
 	
 	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern);
 

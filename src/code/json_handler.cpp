@@ -95,7 +95,8 @@ std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
 				cfg.value("entity", ""),
 				cfg.value("alias", ""),
 				cfg.value("crontab_command", "* * * * *"),
-				cfg.value("log_file", "")
+				cfg.value("log_file", ""),
+				cfg.value("device_name", "")
 			});
 		}
 	}
@@ -118,7 +119,8 @@ void JSON_Handler::save_automation_config_file(const std::vector<Automation_Conf
 			{"entity", auto_config.entity},
 			{"alias", auto_config.alias},
 			{"crontab_command", auto_config.crontab_command},
-			{"log_file", auto_config.logfile}
+			{"log_file", auto_config.logfile},
+			{"device_name", auto_config.device_name}
 		};
 
 		grouped_configs[auto_config.connection]["connection"] = auto_config.connection;

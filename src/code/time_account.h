@@ -17,6 +17,7 @@ struct Automation_Config{
 	std::string alias;
 	std::string crontab_command;
 	std::string logfile;
+	std::string device_name;
 };
 
 class Time_Account{

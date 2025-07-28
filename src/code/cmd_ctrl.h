@@ -10,11 +10,12 @@
 
 class Cmd_Ctrl : public Ctrl{
 public:
-	Cmd_Ctrl(){};
-	~Cmd_Ctrl(){};
 	
 	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
 	std::vector<std::string> split_input(const std::string& input);
+	//Check for valid Arguments
+	bool is_argument_valid(const std::vector<std::string>& str_argv);
+	
 	
 	template <typename T>
 	std::vector<std::string> parse_argv(int argc, T& argv){
@@ -49,9 +50,6 @@ public:
 			}*/
 		return str_argv;
 	}
-	
-	//Check for valid Arguments
-	bool is_argument_valid(const std::vector<std::string>& str_argv);
 	
 };
 
