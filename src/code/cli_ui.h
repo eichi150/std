@@ -11,12 +11,6 @@
 #include "./abstract_class/ui_interface.h"
 #include "arg_manager.h"
 
-struct OutputTable{
-	std::vector<std::string> head;
-	std::vector<std::string> body;
-	
-};
-
 
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI_Interface{
@@ -27,6 +21,7 @@ public:
 
 private:
 	std::shared_ptr<Arg_Manager> arg_man;
+	std::vector<Automation_Config> all_automations;
 	
 	int table_width = 0;
 	//Build Tabellenausgabe

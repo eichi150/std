@@ -213,18 +213,20 @@ std::vector<Time_Account> JSON_Handler::collect_accounts_with_entity(const std::
 }
 
 //wenn der Alias übergeben wird, wird er übersprungen und somit nicht in die Datei geschrieben -> delete Function
-void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save, const std::string& alias){
+void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save){
 	
-    std::vector<Time_Account> matching_accounts = collect_accounts_with_entity(all_accounts, entity_to_save);
+    std::vector<Time_Account> matching_accounts;
+    if(!all_accounts.empty()){
+        matching_accounts = collect_accounts_with_entity(all_accounts, entity_to_save);
 
-    // Keine passenden Accounts?
-    if (matching_accounts.empty()) {
-        jsonH_log << "##Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
-        return;
+        // Keine passenden Accounts?
+        if (matching_accounts.empty()) {
+            jsonH_log << "##Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
+            return;
+        }
+
+        jsonH_log << "~~matching accounts: "<< matching_accounts.size() << std::endl;
     }
-
-    jsonH_log << "~~matching accounts: "<< matching_accounts.size() << std::endl;
-
     // 2. Struktur aufbauen
     json eintraege;
     eintraege["entity"] = entity_to_save;
@@ -232,9 +234,7 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
     json alias_list = json::array();
 
     for (const auto& acc : matching_accounts) {
-        if(!alias.empty() && acc.get_alias() == alias){
-            continue;
-        }
+        
         json alias_entry;
         alias_entry["alias"] = acc.get_alias();
         alias_entry["tag"] = acc.get_tag();
@@ -285,7 +285,8 @@ void JSON_Handler::save_json_accounts(const std::vector<Time_Account>& all_accou
         
         daten.push_back(account_json);
     }
-
+    jsonH_log << "Accounts_Filepath: " << accounts_filepath << '\n';
+    
     std::ofstream file(accounts_filepath);
     if (file.is_open()) {
         file << daten.dump(4);

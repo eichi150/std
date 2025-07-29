@@ -114,7 +114,7 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	for(auto& account : all_accounts){
 		Entry entry{0.f, ss.str(), localTime};
 		account.add_entry(entry);
-		jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+		jsonH->save_json_entity(all_accounts, account.get_entity());
 	}
 	
 	std::stringstream output;

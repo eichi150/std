@@ -39,7 +39,6 @@ public:
 	
 	void add_entry(const Entry& new_entry);
 
-	
 private:
 	std::string entity{};
 	std::string alias{};

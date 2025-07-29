@@ -100,7 +100,9 @@ int CLI_UI::get_sum_str_size(const std::vector<std::string>& multiple_str){
 std::string CLI_UI::create_automation_table(const std::string& account_alias){
 	
 	//Read Automation_Config.json
-	std::vector<Automation_Config> all_automations = arg_man->jsonH->read_automation_config_file();
+	if(all_automations.empty()){
+		all_automations = arg_man->jsonH->read_automation_config_file();
+	}
 	
 	//HEAD Parameter
 	const std::string INDEX_str{"Index"};
@@ -181,7 +183,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 	
 	std::stringstream ss_body;
 		
-	auto account = arg_man->get_account_with_alias(alias);
+	std::shared_ptr<Time_Account> account = arg_man->get_account_with_alias(alias);
 		
 	int index = 0;	
 	for(const auto& entry : account->get_entry()){
@@ -268,15 +270,27 @@ std::string CLI_UI::create_alias_table(){
 	//DATA
 	std::string alias = arg_man->get_str_argv()[2];
 	
-	auto account = arg_man->get_account_with_alias(alias);
+	std::shared_ptr<Time_Account> account = arg_man->get_account_with_alias(alias);
 	
 	std::string t_alias = "@ " + alias;
 	
 	std::string entity = account->get_entity();
-	std::string tag = "plant";
+	std::string tag = account->get_tag();
 	
-	bool is_automation = true;
-	std::string device_name = "BME280";
+	//Read Automation_Config.json
+	if(all_automations.empty()){
+		all_automations = arg_man->jsonH->read_automation_config_file();
+	}
+	
+	bool is_automation = false;
+	std::string device_name;
+	for(const auto& automation : all_automations){
+		if(automation.alias == alias){
+			is_automation = true;
+			device_name = automation.device_name;
+			break;
+		}
+	}
 	std::string t_automation = "Automation: " + (is_automation ? device_name : "None");
 	
 	std::vector<std::string> table_strings = {

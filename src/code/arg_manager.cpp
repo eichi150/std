@@ -4,18 +4,15 @@
 // == PUBLIC ==  //
 // ============= //
 
-Arg_Manager::Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl_ptr): jsonH(jH)
+Arg_Manager::Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr): jsonH(jH), ctrl(ctrl_ptr)
 {
 
-    ctrl = ctrl_ptr;
-	jsonH->read_all_accounts(all_accounts);
+    jsonH->read_all_accounts(all_accounts);
 	
     regex_pattern = ctrl->get_regex_pattern();
     str_error = ctrl->get_str_error();
     
     translator.set_language(jsonH->get_config_language());
-    
-    
 
 };
 
@@ -40,6 +37,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
         }
     );
     str_argv = str_argv_without_LOG_cmd;
+    
     
     switch(argc){
     
@@ -104,8 +102,9 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 //Account löschen
                 //del <alias>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_))){
-                
-                    delete_account(all_accounts, str_argv[2]);
+		    
+		    cmd = std::make_unique<Delete_Command>(all_accounts, jsonH, str_error, str_argv[2]);
+                    //delete_account(all_accounts, str_argv[2]);
                     break;
                 }
                 //Language changeTo
@@ -190,7 +189,6 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		
 		break;
                 }
-
              
                 throw std::runtime_error{str_error.at(error::synthax)};
             };
@@ -208,8 +206,16 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 //Neuen Account hinzufügen
                 //add	
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::add))){
-                
-                    add_account(all_accounts, {});
+		    arg_manager_log << "add_account_noTag\n";
+		    
+		    cmd = std::make_unique<Add_Command>(
+			all_accounts
+			, jsonH
+			, str_error
+			, Add_account{str_argv[2], str_argv[3], ""}
+			, regex_pattern.at(command::add)
+		    );
+                    
                     break;
                 }
         
@@ -296,29 +302,29 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		   
        			if(is_true){  
                     
-				    Device_Ctrl device{str_error.at(error::sensor)};
-	                    
-                    //an den beginn von str_argv die entity speichern -> für automation_config file
-				    for(const auto& account : all_accounts){
-						if( account.get_alias() == str_argv[1] ){
-					    	str_argv[0] = account.get_entity();
-					    	break;
-						}
-				    }
-				    std::vector<command> commands = {
-						  command::logfile
-						, command::minutes
-						, command::hours
-						, command::clock
-						, command::day
-				    };
+			    Device_Ctrl device{str_error.at(error::sensor)};
 				
-				    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
-				    
-				    arg_manager_log << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
-	       				
-					break;
+			//an den beginn von str_argv die entity speichern -> für automation_config file
+			    for(const auto& account : all_accounts){
+				if( account.get_alias() == str_argv[1] ){
+				    str_argv[0] = account.get_entity();
+				    break;
 				}
+			    }
+			    std::vector<command> commands = {
+				command::logfile
+				, command::minutes
+				, command::hours
+				, command::clock
+				, command::day
+			    };
+				    
+			    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
+					
+			    arg_manager_log << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
+					    
+			    break;
+			}
 		#else
 			arg_manager_log << "Only available for Linux" << std::endl;
 			break;
@@ -329,27 +335,46 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
             };
 
         case 6:
-        	{	
-       		 	//Neuen Account mit tag hinzufügen
+	    {	
+		//Neuen Account mit tag hinzufügen
                 //std add <entity> <alias> -tag plant
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::add))
-                	&& std::regex_match(str_argv[4], regex_pattern.at(command::tag)) )
+		    && std::regex_match(str_argv[4], regex_pattern.at(command::tag)) )
                	{
-                
-                    add_account(all_accounts, str_argv[5]);
+		    arg_manager_log << "add_account_withTag " << all_accounts.size() << '\n';
+		    //std::vector<command> commands = {command::add};
+		    //std::map<command, std::regex> special_regex_pattern = ctrl->get_specific_regex_pattern(commands);
+				    
+		    cmd = std::make_unique<Add_Command>(
+			all_accounts
+			, jsonH
+			, str_error
+			, Add_account{str_argv[2], str_argv[3], str_argv[5]}
+			, regex_pattern.at(command::add)
+		    );
+		    
                     break;
                 }	
 				
-				throw std::runtime_error{str_error.at(error::synthax)};
-        	};
+		    throw std::runtime_error{str_error.at(error::synthax)};
+	    };
 
         
         default:
             {
                 throw std::runtime_error{str_error.at(error::untitled_error)};
-            };
+		
+	    };
+	
     };
     
+    if(cmd){
+	cmd->execute();
+	arg_manager_log << cmd->get_log();
+    }else{
+	throw std::runtime_error{str_error.at(error::unknown)};
+    }
+	
 }
 
 // ============= //
@@ -378,7 +403,7 @@ std::string Arg_Manager::add_sensor_data(const std::shared_ptr<Device_Ctrl>& dev
             account.add_entry(entry);
 
             jsonH->save_json_accounts(all_accounts);
-            jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+            jsonH->save_json_entity(all_accounts, account.get_entity());
 
             found_alias = true;
             break;	
@@ -485,7 +510,7 @@ void Arg_Manager::user_change_filepaths(const std::string& ent_filepath, const s
 
 }
 
-void Arg_Manager::delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete){
+/*void Arg_Manager::delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete){
     if(all_accounts.empty()){
         throw std::runtime_error{str_error.at(error::untitled_error)};
     }
@@ -515,65 +540,17 @@ void Arg_Manager::delete_account(std::vector<Time_Account>& all_accounts, const 
             return account.get_alias() == alias_to_delete;
         }
     );
-    jsonH->save_json_entity(all_accounts, entity, alias);
+    //jsonH->save_json_entity(all_accounts, entity, alias);
     
     all_accounts = adjusted_accounts;
 
     //update Files
     jsonH->save_json_accounts(all_accounts);
-    //jsonH->save_json_entity(all_accounts, entity, alias);
+    jsonH->save_json_entity(all_accounts, entity);
     
     arg_manager_log << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 }
-
-
-void Arg_Manager::add_account(std::vector<Time_Account>& all_accounts, const std::string& tag){
-    std::string entity = str_argv[2];
-    std::string alias = str_argv[3];
-	std::stringstream ss;
-    //Entity or Alias cant be named as a command
-    bool is_command = false;
-    for(const auto& pattern : regex_pattern){
-        
-        if(std::regex_match(entity, pattern.second)){
-            is_command = true;
-            break;
-        }	
-        if(std::regex_match(alias, pattern.second)){
-            is_command = true;
-            break;
-        }
-    }
-    if(is_command){
-        throw std::runtime_error{str_error.at(error::user_input_is_command)};
-    }
-        
-    //Entity or Alias already taken?
-    for(const auto& account : all_accounts){
-        if(account.get_alias() == alias){
-            throw std::runtime_error{str_error.at(error::double_alias)};
-        }
-        if(account.get_alias() == entity){
-            throw std::runtime_error{str_error.at(error::alias_equal_entity)};
-        }
-    }
-    
-    Time_Account new_account{entity, alias};
-
-    ss << entity << "-> " << alias;
-    if(!tag.empty()){
-    	new_account.set_tag(tag);
-    	ss <<  " -tag= " << tag;
-    }
-    ss << translator.language_pack.at("saved");
-    
-    all_accounts.push_back(new_account);
-            
-    jsonH->save_json_accounts(all_accounts);
-    jsonH->save_json_entity(all_accounts, entity, {});
-            
-    arg_manager_log << ss.str() << std::endl;
-}
+*/
 
 void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount){
 	
@@ -599,7 +576,7 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
             account.add_entry(entry);
 
             jsonH->save_json_accounts(all_accounts);
-            jsonH->save_json_entity(all_accounts, account.get_entity(), {});
+            jsonH->save_json_entity(all_accounts, account.get_entity());
 
             found_alias = true;
 
@@ -639,7 +616,7 @@ void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, co
 	}
 	
 	jsonH->save_json_accounts(all_accounts);
-    jsonH->save_json_entity(all_accounts, entity, {});
+    jsonH->save_json_entity(all_accounts, entity);
     	
 }
 

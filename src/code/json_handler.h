@@ -9,6 +9,7 @@
 	#include <unistd.h>
 #endif
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <ostream>
@@ -45,7 +46,7 @@ public:
 	//Sammle alle Accounts mit dieser Entity
 	std::vector<Time_Account> collect_accounts_with_entity(const std::vector<Time_Account>& search_in, const std::string& search_for_entity);
 	
-	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save, const std::string& alias);
+	void save_json_entity(const std::vector<Time_Account>& all_accounts, const std::string& entity_to_save);
 	
 	void save_json_accounts(const std::vector<Time_Account>& all_accounts);
 
