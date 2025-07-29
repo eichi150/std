@@ -7,21 +7,25 @@
 
 class Translator{
 public:
-	std::map<std::string, std::string> language_pack{};
+    std::map<std::string, std::string> language_pack{};
 	
     static std::map<Language, std::string> dict_language;
     static std::map<std::string, std::string> english_pack;
     static std::map<std::string, std::string> german_pack;
     static std::map<Language, std::map<std::string, std::string>> all_packs;
 
-	void set_language(const Language& language);
+    void set_language(const Language& language);
 	
-	std::map<std::string, std::string> which_language_pack();
+    std::map<std::string, std::string> which_language_pack();
 
-	std::string get_str_language();
+    std::string get_str_language();
 
+    Language get_current_language() const {
+	return language;
+    }
+    
 private:
-	Language language;
+    Language language;
 	
 };
 

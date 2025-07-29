@@ -34,6 +34,7 @@ public:
 			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
+			, { command::process_log, 		std::regex{R"(^--?prolog$)", std::regex_constants::icase} }
 		};
 		//Error Outputs
 		str_error = {

@@ -22,11 +22,13 @@
 #endif
 
 enum class OutputType{
-	show_all = 0
+	show_all_accounts = 0
 	, show_filepaths
 	, show_language
 	, show_specific_table
-	
+	, show_alias_table
+	, show_alias_automation
+	, arg_manager_log
 	, COUNT //maxSize Bitset
 };
 
@@ -36,10 +38,9 @@ class Arg_Manager{
 public:
 	Arg_Manager(const std::shared_ptr<JSON_Handler>& jH, const std::shared_ptr<Cmd_Ctrl>& ctrl_ptr);
 	
-	void proceed_inputs(const int& argc, const std::vector<std::string>& argv);
+	void proceed_inputs(const int& _argc, const std::vector<std::string>& argv);
 
 	bool run_environment() const { return run_env; }
-
 	
 	std::shared_ptr<JSON_Handler> jsonH;
 	Translator translator{};
@@ -53,6 +54,29 @@ public:
 	void clear_output_flags(){
 		output_flags.reset();
 	}
+	
+	std::vector<Time_Account> get_all_accounts() const {
+		return all_accounts;
+	}
+	
+	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
+	
+	std::vector<std::string> get_str_argv() const {
+		return str_argv;
+	}
+	
+	std::string get_log() const {
+		std::ostringstream log;
+		log 
+			<< "Process Log:\n"
+			<< arg_manager_log.str()
+			<< '\n'
+			<< jsonH->get_log()
+			<< std::endl;
+			
+		return log.str();
+	}
+	
 private:
 
 #ifdef __linux__
@@ -61,7 +85,7 @@ private:
 	
 	OutputBitset output_flags;
 	
-	std::ostringstream table;
+	std::stringstream arg_manager_log;
 	
 	bool run_env = false;
 	
@@ -99,9 +123,6 @@ private:
 
 
 
-	//show Tabellen setw(max_length[]) 
-	std::vector<int> max_length;
-
 	const std::string help = {
     "add 			Add new Entity give it a Alias\n"
     "-h -m  		Time to save in Hours or Minutes\n"
@@ -111,12 +132,6 @@ private:
     "For more Information have a look at README.md on github.com/eichi150/std\n"
     };
 	    
-	void set_table_width(const std::vector<Time_Account>& all_accounts, std::vector<int>& max_length);
-
-	
-	void show_specific_table(const std::vector<Time_Account>& show_accounts);
-	
-	void show_all(const std::vector<Time_Account>& all_accounts);
 	
 };//Arg_Manager
 

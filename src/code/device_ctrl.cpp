@@ -119,7 +119,7 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	
 	std::stringstream output;
 	output 
-		<< std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") 
+		<< std::put_time(&localTime, "%Y-%m-%d %H:%M") 
 		<< '\n' 
 		<<  ss.str() 
 		<< '\n';

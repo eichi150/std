@@ -9,7 +9,6 @@
 	#include <unistd.h>
 #endif
 
-#include <iostream>
 #include <string>
 #include <vector>
 #include <ostream>
@@ -57,7 +56,14 @@ public:
 	void save_automation_config_file(const std::vector<Automation_Config>& automation_config);
 	std::vector<Automation_Config> read_automation_config_file();
 	
+	std::string get_log() const {
+		return jsonH_log.str();
+	}
+	
 private:
+	
+	std::stringstream jsonH_log;
+	
 	std::string config_filepath{"../config.json"};
 	
 	const std::vector<std::string> allowed_keys = {

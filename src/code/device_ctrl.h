@@ -53,6 +53,7 @@ public:
 
 	std::string get_name() const { return name; }
 	
+	
 private:
 	std::string name;
 	std::string error_prompt;

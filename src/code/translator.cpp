@@ -3,7 +3,7 @@
 std::map<std::string, std::string> Translator::english_pack = {
     {"language", "english"}
     ,{"str_language", "Language"}
-    ,{"timepoint", "%Y-%m-%d %H:%M:%S"}
+    ,{"timepoint", "%Y-%m-%d %H:%M"}
     ,{"deleted_out_of_accounts.json", " got deleted. File is still available for Export."}
     ,{"total_hours", "Total Hours"}
     ,{"entity", "Entity"}
@@ -21,7 +21,7 @@ std::map<std::string, std::string> Translator::english_pack = {
 std::map<std::string, std::string> Translator::german_pack = {
     {"language", "deutsch"}
     ,{"str_language", "Sprache"}
-    ,{"timepoint", "%d-%m-%Y %H:%M:%S"}
+    ,{"timepoint", "%d-%m-%Y %H:%M"}
     ,{"deleted_out_of_accounts.json", " wurde gelöscht. Die Datei zu exportieren ist weiterhin möglich."}
     ,{"total_hours", "Stunden gesamt"}
     ,{"entity", "Entität"}

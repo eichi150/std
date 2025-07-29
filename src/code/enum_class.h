@@ -38,6 +38,7 @@ enum class command{
 	, i2c
 	, automatic
 	, environment
+	, process_log
 };
 
 

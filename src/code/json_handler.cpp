@@ -137,7 +137,7 @@ void JSON_Handler::save_automation_config_file(const std::vector<Automation_Conf
 	if(config_file.is_open()){
 		config_file << eintrag.dump(4);
 		config_file.close();
-		std::cout << "Automation Config File saved" << std::endl;
+		jsonH_log << "Automation Config File saved" << std::endl;
 	} else {
 		throw std::runtime_error{"##Cant open Automation_config_File!"};
 	}
@@ -160,12 +160,12 @@ void JSON_Handler::save_config_file(std::map<std::string, std::string>& save_to_
         if(config_file.is_open()){
             config_file << config.dump(4);
             config_file.close();
-            std::cout << "Config_File saved" << std::endl;
+            jsonH_log << "Config_File saved" << std::endl;
         }else{
-            std::cout << "##Cant open Config_File!" << std::endl;
+            jsonH_log << "##Cant open Config_File!" << std::endl;
         }
     }else{
-        std::cout << "##No new valid config entries to save" << std::endl;
+        jsonH_log << "##No new valid config entries to save" << std::endl;
     }
 }
 
@@ -175,7 +175,7 @@ void JSON_Handler::read_config_file(){
     std::ifstream config_file(config_filepath);
     
     if(!config_file.is_open()){
-        std::cerr << "##Cant open " << config_filepath  << std::endl;
+        jsonH_log << "##Cant open " << config_filepath  << std::endl;
         return;
     }
 
@@ -219,11 +219,11 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
 
     // Keine passenden Accounts?
     if (matching_accounts.empty()) {
-        std::cerr << "##Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
+        jsonH_log << "##Keine Eintäge für Entity '" << entity_to_save << "' gefunden." << std::endl;
         return;
     }
 
-    std::cout << "~~matching accounts: "<< matching_accounts.size() << std::endl;
+    jsonH_log << "~~matching accounts: "<< matching_accounts.size() << std::endl;
 
     // 2. Struktur aufbauen
     json eintraege;
@@ -264,9 +264,9 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
     if (file_entry.is_open()) {
         file_entry << eintraege.dump(4);
         file_entry.close();
-        std::cout << "Saved" << entity_filepath_total << std::endl;
+        jsonH_log << "Saved" << entity_filepath_total << std::endl;
     } else {
-        std::cerr << "##Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
+        jsonH_log << "##Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
     }
 
 
@@ -290,9 +290,9 @@ void JSON_Handler::save_json_accounts(const std::vector<Time_Account>& all_accou
     if (file.is_open()) {
         file << daten.dump(4);
         file.close();
-        std::cout << "Accounts-Datei gespeichert." << std::endl;
+        jsonH_log << "Accounts-Datei gespeichert." << std::endl;
     } else {
-        std::cerr << "##Fehler beim oeffnen der Datei." << std::endl;
+        jsonH_log << "##Fehler beim oeffnen der Datei." << std::endl;
     }
 }
 
@@ -302,7 +302,7 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
         std::string filename = entity_filepath + account.get_entity() + ".json";
         std::ifstream entry_file(filename);
         if (!entry_file.is_open()) {
-            std::cerr << "##Eintragsdatei konnte nicht geöffnet werden: " << filename << std::endl;
+            jsonH_log << "##Eintragsdatei konnte nicht geöffnet werden: " << filename << std::endl;
             continue;
         }
 
@@ -310,7 +310,7 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
         try {
             entry_file >> entry_data;
         } catch (const json::parse_error& e) {
-            std::cerr << "##JSON-Parse-Fehler: " << e.what() << std::endl;
+            jsonH_log << "##JSON-Parse-Fehler: " << e.what() << std::endl;
             continue;
         }
 
@@ -336,7 +336,7 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
                         ss >> std::get_time(&time_point, "%Y-%m-%d %H:%M:%S");
 
                         if (ss.fail()) {
-                            std::cerr << "##Zeit konnte nicht gelesen werden für Alias: " << str_alias << std::endl;
+                            jsonH_log << "##Zeit konnte nicht gelesen werden für Alias: " << str_alias << std::endl;
                             time_point = std::tm{};
                         }
 
@@ -352,12 +352,12 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
 void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
     std::ifstream eingabe(accounts_filepath);
     if (!eingabe.is_open()) {
-        std::cerr << "##Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
+        jsonH_log << "##Datei konnte nicht geöffnet werden. " << accounts_filepath << std::endl;
         return;
     }
 
     if (eingabe.peek() == std::ifstream::traits_type::eof()) {
-        std::cerr << "##Datei ist leer.\n";
+        jsonH_log << "##Datei ist leer.\n";
         return;
     }
 
@@ -378,6 +378,6 @@ void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
         }
         
     } catch (const json::parse_error& e) {
-        std::cerr << "##JSON-Fehler: " << e.what() << std::endl;
+        jsonH_log << "##JSON-Fehler: " << e.what() << std::endl;
     }
 }
