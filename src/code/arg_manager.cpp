@@ -40,7 +40,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 //help
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
                 
-                    std::cout << help << std::endl;
+                    table << help << std::endl;
                     break;
                 }
                 
@@ -69,13 +69,14 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                     //show filepath
                     if(std::regex_match(str_argv[2], regex_pattern.at(command::config_filepath))){
                     
-                        show_filepaths();
+                        output_flags.set(static_cast<size_t>(OutputType::show_filepaths));
                         break;
                     }
                     //language anzeigen
                     if(std::regex_match(str_argv[2], regex_pattern.at(command::language))){
-                                            
-                        show_language();
+                                       
+			output_flags.set(static_cast<size_t>(OutputType::show_language));
+                        
                         break;
                     }
                     //Zeige spezifischen Account an
@@ -155,11 +156,11 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 					   		<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
 					    	<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
 					        
-					    std::cout << output_str.str() << std::endl;
+					   	table << output_str.str() << std::endl;
 					    
 				    }
 		#else
-            std::cout << "Only available for Linux" << std::endl;
+            table << "Only available for Linux" << std::endl;
 			
 		#endif // __linux__
 		
@@ -173,10 +174,10 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
         #ifdef __linux__
                 
                     Device_Ctrl device{str_error.at(error::sensor)};
-                    std::cout << add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) << std::endl;
+                    table << add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) << std::endl;
                     
 		#else
-			std::cout << "Only available for Linux" << std::endl;
+			table << "Only available for Linux" << std::endl;
 		#endif // __linux__
 		
 		break;
@@ -193,7 +194,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 
                     user_change_filepaths(str_argv[2], str_argv[3]);
                     
-                    std::cout << str_argv[2] << '\n' << str_argv[3] << std::endl;
+                    table << str_argv[2] << '\n' << str_argv[3] << std::endl;
                     break;
                 }
                 //Neuen Account hinzufügen
@@ -232,7 +233,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 
                     change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
                     
-                    std::cout << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
+                    table << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
                     break;
                 }
     
@@ -257,7 +258,7 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 		            for(const auto& name : ctrl->device_regex_pattern){
 		                ss << " > " << name.first << '\n';
 		            }
-					std::cout << ss.str();
+					table << ss.str();
 					
 				    str_argv[2] = "BME280";
 				    is_true = true;
@@ -295,12 +296,13 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
 				    };
 				
 				    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
-				    std::cout << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
+				    
+				    table << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
 	       				
 					break;
 				}
 		#else
-			std::cout << "Only available for Linux" << std::endl;
+			table << "Only available for Linux" << std::endl;
 			break;
 			
 		#endif // __linux__
@@ -329,6 +331,9 @@ void Arg_Manager::proceed_inputs(const int& argc, const std::vector<std::string>
                 throw std::runtime_error{str_error.at(error::untitled_error)};
             };
     };
+
+	//OUTPUT
+    std::cout << table.str() << std::endl;
 }
 
 // ============= //
@@ -493,7 +498,7 @@ void Arg_Manager::delete_account(std::vector<Time_Account>& all_accounts, const 
     jsonH->save_json_accounts(all_accounts);
     //jsonH->save_json_entity(all_accounts, entity, alias);
     
-    std::cout << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
+    table << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 }
 
 
@@ -542,7 +547,7 @@ void Arg_Manager::add_account(std::vector<Time_Account>& all_accounts, const std
     jsonH->save_json_accounts(all_accounts);
     jsonH->save_json_entity(all_accounts, entity, {});
             
-    std::cout << ss.str() << std::endl;
+    table << ss.str() << std::endl;
 }
 
 void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount){
@@ -578,7 +583,7 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
     }
     
     if(found_alias){
-        std::cout 
+        table 
             << std::put_time(&localTime, translator.language_pack.at("timepoint").c_str()) << '\n'
             << translator.language_pack.at("time_saved")
             << std::endl;
@@ -600,7 +605,7 @@ void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, co
 			found_alias = true;
 			entity = account.get_entity();
 			
-			std::cout << "Tag: " << tag << " to " << account.get_alias() << " added" << std::endl;
+			table << "Tag: " << tag << " to " << account.get_alias() << " added" << std::endl;
 			break;
 		}
 	}
@@ -629,31 +634,20 @@ void Arg_Manager::set_table_width(const std::vector<Time_Account>& all_accounts,
     }
 }
 
-void Arg_Manager::show_filepaths()const {
-    std::cout 
-        << "Config: " << jsonH->get_config_filepath() << '\n'
-        << translator.language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
-        << "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
-}
-
-void Arg_Manager::show_language() const{
-    std::cout << translator.language_pack.at("str_language")<< ": " << translator.language_pack.at("language") << std::endl;
-}
-
 void Arg_Manager::show_specific_table(const std::vector<Time_Account>& show_accounts) {
 		
     set_table_width(show_accounts, max_length);
     
     int index{0};
     int index_entrys = 0;
-    
+
     //Trennlinie 
-    std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+    table << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
         << "=" << std::setfill(' ') << '\n' << std::endl;
         
     for(const auto& account : show_accounts){
         
-        std::cout << std::left 
+        table << std::left 
             << std::setw(max_length[0]) << "index"
             << std::setw(max_length[1]) << "Alias"
             << std::setw(max_length[2]) << translator.language_pack.at("entity")
@@ -661,12 +655,12 @@ void Arg_Manager::show_specific_table(const std::vector<Time_Account>& show_acco
             << std::endl;
             
         //Trennlinie 
-        std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+        table << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
             << "-" << std::setfill(' ') << std::endl;
 
             
         //Datenzeilen
-        std::cout << std::left
+        table << std::left
             << std::setw( max_length[0]) << index
             << std::setw( max_length[1]) << account.get_alias()
             << std::setw( max_length[2]) << account.get_entity()
@@ -674,22 +668,22 @@ void Arg_Manager::show_specific_table(const std::vector<Time_Account>& show_acco
             << std::endl;
             
         //Trennlinie 
-        std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+        table << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
             << "-" << std::setfill(' ') << '\n' << std::endl;
 
         ++index;
         if(account.get_entry().empty()){
-            std::cout << translator.language_pack.at("No_Entrys_available") << std::endl;
+            table << translator.language_pack.at("No_Entrys_available") << std::endl;
             continue;
         }
         
-        std::cout << std::left
+        table << std::left
             << std::setw( max_length[0]) << "index"
             << std::setw(max_length[4]) << translator.language_pack.at("hours")
             << std::setw(max_length[5]) << translator.language_pack.at("timestamp")
             << std::setw(max_length[6]) << translator.language_pack.at("comment")
             << std::endl;
-            
+        
         for(const auto& entry : account.get_entry()){
             std::stringstream ss;
             
@@ -697,9 +691,9 @@ void Arg_Manager::show_specific_table(const std::vector<Time_Account>& show_acco
             ss << std::put_time(&entry.time_point, time_format.c_str());
 
             //Trennlinie 
-            std::cout << std::setfill('-') << std::setw( max_length[0] + max_length[4] + max_length[5] + max_length[6]) << "-" << std::setfill(' ') << std::endl;
+            table << std::setfill('-') << std::setw( max_length[0] + max_length[4] + max_length[5] + max_length[6]) << "-" << std::setfill(' ') << std::endl;
             
-            std::cout << std::left
+            table << std::left
                 << std::setw( max_length[0]) << index_entrys
                 << std::setw(max_length[4]) << entry.hours
                 << std::setw(max_length[5]) << ss.str()
@@ -709,8 +703,9 @@ void Arg_Manager::show_specific_table(const std::vector<Time_Account>& show_acco
             ++index_entrys;
         }
         //Trennlinie 
-        std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
-            << "=" << std::setfill(' ') << '\n' << std::endl;
+        table << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+            << "=" << std::setfill(' ') << '\n';
+         
     }
 }
 
@@ -718,11 +713,12 @@ void Arg_Manager::show_specific_table(const std::vector<Time_Account>& show_acco
 void Arg_Manager::show_all(const std::vector<Time_Account>& all_accounts) {
 		
     set_table_width(all_accounts, max_length);
+
     //Trennlinie 
-    std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+    table << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
         << "=" << std::setfill(' ') << '\n' << std::endl;
         
-    std::cout << std::left 
+    table << std::left 
         << std::setw( max_length[0]) << "index"
         << std::setw( max_length[1]) << "Alias"
         << std::setw( max_length[2]) << translator.language_pack.at("entity")
@@ -733,10 +729,10 @@ void Arg_Manager::show_all(const std::vector<Time_Account>& all_accounts) {
     for(const auto& account : all_accounts){
 
         //Trennlinie 
-        std::cout << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) << "-" << std::setfill(' ') << std::endl;
+        table << std::setfill('-') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) << "-" << std::setfill(' ') << std::endl;
 
         //Datenzeilen
-        std::cout << std::left
+        table << std::left
             << std::setw( max_length[0]) << index
             << std::setw( max_length[1]) << account.get_alias()
             << std::setw( max_length[2]) << account.get_entity()
@@ -747,6 +743,7 @@ void Arg_Manager::show_all(const std::vector<Time_Account>& all_accounts) {
     }
 
     //Trennlinie 
-    std::cout << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
-        << "=" << std::setfill(' ') << '\n' << std::endl;
+    table << '\n' << std::setfill('=') << std::setw(max_length[0] + max_length[1] + max_length[2] + max_length[3]) 
+        << "=" << std::setfill(' ') << '\n';
+
 }

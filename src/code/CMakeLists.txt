@@ -11,6 +11,7 @@ set(SOURCES
 	translator.cpp
 	cmd_ctrl.cpp
 	arg_manager.cpp
+	cli_ui.cpp
 	main.cpp
 )
 

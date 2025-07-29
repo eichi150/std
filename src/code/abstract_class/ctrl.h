@@ -5,10 +5,10 @@
 #include <map>
 #include <regex>
 
-#include "json_handler.h"
-#include "time_account.h"
-#include "clock.h"
-#include "bme280/bme280_sensor.h"
+#include "../json_handler.h"
+#include "../time_account.h"
+#include "../clock.h"
+#include "../bme280/bme280_sensor.h"
 
 class Ctrl{
 public:

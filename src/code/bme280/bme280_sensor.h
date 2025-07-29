@@ -18,14 +18,7 @@
 #include <sstream>
 #include <vector>
 
-class Sensor{
-public:
-    Sensor(){};
-    virtual ~Sensor(){};
-    virtual int scan_sensor(std::vector<float>& float_data){
-    	throw std::runtime_error{"Not implemented"};
-    };
-};
+#include "../abstract_class/sensor.h"
 
 #ifdef __linux__
 class BME_Sensor : public Sensor{

@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <cstdio>
 
-#include "control.h"
+#include "./abstract_class/ctrl.h"
 
 enum class weekday{
 	sunday = 0

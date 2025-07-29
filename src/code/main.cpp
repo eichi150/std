@@ -28,6 +28,7 @@
 #include "translator.h"
 #include "cmd_ctrl.h"
 #include "arg_manager.h"
+#include "cli_ui.h"
 
 // SIMPLE TIME DOCUMENTATION /* github.com/eichi150/std */
 
@@ -65,11 +66,14 @@ int main(int argc, char* argv[]){
 		#endif //__linux__
 				
 				//Init Argument Manager
-				Arg_Manager arg_man{jsonH, std::make_shared<Cmd_Ctrl>(ctrl)};
+				std::shared_ptr<Arg_Manager> arg_man = std::make_shared<Arg_Manager>(jsonH, std::make_shared<Cmd_Ctrl>(ctrl));
 				
-				arg_man.proceed_inputs(argc, str_argv);
-				
-				if(arg_man.run_environment()){
+				arg_man->proceed_inputs(argc, str_argv);
+
+				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(arg_man);
+
+				//Environment
+				if(arg_man->run_environment()){
 					std::cout << "std - Environment started... |-- Close with 'exit'" << std::endl;
 					do{
 						bool arg_valid = false;
@@ -101,13 +105,17 @@ int main(int argc, char* argv[]){
 
 						try{
 				
-							arg_man.proceed_inputs(argc, str_argv);
+							arg_man->proceed_inputs(argc, str_argv);
 							
 						}catch(const std::runtime_error& rt){
 							std::cout << "**" << rt.what() << std::endl;
 						}
-					}while(arg_man.run_environment());
+					}while(arg_man->run_environment());
 				}
+
+				//CLI UserInterface & ConsoleOutput				
+				cli->update();
+
 				
 			}else{
 			

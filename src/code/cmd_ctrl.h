@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 #include "enum_class.h"
-#include "control.h"
+#include "./abstract_class/ctrl.h"
 
 class Cmd_Ctrl : public Ctrl{
 public:
