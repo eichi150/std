@@ -22,9 +22,9 @@ bool Cmd_Ctrl::is_argument_valid(const std::vector<std::string>& str_argv){
 
 	//commands regex_pattern
 	for(const auto& pattern : regex_pattern){
-		for(size_t i{1}; i < str_argv.size(); ++i){
+		for(size_t i{0}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
-			
+				std::cout << str_argv[i];
 				return  true;
 			}	
 		}
@@ -32,7 +32,7 @@ bool Cmd_Ctrl::is_argument_valid(const std::vector<std::string>& str_argv){
 	
 	//device_regex_pattern
 	for(const auto& pattern : device_regex_pattern){
-		for(size_t i{1}; i < str_argv.size(); ++i){
+		for(size_t i{0}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
 
 				return  true;
