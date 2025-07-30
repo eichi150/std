@@ -47,9 +47,10 @@ protected:
 	std::stringstream cmd_log;
 };
 
-class Device_Command : public Command{
+
+class TouchDevice_Command : public Command{
 public:
-	Device_Command(
+	TouchDevice_Command(
 		const std::map<error, std::string>& str_error
 		, const std::string& device_name
 		
@@ -63,7 +64,7 @@ public:
 		return cmd_log.str();
 	}
 	
-	void execute(){
+	void execute() override {
 		
 		Device_Ctrl device{str_error.at(error::sensor)};
 		
@@ -94,8 +95,6 @@ public:
 					    
 		}
 	};
-	
-
 	
 private:
 	std::map<error, std::string> str_error;

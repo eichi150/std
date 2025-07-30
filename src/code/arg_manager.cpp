@@ -73,13 +73,11 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			command::config_filepath
 			, command::language
 		    };
-				    
-		    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
 		    
 		    cmd = std::make_unique<Show_Command>(
 			jsonH
 			, str_argv
-			, regex_pattern
+			, ctrl->get_specific_regex_pattern(commands)
 			, output_flags
 			, all_accounts
 			, str_error
@@ -135,7 +133,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 				
 		#ifdef __linux__
 		
-			cmd = std::make_unique<Device_Command>(
+			cmd = std::make_unique<TouchDevice_Command>(
 			    str_error
 			    , str_argv[2]
 			   
@@ -295,10 +293,14 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 				, command::clock
 				, command::day
 			    };
-				    
-			    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
 					
-			    arg_manager_log << device.set_user_automation_crontab(str_argv, jsonH, regex_pattern) << std::endl;
+			    arg_manager_log 
+				<< device.set_user_automation_crontab(
+					str_argv
+					, jsonH
+					, ctrl->get_specific_regex_pattern(commands)
+				    ) 
+				<< std::endl;
 					    
 			    break;
 			}
