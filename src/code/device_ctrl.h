@@ -38,9 +38,16 @@ enum class months{
 };
 
 
-class Device_Ctrl : public Ctrl{
+class Device_Ctrl : public CTRL::Ctrl{
 public:
 	Device_Ctrl(const std::string& error_prompt);
+	
+	void show_log(bool set_to) override {
+		show_ctrl_log = set_to;
+	}
+	std::string get_log() const override{
+		return ctrl_log;
+	}
 	
 	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command);
 	

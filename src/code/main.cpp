@@ -36,26 +36,26 @@ using json = nlohmann::json;
 int main(int argc, char* argv[]){
 	
 	if(argc > 1){
+		std::shared_ptr<Cmd_Ctrl> ctrl = std::make_shared<Cmd_Ctrl>();
 		try{
-			Cmd_Ctrl ctrl{};
 			
 			//Argumente entgegen nehmen und Parsen
 			
-			std::vector<std::string> str_argv = ctrl.parse_argv(argc, argv);
+			std::vector<std::string> str_argv = ctrl->parse_argv(argc, argv);
 
-			if(ctrl.is_argument_valid(str_argv)){
+			if(ctrl->is_argument_valid(str_argv)){
 				
 				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
 
 		#ifdef __linux__
-				auto regex_pattern = ctrl.get_regex_pattern();
+				auto regex_pattern = ctrl->get_regex_pattern();
 				
 				//Vorher Automation ausführen
 				if(	str_argv.size() >= 4 
 					&& std::regex_match(str_argv[1], regex_pattern.at(command::automatic))
-					&& std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor))
+					&& std::regex_match(str_argv[3], regex_pattern.at(command::measure_sensor))
 				){
-					Device_Ctrl device{ctrl.get_str_error().at(error::unknown)};
+					Device_Ctrl device{ctrl->get_str_error().at(error::unknown)};
 					
 					std::cout << device.process_automation(jsonH, str_argv[2]) << std::endl;
 					
@@ -65,11 +65,11 @@ int main(int argc, char* argv[]){
 		#endif //__linux__
 				
 				//Init Argument Manager
-				std::shared_ptr<Arg_Manager> arg_man = std::make_shared<Arg_Manager>(jsonH, std::make_shared<Cmd_Ctrl>(ctrl));
+				std::shared_ptr<Arg_Manager> arg_man = std::make_shared<Arg_Manager>(jsonH, ctrl);
 				
 				arg_man->proceed_inputs(argc, str_argv);
-
-				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(arg_man);
+				
+				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(arg_man, ctrl->get_log());
 
 				//Environment
 				if(arg_man->run_environment()){
@@ -88,10 +88,10 @@ int main(int argc, char* argv[]){
 								return 0;
 							}
 							
-							new_argv = ctrl.split_input(input);
+							new_argv = ctrl->split_input(input);
 							new_argv.insert(new_argv.begin(), "std");
-							new_argv = ctrl.parse_argv(new_argv.size(), new_argv);
-							arg_valid = ctrl.is_argument_valid(new_argv);
+							new_argv = ctrl->parse_argv(new_argv.size(), new_argv);
+							arg_valid = ctrl->is_argument_valid(new_argv);
 							
 							for(const auto& arg : new_argv){
 								std::cout << arg << '\n';
@@ -118,11 +118,11 @@ int main(int argc, char* argv[]){
 				
 			}else{
 			
-				throw std::runtime_error{ctrl.get_str_error().at(error::unknown)};
+				throw std::runtime_error{ctrl->get_str_error().at(error::unknown)};
 			}
 		//Error Output	
 		}catch(const std::runtime_error& re){
-			std::cerr << "**" << re.what() << std::endl;
+			std::cerr << "**" << re.what() << "\n" << ctrl->get_log() << std::endl;
 		}
 		
 	}else{

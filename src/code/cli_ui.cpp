@@ -1,6 +1,7 @@
 #include "cli_ui.h"
 
-CLI_UI::CLI_UI(std::shared_ptr<Arg_Manager> manager) : arg_man(std::move(manager)){};
+CLI_UI::CLI_UI(std::shared_ptr<Arg_Manager> manager, const std::string& ctrl_log) 
+	: arg_man(std::move(manager)), ctrl_log(ctrl_log){};
 
 void CLI_UI::update(){
 	
@@ -39,6 +40,8 @@ void CLI_UI::update(){
 	if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
 		
 		std::cout 
+			<< "\n===== Control_Log: =====\n"
+			<< ctrl_log
 			<< "\n===== Arg_Manager_Log: =====\n"
 			<< arg_man->get_log() 
 			<< "\n===== UI_Interface_Log: =====\n"
@@ -263,7 +266,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 		<< create_line(table_width, '=')
 		<< '\n'
 		
-		<< "Data: @" + alias
+		<< "Data: @ " + alias
 		<< create_line(table_width, '-')
 		
 		//empty Strings

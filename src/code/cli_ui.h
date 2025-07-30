@@ -16,11 +16,13 @@
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI::UI_Interface{
 public:
-	explicit CLI_UI(std::shared_ptr<Arg_Manager> manager);
+	explicit CLI_UI(std::shared_ptr<Arg_Manager> manager, const std::string& ctrl_log);
 
 	void update() override;
 	
 private:
+	std::string ctrl_log;
+	
 	std::shared_ptr<Arg_Manager> arg_man;
 	std::vector<Automation_Config> all_automations;
 	

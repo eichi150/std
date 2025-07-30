@@ -34,58 +34,54 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	    }
 	    this->output_flags.set(static_cast<size_t>(OutputType::show_all_log));
 	    this->argc -= 1;
+	    ctrl->show_log(true);
+	    arg_manager_log << "show log\n";
 	    return false;
         }
     );
     str_argv = str_argv_without_LOG_cmd;
     
+    
+    //show Möglichkeiten
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
+	std::vector<command> commands = {
+	    command::config_filepath
+	    , command::language
+	    , command::help
+	    , command::show
+	    , command::activate
+	};
+	    
+	arg_manager_log << "show Command\n";
+	    
+	cmd = std::make_unique<Show_Command>(
+	    jsonH
+	    , str_argv
+	    , argc
+	    , ctrl->get_specific_regex_pattern(commands)
+	    , output_flags
+	    , all_accounts
+	    , str_error
+	);
+    }
+    
+    
+    if(!cmd){
     switch(argc){
     
         case 2:
             {
-                //Zeige Hilfe an
-                //help
-                if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
-		    output_flags.set(static_cast<size_t>(OutputType::show_help));
-                    break;
-                }
-
-                //Zeige alle <entity> und <alias> an
-                //show
-                if (std::regex_match(str_argv[1], regex_pattern.at(command::show))) {
-                    output_flags.set(static_cast<size_t>(OutputType::show_all_accounts));
-                    break;
-                }
-
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
 		    run_env = true;
+		    arg_manager_log << "start environment\n";
 		    break;
                 }
-                
+                arg_manager_log << "error: syntax wrong\n";
                 throw std::runtime_error{str_error.at(error::synthax)};
             }
             
         case 3:
             {	
-                //show Möglichkeiten
-                if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
-		    std::vector<command> commands = {
-			command::config_filepath
-			, command::language
-		    };
-		    
-		    cmd = std::make_unique<Show_Command>(
-			jsonH
-			, str_argv
-			, ctrl->get_specific_regex_pattern(commands)
-			, output_flags
-			, all_accounts
-			, str_error
-		    );
-		    
-		    break;
-
-                }
                 
                 //Account löschen
                 //del <alias>
@@ -99,7 +95,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    );
                     
 		    user_output_log << str_argv[2] << " Alias deleted\n";
-		    
+		    arg_manager_log << str_argv[2] << " Alias deleted\n";
                     break;
                 }
                 //Language changeTo
@@ -115,7 +111,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    );
 		    
 		    user_output_log << "Language changed to " << str_argv[2] << '\n';
-		    
+		    arg_manager_log << "Language changed to " << str_argv[2] << '\n';
 		    break;
                 }
                 
@@ -131,7 +127,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			    , str_argv[2]
 			   
 			);
-			user_output_log << "Device touched\n";
+			arg_manager_log << "Device touched\n";
 		#else
 		
 		    arg_manager_log << "-touch <device> Only available for Linux" << std::endl;
@@ -144,12 +140,14 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                                 
                 //i2c Sensor Messwerte für <alias> speichern
                 // <alias> -mes
-                if(std::regex_match(str_argv[2], regex_pattern.at(command::messure_sensor))){
+                if(std::regex_match(str_argv[2], regex_pattern.at(command::measure_sensor))){
                 
 		#ifdef __linux__
-                
+    /* BUILD UP */
                     Device_Ctrl device{str_error.at(error::sensor)};
-                    arg_manager_log << add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) << std::endl;
+                    arg_manager_log 
+			<< add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) 
+			<< std::endl;
                     
 		#else
 			arg_manager_log << "Only available for Linux\n";
@@ -158,12 +156,13 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		
 		    break;
                 }
-             
+		arg_manager_log << "error: Syntax wrong\n";
                 throw std::runtime_error{str_error.at(error::synthax)};
             }
 
         case 4:
             {
+    /* BUILD UP */
                 //-f <entityFilepath> <accountsFilepath>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::user_filepath))){
                 
@@ -186,15 +185,23 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    );
                     
 		    user_output_log << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << '\n';
+		    arg_manager_log << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << '\n';
                     break;
                 }
         
                 //Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
                 //-h -m
-                if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
-                   || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
+                if( std::regex_match(str_argv[3], regex_pattern.at(command::hours))
+                   || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)) )
                 {
-                    add_hours(all_accounts, str_argv[2]);
+    /* BUILD UP */
+		    if( std::regex_match(str_argv[2], ctrl->get_integer_pattern()) ){
+			add_hours(all_accounts, str_argv[2]);
+			arg_manager_log << "add hours without comment\n";
+		    }else{
+			user_output_log << "insert number for time value\n";
+			arg_manager_log << "insert number for time value\n";
+		    }
                     break;
                 }
 
@@ -202,22 +209,13 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 //<alias> -tag plant
 		if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
                	{
-               		                	
+    /* BUILD UP */         		                	
 		    add_tag_to_account(all_accounts, str_argv[3]);
+		    arg_manager_log << "add Tag to account\n";
 		    break;
                 }
 		
-		//show automation für alias
-		//.std sh <alias> -activate
-                if(std::regex_match(str_argv[1], regex_pattern.at(command::show))
-		    && std::regex_match(str_argv[3], regex_pattern.at(command::activate))
-		) 
-               	{
-		    
-		    output_flags.set(static_cast<size_t>(OutputType::show_alias_automation));
-		    break;
-		}
-		
+		arg_manager_log << "error: Syntax wrong\n";
                 throw std::runtime_error{str_error.at(error::synthax)};
             }
             
@@ -225,7 +223,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
             {
                 //-cf <configFilepath> <entityFilepath> <accountsFilepath>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::config_filepath))){
-                
+    /* BUILD UP */           
                     change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
                     
                     arg_manager_log << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
@@ -237,78 +235,30 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
                     || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
                 {
+    /* BUILD UP */
                     add_hours(all_accounts, str_argv[2]);
+		    arg_manager_log << "add hours with comment\n";
                     break;
                 }
 		
 		//Automation konfigurieren
 		//<alias> -a -mes "time_config"
-		bool is_true = false;
-		bool cmd_messure = std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor));
-		//-activate
-		if(std::regex_match(str_argv[2], regex_pattern.at(command::activate)) && cmd_messure){
-				
-		    std::stringstream ss;
-		    ss << "\nPossible Connections:\n";
-		    for(const auto& name : ctrl->device_regex_pattern){
-			ss << " > " << name.first << '\n';
-		    }
-		    arg_manager_log << ss.str();
-					
-		    str_argv[2] = "BME280";
-		    is_true = true;
-					    	
-		}else{
-		    std::string arg = str_argv[2];
-		    auto it = ctrl->device_regex_pattern.find(arg);
-		    if(it != ctrl->device_regex_pattern.end()){
-			//<device_name>
-			if(std::regex_match(str_argv[2], ctrl->device_regex_pattern.at(str_argv[2])) && cmd_messure){
-			    is_true = true;
-			}
-		    }
-		}
-				
-		#ifdef __linux__
-		   
-		if(is_true){  
-                    
-		    Device_Ctrl device{str_error.at(error::sensor)};
-			
-		    //an den beginn von str_argv die entity speichern -> für automation_config file
-			    
-		    std::any_of( all_accounts.begin(), all_accounts.end(),
-			[this](const Time_Account& account){
-			    if(this->str_argv[1] == account.get_alias()){
-				this->str_argv[0] = account.get_entity();
-				return true;
-			    }
-			return false;
-		    });
+		//-activate -measure
+		if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) ){
 		    
-		    std::vector<command> commands = {
-			command::logfile
-			, command::minutes
-			, command::hours
-			, command::clock
-			, command::day
-		    };
-					
-		    arg_manager_log << device.set_user_automation_crontab(
-			    str_argv
-			    , jsonH
-			    , ctrl->get_specific_regex_pattern(commands)
-			) 
-			<< std::endl;
-					    
-			break;
-			}
-		#else
-			arg_manager_log << "Only available for Linux" << std::endl;
-			break;
+		    cmd = std::make_unique<Activate_Command>(
+			regex_pattern
+			, all_accounts
+			, str_error
+			, jsonH
+			, str_argv
+		    );
+		    arg_manager_log << "Activate_Command\n";
+		    
+		    break;
+		}
 			
-		#endif // __linux__
-				
+		arg_manager_log << "error: Syntax wrong\n";		
                 throw std::runtime_error{str_error.at(error::synthax)};
             }
 
@@ -320,9 +270,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    && std::regex_match(str_argv[4], regex_pattern.at(command::tag)) )
                	{
 		    arg_manager_log << "add_account_withTag " << all_accounts.size() << '\n';
-		    //std::vector<command> commands = {command::add};
-		    //std::map<command, std::regex> special_regex_pattern = ctrl->get_specific_regex_pattern(commands);
-				    
+		    	    
 		    cmd = std::make_unique<Add_Command>(
 			all_accounts
 			, jsonH
@@ -330,26 +278,28 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			, Add_account{str_argv[2], str_argv[3], str_argv[5]}
 			, regex_pattern.at(command::add)
 		    );
-		    
+		    arg_manager_log  << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << " | Tag: " << str_argv[5] << '\n';
 		    user_output_log << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << " | Tag: " << str_argv[5] << '\n';
                     break;
                 }	
-				
+		    arg_manager_log << "error: Syntax wrong\n";
 		    throw std::runtime_error{str_error.at(error::synthax)};
 	    }
 
         
         default:
-            {
+            {	
+		arg_manager_log << "error: switchCase default\n";
                 throw std::runtime_error{str_error.at(error::untitled_error)};
 		
 	    }
-	
     };
-    
+    }
     if(cmd){
 	cmd->execute();
-	arg_manager_log << cmd->get_log();
+	arg_manager_log
+	    << "\n===== Command_Log: =====\n" 
+	    << cmd->get_log();
 	
 	user_output_log << cmd->get_user_log();
 	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
@@ -363,6 +313,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	    }
 	}
 	if(throw_error){
+	    arg_manager_log << "error: unknown_flag\n";
 	    throw std::runtime_error{str_error.at(error::unknown)};
 	}
     }
@@ -450,11 +401,7 @@ std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::str
     );
     if(!acc){
 	
-    /*for(const auto& account : all_accounts){
-	if(account.get_alias() == alias){
-	    return std::make_shared<Time_Account>(account);
-	}
-    }*/
+    
     throw std::runtime_error{str_error.at(error::unknown_alias)};
     }
     return acc;
@@ -512,9 +459,8 @@ void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::
     for(auto& account : all_accounts){
                         
         if(str_argv[1] == account.get_alias() ){
-        
-            float time_float = stof(amount);
-            
+	    float time_float = stof(amount);
+           
             if (std::regex_match(str_argv[3], regex_pattern.at(command::minutes))){
                 time_float /= 60.f;
             }

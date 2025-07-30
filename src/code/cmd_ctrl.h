@@ -7,8 +7,18 @@
 #include <string>
 #include "./abstract_class/ctrl.h"
 
-class Cmd_Ctrl : public Ctrl{
+class Cmd_Ctrl : public CTRL::Ctrl{
 public:
+	void show_log(bool set_to) override {
+		show_ctrl_log = set_to;
+	}
+	
+	std::string get_log() const override{
+		if(show_ctrl_log){
+			return ctrl_log;
+		}
+		return {};
+	}
 	
 	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
 	std::vector<std::string> split_input(const std::string& input);
@@ -44,9 +54,14 @@ public:
 			}
 			
 			argv = {};
-			/*for(const auto& str : str_argv){
-				std::cout << argc << " "  << str << std::endl;
-			}*/
+			
+			//Log Output
+			ctrl_log.append(std::to_string(argc));
+			ctrl_log.append("\n");
+			for(const auto& str : str_argv){
+				ctrl_log.append(str);
+				ctrl_log.append("\n");
+			}
 		return str_argv;
 	}
 	

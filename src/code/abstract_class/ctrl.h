@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <regex>
+#include <sstream>
 
 #include "../json_handler.h"
 #include "../time_account.h"
@@ -42,7 +43,7 @@ enum class command{
 	, language
 	, tag
 	, touch_sensor
-	, messure_sensor
+	, measure_sensor
 	, activate
 	, i2c
 	, automatic
@@ -50,7 +51,8 @@ enum class command{
 	, show_all_log
 };
 
-
+namespace CTRL{
+	
 class Ctrl{
 public:
 	Ctrl(){
@@ -70,12 +72,12 @@ public:
 			, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
 			, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
 			, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
-			, { command::messure_sensor,	std::regex{R"(^(--?mes(sure)?)$)", std::regex_constants::icase } }
+			, { command::measure_sensor,	std::regex{R"(^(--?me(asure)?)$)", std::regex_constants::icase } }
 			, { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
 			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
-			, { command::show_all_log, 		std::regex{R"(^--?prolog$)", std::regex_constants::icase} }
+			, { command::show_all_log, 		std::regex{R"(^--?debug$)", std::regex_constants::icase} }
 		};
 		//Error Outputs
 		str_error = {
@@ -107,7 +109,10 @@ public:
 	};
 	
 	virtual ~Ctrl(){};
-		
+	
+	virtual std::string get_log() const = 0;
+	virtual void show_log(bool set_to) = 0;
+	
 	virtual std::vector<float> check_device(const std::string& name){
 		throw std::runtime_error{"Not implemented"};
 	};
@@ -140,7 +145,10 @@ public:
 	std::map<command, std::regex> get_regex_pattern() const {
 		return regex_pattern;
 	}
-
+	std::regex get_integer_pattern() const {
+		return integer_pattern;
+	}
+	
 	std::map<command, std::regex> get_specific_regex_pattern(const std::vector<command>& command_list) const {
 		std::map<command, std::regex> pattern;
 
@@ -154,6 +162,8 @@ public:
 	std::map<std::string, std::regex> device_regex_pattern;
 	
 protected:
+	bool show_ctrl_log = false;
+	std::string ctrl_log;
 	
 	Clock clock{};
 	std::regex integer_pattern{R"(^\d+$)"};
@@ -185,5 +195,6 @@ protected:
 	
 	
 
-};
+};//Ctrl
+}; //namespace CTRL
 #endif // CTRL_H
