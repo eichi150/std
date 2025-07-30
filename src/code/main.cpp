@@ -46,11 +46,10 @@ int main(int argc, char* argv[]){
 
 			if(ctrl.is_argument_valid(str_argv)){
 				
-				auto regex_pattern = ctrl.get_regex_pattern();
-				
 				std::shared_ptr<JSON_Handler> jsonH = std::make_shared<JSON_Handler>();
 
 		#ifdef __linux__
+				auto regex_pattern = ctrl.get_regex_pattern();
 				
 				//Vorher Automation ausführen
 				if(	str_argv.size() >= 4 

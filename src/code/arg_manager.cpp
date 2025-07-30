@@ -22,31 +22,6 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
     this->argc = _argc;
     this->regex_pattern = ctrl->get_regex_pattern();
     
-    regex_pattern = {
-			  { command::help,      		std::regex{R"(^--?help$)", std::regex_constants::icase } }
-			, { command::add,       		std::regex{R"(^--?add$)", std::regex_constants::icase } }
-			, { command::show,      		std::regex{R"(^(--?show|--?sh|show|sh)$)" , std::regex_constants::icase }}
-			, { command::delete_,   		std::regex{R"(^(--?del(ete)?)$)", std::regex_constants::icase } }
-			, { command::hours, 			std::regex{R"(^(--?h(ours)?)$)", std::regex_constants::icase } }
-			, { command::minutes, 			std::regex{R"(^(--?m(inutes)?)$)", std::regex_constants::icase } }
-			, { command::day, 				std::regex{R"(^--?day$)", std::regex_constants::icase} }
-			, { command::logfile, 			std::regex{R"(^--?log$)", std::regex_constants::icase} }
-			, { command::clock, 			std::regex{R"(^--?clock$)", std::regex_constants::icase} }
-			, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
-			, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
-			, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
-			, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
-			, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
-			, { command::messure_sensor,	std::regex{R"(^(--?mes(sure)?)$)", std::regex_constants::icase } }
-			, { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
-			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
-			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
-			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
-			, { command::process_log, 		std::regex{R"(^--?prolog$)", std::regex_constants::icase} }
-		};
-    
-    
-    
     //enable show_logfile, erase '-prolog' cmd out of str_argv, argc -=1
     std::vector<std::string> str_argv_without_LOG_cmd;
     std::copy_if(
@@ -63,8 +38,6 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
         }
     );
     str_argv = str_argv_without_LOG_cmd;
-    
-    arg_manager_log << argc << " " << str_argv.size() << '\n';
     
     switch(argc){
     
@@ -161,36 +134,15 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
 				
 		#ifdef __linux__
-				    
-			std::string arg = str_argv[2];
-			auto it = ctrl->device_regex_pattern.find(arg);
-			if(it == ctrl->device_regex_pattern.end()){
-			    std::stringstream ss;
-			    ss << "\nPossible Connections:\n";
-			    for(const auto& name : ctrl->device_regex_pattern){
-				ss << " > " << name.first << '\n';
-			    }
-			    throw std::runtime_error{str_error.at(error::synthax) + ss.str()};
-			}
-				    
-			if(std::regex_match(str_argv[2],  ctrl->device_regex_pattern.at(arg)) ){
-
-			    Device_Ctrl device{str_error.at(error::sensor)};
-			    std::vector<float> output_sensor = device.check_device(arg);
-
-			    std::stringstream output_str;
-					    
-			    output_str 
-				<< translator.language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-				<< translator.language_pack.at("Pressure")<< ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-				<< translator.language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
-					        
-			    arg_manager_log << output_str.str() << std::endl;
-					    
-			}
+		
+			cmd = std::make_unique<Device_Command>(
+			    str_error
+			    , str_argv[2]
+			   
+			);
 		#else
-            arg_manager_log << "Only available for Linux" << std::endl;
-			
+		arg_manager_log << "-touch <device> Only available for Linux" << std::endl;
+		throw std::runtime_error{"Only available for Linux"};
 		#endif // __linux__
 		
 			break;

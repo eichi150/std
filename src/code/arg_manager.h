@@ -47,6 +47,62 @@ protected:
 	std::stringstream cmd_log;
 };
 
+class Device_Command : public Command{
+public:
+	Device_Command(
+		const std::map<error, std::string>& str_error
+		, const std::string& device_name
+		
+		
+	) : str_error(str_error)
+		, arg(device_name)
+		
+	{};
+	
+	std::string get_log() const override {
+		return cmd_log.str();
+	}
+	
+	void execute(){
+		
+		Device_Ctrl device{str_error.at(error::sensor)};
+		
+		auto it = device.device_regex_pattern.find(arg);
+		
+		if(it == device.device_regex_pattern.end()){
+		    std::stringstream ss;
+		    ss << "\nPossible Connections:\n";
+			for(const auto& name : device.device_regex_pattern){
+				ss << " > " << name.first << '\n';
+			}
+		    throw std::runtime_error{str_error.at(error::synthax) + ss.str()};
+		}
+				    
+		if(std::regex_match(arg, device.device_regex_pattern.at(arg)) ){
+
+		    
+		    std::vector<float> output_sensor = device.check_device(arg);
+
+		    std::stringstream output_str;
+					    
+			output_str 
+			<< "Temperature" << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+			<< "Pressure" << ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+			<< "Humidity" << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+					        
+			cmd_log << output_str.str() << std::endl;
+					    
+		}
+	};
+	
+
+	
+private:
+	std::map<error, std::string> str_error;
+	std::string arg;
+	
+};
+
 class Show_Command : public Command{
 public:
 	
