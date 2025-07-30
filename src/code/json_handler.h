@@ -17,7 +17,7 @@
 #include <fstream>
 
 #include "json.hpp"
-#include "enum_class.h"
+#include "translator.h"
 #include "time_account.h"
 
 class JSON_Handler{

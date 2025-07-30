@@ -36,10 +36,15 @@ void CLI_UI::update(){
 		
 	}
 	
-	if(flags.test(static_cast<size_t>(OutputType::arg_manager_log))){
+	if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
 		
-		std::cout << arg_man->get_log() << std::endl;
-		
+		std::cout 
+			<< "\n===== Arg_Manager_Log: =====\n"
+			<< arg_man->get_log() 
+			<< "\n===== UI_Interface_Log: =====\n"
+			<< ui_interface_log.str()
+			<< "\n===== Log_Ende ====="
+			<< std::endl;
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
@@ -112,9 +117,14 @@ int CLI_UI::get_sum_str_size(const std::vector<std::string>& multiple_str){
 
 std::string CLI_UI::create_automation_table(const std::string& account_alias){
 	
+	try{
 	//Read Automation_Config.json
 	if(all_automations.empty()){
 		all_automations = arg_man->jsonH->read_automation_config_file();
+	}
+	
+	}catch(const std::runtime_error& re){
+		ui_interface_log << "CLI_UI AutomationTable " << re.what() << std::endl;
 	}
 	
 	//HEAD Parameter
@@ -290,20 +300,22 @@ std::string CLI_UI::create_alias_table(){
 	std::string entity = account->get_entity();
 	std::string tag = account->get_tag();
 	
-	//Read Automation_Config.json
-	if(all_automations.empty()){
-		all_automations = arg_man->jsonH->read_automation_config_file();
-	}
+	//Read Automation_Config.json File
+	std::string automation_table_str = create_automation_table(alias);
 	
-	bool is_automation = false;
 	std::string device_name;
-	for(const auto& automation : all_automations){
-		if(automation.alias == alias){
-			is_automation = true;
+	bool is_automation = std::any_of(
+		all_automations.begin(), all_automations.end(),
+		[&alias, &device_name](const Automation_Config& automation){
+			if(automation.alias != alias){
+				return false;
+			}
 			device_name = automation.device_name;
-			break;
+			return true;
 		}
-	}
+	);
+	
+	
 	std::string t_automation = "Automation: " + (is_automation ? device_name : "None");
 	
 	std::vector<std::string> table_strings = {
@@ -331,7 +343,7 @@ std::string CLI_UI::create_alias_table(){
 	std::ostringstream table;
 	table 
 		<< ss_head.str()
-		<< create_automation_table(alias)		
+		<< automation_table_str	
 		<< data_table
 		
 		<< std::endl;

@@ -13,7 +13,6 @@
 #include "translator.h"
 #include "clock.h"
 #include "cmd_ctrl.h"
-#include "enum_class.h"
 
 #ifdef __linux__
 	#include "device_ctrl.h"
@@ -27,7 +26,7 @@ enum class OutputType{
 	, show_specific_table
 	, show_alias_table
 	, show_alias_automation
-	, arg_manager_log
+	, show_all_log
 	, show_user_output_log
 	, COUNT //maxSize Bitset
 };
@@ -43,9 +42,11 @@ public:
 	virtual void execute() = 0;
 	
 	virtual std::string get_log() const = 0;
-
+	virtual std::string get_user_log() const = 0;
+	
 protected:
 	std::stringstream cmd_log;
+	std::stringstream user_output_log;
 };
 
 class ChangeLanguage_Command : public Command{
@@ -65,6 +66,9 @@ public:
 	std::string get_log() const override {
 		return cmd_log.str();
 	};
+	std::string get_user_log() const override{
+		return user_output_log.str();
+	}
 	
 	void execute() override{
 		
@@ -126,6 +130,10 @@ public:
 		return cmd_log.str();
 	}
 	
+	std::string get_user_log() const override{
+		return user_output_log.str();
+	}
+	
 	void execute() override {
 		
 		Device_Ctrl device{str_error.at(error::sensor)};
@@ -157,7 +165,7 @@ public:
 			<< "Humidity" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[2] << " %\n";
 					        
 			cmd_log << output_str.str() << std::endl;
-					    
+			user_output_log << output_str.str() << std::endl;	    
 		}
 	};
 	
@@ -190,6 +198,9 @@ public:
 	
 	std::string get_log() const override{
 		return cmd_log.str();
+	}
+	std::string get_user_log() const override{
+		return user_output_log.str();
 	}
 	
 	void execute() override{
@@ -264,6 +275,13 @@ public:
 		alias_to_delete(alias_to_delete) 
 	{};
 	
+	std::string get_log() const override {
+		return cmd_log.str();
+	}
+	std::string get_user_log() const override{
+		return user_output_log.str();
+	}
+	
 	void execute() override{
 		cmd_log << "execute Delete_Command\n";
 		if(all_accounts.empty()){
@@ -311,9 +329,6 @@ public:
 		cmd_log << alias_to_delete << " deleted\n";//translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 	}
 	
-	std::string get_log() const override {
-		return cmd_log.str();
-	}
 	
 private:
 	
@@ -350,6 +365,13 @@ public:
 	{
 		cmd_log << "+Add_Command\n";
 	};
+	std::string get_log() const override{
+		return cmd_log.str();
+	}
+	
+	std::string get_user_log() const override{
+		return user_output_log.str();
+	}
 	
 	void execute() override{
 		cmd_log << "execute Add_Command\n";
@@ -392,9 +414,7 @@ public:
 		cmd_log << ss.str() << std::endl;	
 	};
 	
-	std::string get_log() const override{
-		return cmd_log.str();
-	}
+	
 	
 private:
 	
@@ -411,38 +431,25 @@ class Arg_Manager{
 public:
 	Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr);
 	
-	void proceed_inputs(const int& _argc, const std::vector<std::string>& argv);
-
-	bool run_environment() const { return run_env; }
-	
+	//Variables
 	std::shared_ptr<JSON_Handler> jsonH;
 	Translator translator{};
 	
-	void set_output_flag(OutputType flag, bool value = true){
-		output_flags.set(static_cast<size_t>(flag), value);
-	}
-	OutputBitset get_output_flags() const {
-		return output_flags;
-	}
-	void clear_output_flags(){
-		output_flags.reset();
-	}
+	//Methods
 	
-	std::vector<Time_Account> get_all_accounts() const {
-		return all_accounts;
-	}
+	void proceed_inputs(const int& _argc, const std::vector<std::string>& argv);
+
+	bool run_environment() const { return run_env; }
+	void set_output_flag(OutputType flag, bool value = true); 
+	
+	OutputBitset get_output_flags() const;
+	void clear_output_flags();
+	std::vector<Time_Account> get_all_accounts() const;
+	std::vector<std::string> get_str_argv() const;
+	std::string get_log() const;
+	std::string get_user_output_log() const;
 	
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
-	
-	std::vector<std::string> get_str_argv() const {
-		return str_argv;
-	}
-	
-	std::string get_log() const;
-	
-	std::string get_user_output_log() const {
-		return user_output_log.str();
-	}
 	
 private:
 
@@ -464,8 +471,8 @@ private:
 	std::map<error, std::string> str_error;
 /*====*/
 	bool run_env = false;
-	
 	Clock clock{};
+	
 
 	void change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath);
 

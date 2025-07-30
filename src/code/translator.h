@@ -3,7 +3,11 @@
 
 #include <map>
 #include <string>
-#include "enum_class.h"
+
+enum class Language{
+    english = 0
+    , german 
+};
 
 class Translator{
 public:

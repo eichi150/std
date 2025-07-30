@@ -22,7 +22,6 @@
 #include "json.hpp"
 
 #include "clock.h"
-#include "enum_class.h"
 #include "time_account.h"
 #include "json_handler.h"
 #include "translator.h"

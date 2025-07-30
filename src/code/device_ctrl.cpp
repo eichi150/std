@@ -26,7 +26,8 @@ Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_p
 		, {months::october, 	"october"}
 		, {months::november, 	"november"}
 		, {months::december, 	"december"}
-	};	
+	};
+	
 };
 
 //std <alias> -a -mes "time"

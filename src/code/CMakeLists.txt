@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
-	enum_class.cpp
 	time_account.cpp
 	json_handler.cpp
 	translator.cpp

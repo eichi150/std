@@ -55,6 +55,8 @@ public:
 	
 	
 private:
+	
+	
 	std::string name;
 	std::string error_prompt;
 	std::vector<Automation_Config> all_automations;
@@ -62,6 +64,7 @@ private:
 	
 	std::map<weekday, std::string> str_weekday;
 	std::map<months, std::string> str_months;
+	
 	
 	std::pair<std::string, bool> get_user_crontag_line(const std::vector<std::string>& str_argv, const std::map<command, std::regex>& regex_pattern);
 

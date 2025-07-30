@@ -14,12 +14,12 @@
 
 
 //Console Line Interface - Konsolenausgaben
-class CLI_UI : public UI_Interface{
+class CLI_UI : public UI::UI_Interface{
 public:
 	explicit CLI_UI(std::shared_ptr<Arg_Manager> manager);
 
 	void update() override;
-
+	
 private:
 	std::shared_ptr<Arg_Manager> arg_man;
 	std::vector<Automation_Config> all_automations;

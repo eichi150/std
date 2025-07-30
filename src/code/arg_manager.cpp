@@ -28,11 +28,11 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
         str_argv.begin(), str_argv.end(),
         std::back_inserter(str_argv_without_LOG_cmd),
         [this](const std::string& str) {
-	    if(!std::regex_match(str, this->regex_pattern.at(command::process_log))){
+	    if(!std::regex_match(str, this->regex_pattern.at(command::show_all_log))){
 	    
 		return true;
 	    }
-	    this->output_flags.set(static_cast<size_t>(OutputType::arg_manager_log));
+	    this->output_flags.set(static_cast<size_t>(OutputType::show_all_log));
 	    this->argc -= 1;
 	    return false;
         }
@@ -351,6 +351,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	cmd->execute();
 	arg_manager_log << cmd->get_log();
 	
+	user_output_log << cmd->get_user_log();
 	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
 	
     }else{
@@ -371,8 +372,22 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 // == PRIVATE == //
 // ============= //
 
+std::string Arg_Manager::get_log() const {
+    std::ostringstream log;
+    log 
+    << "Arg_Manager:\n"
+    << arg_manager_log.str()
+    << "\nJSON_Handler:\n"
+    << jsonH->get_log()
+    << std::endl;
+			
+    return log.str();
+}
 
-
+std::string Arg_Manager::get_user_output_log() const {
+    return user_output_log.str();
+}
+	
 #ifdef __linux__
 std::string Arg_Manager::add_sensor_data(const std::shared_ptr<Device_Ctrl>& device, std::vector<Time_Account>& all_accounts){
 
@@ -419,28 +434,51 @@ std::string Arg_Manager::add_sensor_data(const std::shared_ptr<Device_Ctrl>& dev
 }
 #endif // __linux__
 
-std::string Arg_Manager::get_log() const {
-    std::ostringstream log;
-    log 
-    << "Process Log:\nArg_Manager:\n"
-    << arg_manager_log.str()
-    << "\nJSON_Handler:\n"
-    << jsonH->get_log()
-    << std::endl;
-			
-    return log.str();
-}
-
 
 std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::string& alias){
-    for(const auto& account : all_accounts){
+    
+    std::shared_ptr<Time_Account> acc;
+    std::any_of(
+	all_accounts.begin(), all_accounts.end(),
+	[&alias, &acc](const Time_Account& account){
+	    if(account.get_alias() != alias){
+		return false;
+	    }
+	    acc = std::make_shared<Time_Account>(account);
+	    return true;
+	}
+    );
+    if(!acc){
+	
+    /*for(const auto& account : all_accounts){
 	if(account.get_alias() == alias){
 	    return std::make_shared<Time_Account>(account);
 	}
-    }
+    }*/
     throw std::runtime_error{str_error.at(error::unknown_alias)};
+    }
+    return acc;
 }
 
+void Arg_Manager::set_output_flag(OutputType flag, bool value){
+    output_flags.set(static_cast<size_t>(flag), value);
+}
+
+OutputBitset Arg_Manager::get_output_flags() const {
+    return output_flags;
+}
+
+void Arg_Manager::clear_output_flags(){
+    output_flags.reset();
+}
+	
+std::vector<Time_Account> Arg_Manager::get_all_accounts() const {
+    return all_accounts;
+}
+	
+std::vector<std::string> Arg_Manager::get_str_argv() const {
+    return str_argv;
+}
 
 
 void Arg_Manager::change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
@@ -516,21 +554,20 @@ void Arg_Manager::add_tag_to_account(std::vector<Time_Account>& all_accounts, co
 	std::string entity;
 	for(auto& account : all_accounts){
 		if(account.get_alias() == str_argv[1]){
+		    account.set_tag(tag);
+		    found_alias = true;
+		    entity = account.get_entity();
 			
-			account.set_tag(tag);
-			found_alias = true;
-			entity = account.get_entity();
-			
-			arg_manager_log << "Tag: " << tag << " to " << account.get_alias() << " added" << std::endl;
-			break;
+		    arg_manager_log << "Tag: " << tag << " to " << account.get_alias() << " added" << std::endl;
+		    break;
 		}
 	}
 	if(!found_alias){
-       throw std::runtime_error{str_error.at(error::not_found)};
+	    throw std::runtime_error{str_error.at(error::not_found)};
 	}
 	
 	jsonH->save_json_accounts(all_accounts);
-    jsonH->save_json_entity(all_accounts, entity);
+	jsonH->save_json_entity(all_accounts, entity);
     	
 }
 

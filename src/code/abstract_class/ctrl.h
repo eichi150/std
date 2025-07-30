@@ -10,6 +10,47 @@
 #include "../clock.h"
 #include "../bme280/bme280_sensor.h"
 
+enum class error{
+	  ok = 0
+	, unknown
+	, not_found
+	, synthax
+	, untitled_error
+	, double_entity
+	, double_alias
+	, unknown_alias
+	, unknown_alias_or_entity
+	, alias_equal_entity
+	, user_input_is_command
+	, unknown_language
+	, sensor
+	, tag_not_found
+};
+
+enum class command{
+	  help = 0
+	, add
+	, delete_
+	, show
+	, hours
+	, minutes
+	, day
+	, logfile
+	, clock
+	, config_filepath
+	, user_filepath
+	, language
+	, tag
+	, touch_sensor
+	, messure_sensor
+	, activate
+	, i2c
+	, automatic
+	, environment
+	, show_all_log
+};
+
+
 class Ctrl{
 public:
 	Ctrl(){
@@ -34,7 +75,7 @@ public:
 			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
-			, { command::process_log, 		std::regex{R"(^--?prolog$)", std::regex_constants::icase} }
+			, { command::show_all_log, 		std::regex{R"(^--?prolog$)", std::regex_constants::icase} }
 		};
 		//Error Outputs
 		str_error = {
@@ -57,10 +98,12 @@ public:
 		all_devices = {
 			{"BME280", std::make_shared<BME_Sensor>()}
 		};
+			
 		//regex_pattern für Device_name generieren
 		for(const auto& [name, _] : all_devices){
 			device_regex_pattern[name] = create_regex_outOf_string(name);	
 		}
+		
 	};
 	
 	virtual ~Ctrl(){};
@@ -107,18 +150,16 @@ public:
 		return pattern;
 	};
 	
+	std::map<std::string, std::shared_ptr<Sensor>> all_devices;
 	std::map<std::string, std::regex> device_regex_pattern;
 	
-
 protected:
-	std::map<std::string, std::shared_ptr<Sensor>> all_devices;
 	
 	Clock clock{};
 	std::regex integer_pattern{R"(^\d+$)"};
 	
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
-
 	
 	template <typename T>
 	std::shared_ptr<T> get_sensor_with_name(const std::string& name) {
@@ -141,6 +182,8 @@ protected:
 		}
 		return false;
 	}
+	
+	
 
 };
 #endif // CTRL_H
