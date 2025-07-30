@@ -19,6 +19,21 @@
 	#include "device_ctrl.h"
 #endif
 
+enum class OutputType{
+	show_all_accounts = 0
+	, show_help
+	, show_filepaths
+	, show_language
+	, show_specific_table
+	, show_alias_table
+	, show_alias_automation
+	, arg_manager_log
+	, COUNT //maxSize Bitset
+};
+
+
+using OutputBitset = std::bitset<static_cast<size_t>(OutputType::COUNT)>;
+
 class Command{
 public:
 	
@@ -28,6 +43,86 @@ public:
 	
 	virtual std::string get_log() const = 0;
 
+protected:
+	std::stringstream cmd_log;
+};
+
+class Show_Command : public Command{
+public:
+	
+	Show_Command(
+		std::shared_ptr<JSON_Handler> jsonH
+		, const std::vector<std::string>& str_argv
+		, const std::map<command, std::regex>& regex_pattern
+		, OutputBitset& output_flags
+		, const std::vector<Time_Account>& all_accounts
+		, const std::map<error, std::string>& str_error
+	
+	) : jsonH(jsonH)
+		, str_argv(str_argv)
+		, regex_pattern(regex_pattern)
+		, output_flags(output_flags)
+		, all_accounts(all_accounts)
+		, str_error(str_error)
+	{};
+	
+	std::string get_log() const override{
+		return cmd_log.str();
+	}
+	
+	void execute() override{
+		cmd_log << "execute Show_Command\n";
+		
+		//Zeige Filepaths, Language Setting, Alias Tabelle an
+        //show filepath
+        if(std::regex_match(str_argv[2], regex_pattern.at(command::config_filepath))){
+                    
+            output_flags.set(static_cast<size_t>(OutputType::show_filepaths));
+            cmd_log << str_argv[2] << " show activated\n";
+			return;
+        }
+        //language anzeigen
+        if(std::regex_match(str_argv[2], regex_pattern.at(command::language))){
+                                       
+			output_flags.set(static_cast<size_t>(OutputType::show_language));
+			cmd_log << str_argv[2] << " show activated\n";
+            return;    
+        }
+        //Zeige spezifischen Account an
+        //show <alias>
+        std::vector<Time_Account> matching_accounts;
+        matching_accounts = check_for_alias(str_argv[2]);
+                    
+        if(matching_accounts.empty()){
+			throw std::runtime_error{str_error.at(error::unknown_alias_or_entity)};
+        }
+	 
+		output_flags.set(static_cast<size_t>(OutputType::show_alias_table));
+		
+		cmd_log << str_argv[2] << " show activated\n";
+	};
+	
+	std::vector<Time_Account> check_for_alias(const std::string& alias){
+		std::vector<Time_Account> matching_accounts;
+			
+		std::copy_if(
+			all_accounts.begin(), all_accounts.end(),
+			std::back_inserter(matching_accounts),
+			[&alias](const Time_Account& acc) {
+				return acc.get_alias() == alias;
+			}
+		);
+		
+		return matching_accounts;
+	}
+
+private:
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::vector<std::string> str_argv;
+	std::map<command, std::regex> regex_pattern;
+	OutputBitset& output_flags;
+	std::vector<Time_Account> all_accounts;
+	std::map<error, std::string> str_error;
 };
 
 class Delete_Command : public Command{
@@ -44,30 +139,32 @@ public:
 		alias_to_delete(alias_to_delete) {};
 	
 	void execute() override{
-		delete_cmd_log << "execute Delete_Command\n";
+		cmd_log << "execute Delete_Command\n";
 		if(all_accounts.empty()){
 			throw std::runtime_error{str_error.at(error::untitled_error)};
 		}
 		
-		bool found_alias = false;
 		std::string entity;
 		std::string alias;
-	
-		for(const auto& account : all_accounts){
-			if(account.get_alias() == alias_to_delete){
-				entity = account.get_entity();
-				alias = account.get_alias();
-				found_alias = true;
-				break;
+		
+		bool found_alias = std::any_of(all_accounts.begin(), all_accounts.end(),
+			[this, &entity, &alias](const Time_Account& account){
+				if(account.get_alias() == this->alias_to_delete){
+					entity = account.get_entity();
+					alias = account.get_alias();
+					return true;
+				}
+				return false;
 			}
-		}
+		);
+		
 		if(!found_alias){
 			throw std::runtime_error{str_error.at(error::unknown_alias)};
 		}
 		
 		std::vector<Time_Account> adjusted_accounts;
 		
-		delete_cmd_log << "account_size: " << all_accounts.size() << '\n';
+		cmd_log << "account_size: " << all_accounts.size() << '\n';
 		//remove out of all_accounts
 		std::copy_if(all_accounts.begin(), all_accounts.end(),
 			std::back_inserter(adjusted_accounts),
@@ -78,28 +175,28 @@ public:
 				return true;
 			}
 		);
-		delete_cmd_log << "after_copy account_size: " << adjusted_accounts.size() << '\n';
+		cmd_log << "after_copy account_size: " << adjusted_accounts.size() << '\n';
 		
 		//update Files
 		jsonH->save_json_accounts(adjusted_accounts);
 		jsonH->save_json_entity(adjusted_accounts, entity);
 		
 		all_accounts = adjusted_accounts;
-		delete_cmd_log << alias_to_delete << " deleted\n";//translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
+		cmd_log << alias_to_delete << " deleted\n";//translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 	}
 	
 	std::string get_log() const override {
-		return delete_cmd_log.str();
+		return cmd_log.str();
 	}
 	
 private:
-	std::stringstream delete_cmd_log;
+	
 	
 	std::vector<Time_Account>& all_accounts;
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::map<error, std::string> str_error;
 	std::string alias_to_delete;
-};
+}; // Delete_Command
 
 
 
@@ -118,19 +215,18 @@ public:
 		, const std::map<error, std::string>& str_error
 		, const Add_account& add
 		, const std::regex& pattern
-	) 
-		
-		: all_accounts(all_accounts),
+	
+	) : all_accounts(all_accounts),
 		jsonH(jsonH),
 		str_error(str_error),
 		add(add),
 		regex_pattern(pattern) 
-		{
-			add_cmd_log << "+Add_Command\n";
-		};
+	{
+		cmd_log << "+Add_Command\n";
+	};
 	
 	void execute() override{
-		add_cmd_log << "execute Add_Command\n";
+		cmd_log << "execute Add_Command\n";
 		std::stringstream ss;
 		//Entity or Alias cant be named as a command
 		
@@ -167,36 +263,23 @@ public:
 			ss <<  " -tag= " << add.tag;
 		}
 		ss << " Saved";
-		add_cmd_log << ss.str() << std::endl;	
+		cmd_log << ss.str() << std::endl;	
 	};
 	
 	std::string get_log() const override{
-		return add_cmd_log.str();
+		return cmd_log.str();
 	}
 	
 private:
-	std::stringstream add_cmd_log;
 	
 	std::vector<Time_Account> all_accounts;
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::map<error, std::string> str_error;
 	Add_account add;
 	std::regex regex_pattern;
-};
+}; // Add_Command
 
 
-enum class OutputType{
-	show_all_accounts = 0
-	, show_filepaths
-	, show_language
-	, show_specific_table
-	, show_alias_table
-	, show_alias_automation
-	, arg_manager_log
-	, COUNT //maxSize Bitset
-};
-
-using OutputBitset = std::bitset<static_cast<size_t>(OutputType::COUNT)>;
 
 class Arg_Manager{
 public:
@@ -229,17 +312,7 @@ public:
 		return str_argv;
 	}
 	
-	std::string get_log() const {
-		std::ostringstream log;
-		log 
-			<< "Process Log:\nArg_Manager:\n"
-			<< arg_manager_log.str()
-			<< "\nJSON_Handler:\n"
-			<< jsonH->get_log()
-			<< std::endl;
-			
-		return log.str();
-	}
+	std::string get_log() const;
 	
 private:
 
@@ -248,29 +321,19 @@ private:
 #endif // __linux__
 	
 	std::unique_ptr<Command> cmd;
-	
 	OutputBitset output_flags;
-	
 	std::stringstream arg_manager_log;
 	
-	bool run_env = false;
-	
 	std::shared_ptr<Cmd_Ctrl> ctrl;
-	
 	std::vector<Time_Account> all_accounts;
-	
-	Clock clock{};
-	
-	std::vector<std::string> str_argv;
 	int argc;
-	
+	std::vector<std::string> str_argv;
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
-
-	std::vector<Time_Account> check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity);
+/*====*/
+	bool run_env = false;
 	
-	//Sammle alle Accounts mit diesem Alias
-	std::vector<Time_Account> collect_accounts_with_alias(const std::vector<Time_Account>& search_in, const std::string& search_for_alias);
+	Clock clock{};
 
 	void change_config_json_language(const std::string& to_language);
 
@@ -278,25 +341,12 @@ private:
 
 	void user_change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath);
 	
-	//void delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete);
-	
-
 	void add_tag_to_account(std::vector<Time_Account>& all_accounts, const std::string& tag);
 	
 	void add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount);
-
-
-
-	const std::string help = {
-    "add 			Add new Entity give it a Alias\n"
-    "-h -m  		Time to save in Hours or Minutes\n"
-    "show 			Show all Entitys and Alias's\n"
-    "sh 			Short Form of show\n"
-    "show 'ALIAS' 	show specific Entity's Time Account\n\n"
-    "For more Information have a look at README.md on github.com/eichi150/std\n"
-    };
 	    
 	
 };//Arg_Manager
+
 
 #endif // ARG_MANAGER_H

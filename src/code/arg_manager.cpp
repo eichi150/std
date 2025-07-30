@@ -4,12 +4,12 @@
 // == PUBLIC ==  //
 // ============= //
 
+
 Arg_Manager::Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr): jsonH(jH), ctrl(ctrl_ptr)
 {
 
     jsonH->read_all_accounts(all_accounts);
 	
-    regex_pattern = ctrl->get_regex_pattern();
     str_error = ctrl->get_str_error();
     
     translator.set_language(jsonH->get_config_language());
@@ -20,6 +20,32 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 
     this->str_argv = argv;
     this->argc = _argc;
+    this->regex_pattern = ctrl->get_regex_pattern();
+    
+    regex_pattern = {
+			  { command::help,      		std::regex{R"(^--?help$)", std::regex_constants::icase } }
+			, { command::add,       		std::regex{R"(^--?add$)", std::regex_constants::icase } }
+			, { command::show,      		std::regex{R"(^(--?show|--?sh|show|sh)$)" , std::regex_constants::icase }}
+			, { command::delete_,   		std::regex{R"(^(--?del(ete)?)$)", std::regex_constants::icase } }
+			, { command::hours, 			std::regex{R"(^(--?h(ours)?)$)", std::regex_constants::icase } }
+			, { command::minutes, 			std::regex{R"(^(--?m(inutes)?)$)", std::regex_constants::icase } }
+			, { command::day, 				std::regex{R"(^--?day$)", std::regex_constants::icase} }
+			, { command::logfile, 			std::regex{R"(^--?log$)", std::regex_constants::icase} }
+			, { command::clock, 			std::regex{R"(^--?clock$)", std::regex_constants::icase} }
+			, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
+			, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+			, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
+			, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
+			, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
+			, { command::messure_sensor,	std::regex{R"(^(--?mes(sure)?)$)", std::regex_constants::icase } }
+			, { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
+			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
+			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
+			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
+			, { command::process_log, 		std::regex{R"(^--?prolog$)", std::regex_constants::icase} }
+		};
+    
+    
     
     //enable show_logfile, erase '-prolog' cmd out of str_argv, argc -=1
     std::vector<std::string> str_argv_without_LOG_cmd;
@@ -38,6 +64,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
     );
     str_argv = str_argv_without_LOG_cmd;
     
+    arg_manager_log << argc << " " << str_argv.size() << '\n';
     
     switch(argc){
     
@@ -46,65 +73,60 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 //Zeige Hilfe an
                 //help
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
-                
-                    arg_manager_log << help << std::endl;
+		    output_flags.set(static_cast<size_t>(OutputType::show_help));
                     break;
                 }
-                
+
                 //Zeige alle <entity> und <alias> an
                 //show
-                if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
-                
+                if (std::regex_match(str_argv[1], regex_pattern.at(command::show))) {
                     output_flags.set(static_cast<size_t>(OutputType::show_all_accounts));
                     break;
                 }
 
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
-                	run_env = true;
-                	break;
+		    run_env = true;
+		    break;
                 }
                 
                 throw std::runtime_error{str_error.at(error::synthax)};
-            };
+            }
             
         case 3:
             {	
                 //show Möglichkeiten
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
+		    std::vector<command> commands = {
+			command::config_filepath
+			, command::language
+		    };
+				    
+		    std::map<command, std::regex> regex_pattern = ctrl->get_specific_regex_pattern(commands);
 		    
-                    //Zeige entity, accounts, config filepaths an
-                    //show filepath
-                    if(std::regex_match(str_argv[2], regex_pattern.at(command::config_filepath))){
-                    
-                        output_flags.set(static_cast<size_t>(OutputType::show_filepaths));
-                        break;
-                    }
-                    //language anzeigen
-                    if(std::regex_match(str_argv[2], regex_pattern.at(command::language))){
-                                       
-			output_flags.set(static_cast<size_t>(OutputType::show_language));
-                        break;
-                    }
-                    //Zeige spezifischen Account an
-                    //show <entity> ODER show <alias>	
-		    //entity oder alias ?? -> entsprechende accounts erhalten
-                    std::vector<Time_Account> matching_accounts;
-                    matching_accounts = check_for_alias_or_entity(all_accounts, str_argv[2]);
-                    
-                    if(matching_accounts.empty()){
-                        throw std::runtime_error{str_error.at(error::unknown_alias_or_entity)};
-                    }
+		    cmd = std::make_unique<Show_Command>(
+			jsonH
+			, str_argv
+			, regex_pattern
+			, output_flags
+			, all_accounts
+			, str_error
+		    );
 		    
-		    output_flags.set(static_cast<size_t>(OutputType::show_alias_table));
-                    break;
+		    break;
+
                 }
                 
                 //Account löschen
                 //del <alias>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_))){
 		    
-		    cmd = std::make_unique<Delete_Command>(all_accounts, jsonH, str_error, str_argv[2]);
-                    //delete_account(all_accounts, str_argv[2]);
+		    cmd = std::make_unique<Delete_Command>(
+			all_accounts
+			, jsonH
+			, str_error
+			, str_argv[2]
+		    );
+                    
                     break;
                 }
                 //Language changeTo
@@ -191,7 +213,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 }
              
                 throw std::runtime_error{str_error.at(error::synthax)};
-            };
+            }
 
         case 4:
             {
@@ -236,8 +258,8 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    add_tag_to_account(all_accounts, str_argv[3]);
 		    break;
                 }
-		//automation für alias ausgeben
-		//.std sh <alias> -a
+		//show automation für alias
+		//.std sh <alias> -activate
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::show))
 		    && std::regex_match(str_argv[3], regex_pattern.at(command::activate))
 		) 
@@ -248,7 +270,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		}
 		
                 throw std::runtime_error{str_error.at(error::synthax)};
-            };
+            }
             
         case 5:
             {
@@ -305,12 +327,15 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			    Device_Ctrl device{str_error.at(error::sensor)};
 				
 			//an den beginn von str_argv die entity speichern -> für automation_config file
-			    for(const auto& account : all_accounts){
-				if( account.get_alias() == str_argv[1] ){
-				    str_argv[0] = account.get_entity();
-				    break;
-				}
-			    }
+			    
+			    std::any_of( all_accounts.begin(), all_accounts.end(),
+				[this](const Time_Account& account){
+				    if(this->str_argv[1] == account.get_alias()){
+					this->str_argv[0] = account.get_entity();
+					return true;
+				    }
+				    return false;
+				});
 			    std::vector<command> commands = {
 				command::logfile
 				, command::minutes
@@ -332,7 +357,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		#endif // __linux__
 				
                 throw std::runtime_error{str_error.at(error::synthax)};
-            };
+            }
 
         case 6:
 	    {	
@@ -357,22 +382,32 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 }	
 				
 		    throw std::runtime_error{str_error.at(error::synthax)};
-	    };
+	    }
 
         
         default:
             {
                 throw std::runtime_error{str_error.at(error::untitled_error)};
 		
-	    };
+	    }
 	
     };
     
     if(cmd){
 	cmd->execute();
 	arg_manager_log << cmd->get_log();
+    
     }else{
-	throw std::runtime_error{str_error.at(error::unknown)};
+	bool throw_error = true;
+	for(int i{0}; i < static_cast<int>(OutputType::COUNT); ++i){
+	    if(output_flags.test(i)){
+		throw_error = false;
+		break;
+	    }
+	}
+	if(throw_error){
+	    throw std::runtime_error{str_error.at(error::unknown)};
+	}
     }
 	
 }
@@ -380,6 +415,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 // ============= //
 // == PRIVATE == //
 // ============= //
+
 
 
 #ifdef __linux__
@@ -428,6 +464,18 @@ std::string Arg_Manager::add_sensor_data(const std::shared_ptr<Device_Ctrl>& dev
 }
 #endif // __linux__
 
+std::string Arg_Manager::get_log() const {
+    std::ostringstream log;
+    log 
+    << "Process Log:\nArg_Manager:\n"
+    << arg_manager_log.str()
+    << "\nJSON_Handler:\n"
+    << jsonH->get_log()
+    << std::endl;
+			
+    return log.str();
+}
+
 
 std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::string& alias){
     for(const auto& account : all_accounts){
@@ -438,43 +486,6 @@ std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::str
     throw std::runtime_error{str_error.at(error::unknown_alias)};
 }
 
-std::vector<Time_Account> Arg_Manager::check_for_alias_or_entity(const std::vector<Time_Account>& all_accounts, const std::string& alias_or_entity){
-    std::vector<Time_Account> matching_accounts;
-    bool alias_found = false;
-    bool entity_found = false;
-    for(auto& account : all_accounts){
-    
-        if(account.get_alias() == alias_or_entity){
-            alias_found = true;
-            matching_accounts = collect_accounts_with_alias(all_accounts, str_argv[2]);
-            break;
-        }
-        if(account.get_entity() == alias_or_entity){
-            entity_found = true;
-            matching_accounts = jsonH->collect_accounts_with_entity(all_accounts, str_argv[2]);
-            break;
-        }
-    }
-
-    if( (!alias_found && !entity_found) || matching_accounts.empty()){
-        throw std::runtime_error{str_error.at(error::unknown_alias_or_entity)};
-    }
-    
-    return matching_accounts;
-}
-
-
-std::vector<Time_Account> Arg_Manager::collect_accounts_with_alias(const std::vector<Time_Account>& search_in, const std::string& search_for_alias){
-    std::vector<Time_Account> matching_accounts;
-    std::copy_if(
-        search_in.begin(), search_in.end(),
-        std::back_inserter(matching_accounts),
-        [&search_for_alias](const Time_Account& acc) {
-            return acc.get_alias() == search_for_alias;
-        }
-    );
-    return matching_accounts;
-}
 
 void Arg_Manager::change_config_json_language(const std::string& to_language){
     std::map<std::string, std::string> new_data = {
@@ -510,47 +521,6 @@ void Arg_Manager::user_change_filepaths(const std::string& ent_filepath, const s
 
 }
 
-/*void Arg_Manager::delete_account(std::vector<Time_Account>& all_accounts, const std::string& alias_to_delete){
-    if(all_accounts.empty()){
-        throw std::runtime_error{str_error.at(error::untitled_error)};
-    }
-    
-    bool found_alias = false;
-    std::string entity;
-    std::string alias;
-    
-    for(const auto& account : all_accounts){
-        if(account.get_alias() == alias_to_delete){
-            entity = account.get_entity();
-            alias = account.get_alias();
-            found_alias = true;
-            break;
-        }
-    }
-    if(!found_alias){
-        throw std::runtime_error{str_error.at(error::unknown_alias)};
-    }
-    
-    std::vector<Time_Account> adjusted_accounts;
-
-    //remove out of all_accounts
-    std::remove_copy_if(all_accounts.begin(), all_accounts.end(),
-        std::back_inserter(adjusted_accounts),
-        [alias_to_delete](const Time_Account& account){
-            return account.get_alias() == alias_to_delete;
-        }
-    );
-    //jsonH->save_json_entity(all_accounts, entity, alias);
-    
-    all_accounts = adjusted_accounts;
-
-    //update Files
-    jsonH->save_json_accounts(all_accounts);
-    jsonH->save_json_entity(all_accounts, entity);
-    
-    arg_manager_log << alias_to_delete << translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
-}
-*/
 
 void Arg_Manager::add_hours(std::vector<Time_Account>& all_accounts, const std::string& amount){
 	

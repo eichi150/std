@@ -7,6 +7,7 @@
 #include <memory>
 #include <ostream>
 #include <vector>
+#include <string>
 
 #include "./abstract_class/ui_interface.h"
 #include "arg_manager.h"
@@ -35,12 +36,21 @@ private:
 	size_t scale_str_size(const std::string& str);
 	int get_sum_str_size(const std::vector<std::string>& multiple_str);
 	
+	void show_help();
 	void show_all_accounts();
-	
 	void show_alias_table();
 	void show_alias_automation_table();
 	void show_filepaths();
 	void show_language();
+	
+	const std::string help = {
+    "add 			Add new Entity give it a Alias\n"
+    "-h -m  		Time to save in Hours or Minutes\n"
+    "show 			Show all Entitys and Alias's\n"
+    "sh 			Short Form of show\n"
+    "show 'ALIAS' 	show specific Entity's Time Account\n\n"
+    "For more Information have a look at README.md on github.com/eichi150/std\n"
+    };
 };
 
 #endif // CLI_UI_H

@@ -41,8 +41,9 @@ int main(int argc, char* argv[]){
 			Cmd_Ctrl ctrl{};
 			
 			//Argumente entgegen nehmen und Parsen
-			std::vector<std::string> str_argv = ctrl.parse_argv(argc, argv);
 			
+			std::vector<std::string> str_argv = ctrl.parse_argv(argc, argv);
+
 			if(ctrl.is_argument_valid(str_argv)){
 				
 				auto regex_pattern = ctrl.get_regex_pattern();

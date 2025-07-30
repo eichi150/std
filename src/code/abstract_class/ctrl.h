@@ -17,7 +17,7 @@ public:
 		regex_pattern = {
 			  { command::help,      		std::regex{R"(^--?help$)", std::regex_constants::icase } }
 			, { command::add,       		std::regex{R"(^--?add$)", std::regex_constants::icase } }
-			, { command::show,      		std::regex{R"(^(--?sh(ow)?|sh|show)$)", std::regex_constants::icase } }
+			, { command::show,      		std::regex{R"(^(--?show|--?sh|show|sh)$)" , std::regex_constants::icase }}
 			, { command::delete_,   		std::regex{R"(^(--?del(ete)?)$)", std::regex_constants::icase } }
 			, { command::hours, 			std::regex{R"(^(--?h(ours)?)$)", std::regex_constants::icase } }
 			, { command::minutes, 			std::regex{R"(^(--?m(inutes)?)$)", std::regex_constants::icase } }
@@ -108,6 +108,8 @@ public:
 	};
 	
 	std::map<std::string, std::regex> device_regex_pattern;
+	
+
 protected:
 	std::map<std::string, std::shared_ptr<Sensor>> all_devices;
 	

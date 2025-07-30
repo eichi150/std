@@ -6,6 +6,10 @@ void CLI_UI::update(){
 	
 	const auto flags = arg_man->get_output_flags();
 	
+	if(flags.test(static_cast<size_t>(OutputType::show_help)) ){
+		
+		show_help();
+	}
 	if(flags.test(static_cast<size_t>(OutputType::show_filepaths)) ){
 		
 		show_filepaths();
@@ -39,6 +43,10 @@ void CLI_UI::update(){
 	}
 	
 	arg_man->clear_output_flags();
+}
+
+void CLI_UI::show_help(){
+	std::cout << help << std::endl;
 }
 
 void CLI_UI::show_filepaths() {
