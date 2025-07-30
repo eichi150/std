@@ -42,6 +42,11 @@ void CLI_UI::update(){
 		
 	}
 	
+	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
+		
+		std::cout << arg_man->get_user_output_log() << std::endl;
+	}
+	
 	arg_man->clear_output_flags();
 }
 

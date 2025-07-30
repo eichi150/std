@@ -98,32 +98,25 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			, str_argv[2]
 		    );
                     
+		    user_output_log << str_argv[2] << " Alias deleted\n";
+		    
                     break;
                 }
                 //Language changeTo
                 //-l ger
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
-
-                    bool is_possible_language = false;					
-                    for(const auto& key : translator.dict_language){
-                        if(key.second == str_argv[2]){
-                            is_possible_language = true;
-                            break;
-                        }
-                    }
-                    
-                    if(!is_possible_language){
-                        std::stringstream ss;
-                        ss << "\nPossible Languages:\n";
-                        for(const auto& str : translator.dict_language){
-                            ss << " > " << str.second << '\n';
-                        }
-                                                
-                        throw std::runtime_error{str_error.at(error::unknown_language) + ss.str()};
-                    }
-
-                    change_config_json_language(str_argv[2]);
-                    break;
+		    
+		    
+		    cmd = std::make_unique<ChangeLanguage_Command>(
+			std::make_shared<Translator>(translator)
+			, str_argv[2]
+			, jsonH
+			, str_error
+		    );
+		    
+		    user_output_log << "Language changed to " << str_argv[2] << '\n';
+		    
+		    break;
                 }
                 
 
@@ -138,9 +131,12 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			    , str_argv[2]
 			   
 			);
+			user_output_log << "Device touched\n";
 		#else
-		arg_manager_log << "-touch <device> Only available for Linux" << std::endl;
-		throw std::runtime_error{"Only available for Linux"};
+		
+		    arg_manager_log << "-touch <device> Only available for Linux" << std::endl;
+		    throw std::runtime_error{"Only available for Linux"};
+		
 		#endif // __linux__
 		
 			break;
@@ -150,16 +146,17 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 // <alias> -mes
                 if(std::regex_match(str_argv[2], regex_pattern.at(command::messure_sensor))){
                 
-        #ifdef __linux__
+		#ifdef __linux__
                 
                     Device_Ctrl device{str_error.at(error::sensor)};
                     arg_manager_log << add_sensor_data(std::make_shared<Device_Ctrl>(device), all_accounts) << std::endl;
                     
 		#else
-			arg_manager_log << "Only available for Linux" << std::endl;
+			arg_manager_log << "Only available for Linux\n";
+			user_output_log << "Only available for Linux\n";
 		#endif // __linux__
 		
-		break;
+		    break;
                 }
              
                 throw std::runtime_error{str_error.at(error::synthax)};
@@ -188,6 +185,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			, regex_pattern.at(command::add)
 		    );
                     
+		    user_output_log << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << '\n';
                     break;
                 }
         
@@ -208,6 +206,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    add_tag_to_account(all_accounts, str_argv[3]);
 		    break;
                 }
+		
 		//show automation für alias
 		//.std sh <alias> -activate
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::show))
@@ -242,67 +241,67 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                     break;
                 }
 		
-			//Automation konfigurieren
-			//<alias> -a -mes "time_config"
-			bool is_true = false;
-			bool cmd_messure = std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor));
-			//-activate
-			if(std::regex_match(str_argv[2], regex_pattern.at(command::activate)) && cmd_messure){
+		//Automation konfigurieren
+		//<alias> -a -mes "time_config"
+		bool is_true = false;
+		bool cmd_messure = std::regex_match(str_argv[3], regex_pattern.at(command::messure_sensor));
+		//-activate
+		if(std::regex_match(str_argv[2], regex_pattern.at(command::activate)) && cmd_messure){
 				
-			    std::stringstream ss;
-			    ss << "\nPossible Connections:\n";
-			    for(const auto& name : ctrl->device_regex_pattern){
-				ss << " > " << name.first << '\n';
-			    }
-			    arg_manager_log << ss.str();
+		    std::stringstream ss;
+		    ss << "\nPossible Connections:\n";
+		    for(const auto& name : ctrl->device_regex_pattern){
+			ss << " > " << name.first << '\n';
+		    }
+		    arg_manager_log << ss.str();
 					
-			    str_argv[2] = "BME280";
-			    is_true = true;
+		    str_argv[2] = "BME280";
+		    is_true = true;
 					    	
-			}else{
-			    std::string arg = str_argv[2];
-			    auto it = ctrl->device_regex_pattern.find(arg);
-			    if(it != ctrl->device_regex_pattern.end()){
-			    //<device_name>
-				if(std::regex_match(str_argv[2], ctrl->device_regex_pattern.at(str_argv[2])) && cmd_messure){
-				    is_true = true;
-				}
-			    }
+		}else{
+		    std::string arg = str_argv[2];
+		    auto it = ctrl->device_regex_pattern.find(arg);
+		    if(it != ctrl->device_regex_pattern.end()){
+			//<device_name>
+			if(std::regex_match(str_argv[2], ctrl->device_regex_pattern.at(str_argv[2])) && cmd_messure){
+			    is_true = true;
 			}
+		    }
+		}
 				
 		#ifdef __linux__
 		   
-       			if(is_true){  
+		if(is_true){  
                     
-			    Device_Ctrl device{str_error.at(error::sensor)};
-				
-			//an den beginn von str_argv die entity speichern -> für automation_config file
+		    Device_Ctrl device{str_error.at(error::sensor)};
+			
+		    //an den beginn von str_argv die entity speichern -> für automation_config file
 			    
-			    std::any_of( all_accounts.begin(), all_accounts.end(),
-				[this](const Time_Account& account){
-				    if(this->str_argv[1] == account.get_alias()){
-					this->str_argv[0] = account.get_entity();
-					return true;
-				    }
-				    return false;
-				});
-			    std::vector<command> commands = {
-				command::logfile
-				, command::minutes
-				, command::hours
-				, command::clock
-				, command::day
-			    };
+		    std::any_of( all_accounts.begin(), all_accounts.end(),
+			[this](const Time_Account& account){
+			    if(this->str_argv[1] == account.get_alias()){
+				this->str_argv[0] = account.get_entity();
+				return true;
+			    }
+			return false;
+		    });
+		    
+		    std::vector<command> commands = {
+			command::logfile
+			, command::minutes
+			, command::hours
+			, command::clock
+			, command::day
+		    };
 					
-			    arg_manager_log 
-				<< device.set_user_automation_crontab(
-					str_argv
-					, jsonH
-					, ctrl->get_specific_regex_pattern(commands)
-				    ) 
-				<< std::endl;
+		    arg_manager_log << device.set_user_automation_crontab(
+			    str_argv
+			    , jsonH
+			    , ctrl->get_specific_regex_pattern(commands)
+			) 
+			<< std::endl;
 					    
-			    break;
+			break;
 			}
 		#else
 			arg_manager_log << "Only available for Linux" << std::endl;
@@ -332,6 +331,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			, regex_pattern.at(command::add)
 		    );
 		    
+		    user_output_log << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << " | Tag: " << str_argv[5] << '\n';
                     break;
                 }	
 				
@@ -350,7 +350,9 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
     if(cmd){
 	cmd->execute();
 	arg_manager_log << cmd->get_log();
-    
+	
+	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
+	
     }else{
 	bool throw_error = true;
 	for(int i{0}; i < static_cast<int>(OutputType::COUNT); ++i){
@@ -363,7 +365,6 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	    throw std::runtime_error{str_error.at(error::unknown)};
 	}
     }
-	
 }
 
 // ============= //
@@ -441,17 +442,6 @@ std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::str
 }
 
 
-void Arg_Manager::change_config_json_language(const std::string& to_language){
-    std::map<std::string, std::string> new_data = {
-          {"config_filepath", jsonH->get_config_filepath()}
-        , {"entity_filepath", jsonH->get_entity_filepath()}
-        , {"accounts_filepath", jsonH->get_accounts_filepath()}
-        , {"language", to_language}
-        , {"automation_filepath", jsonH->get_automatic_config_filepath()}
-    };
-    jsonH->save_config_file(new_data);
-    
-}
 
 void Arg_Manager::change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
 	

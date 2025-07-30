@@ -28,6 +28,7 @@ enum class OutputType{
 	, show_alias_table
 	, show_alias_automation
 	, arg_manager_log
+	, show_user_output_log
 	, COUNT //maxSize Bitset
 };
 
@@ -47,7 +48,68 @@ protected:
 	std::stringstream cmd_log;
 };
 
+class ChangeLanguage_Command : public Command{
+public:
+	ChangeLanguage_Command(
+		std::shared_ptr<Translator> translator
+		, const std::string& change_to_language
+		, std::shared_ptr<JSON_Handler> jsonH
+		, const std::map<error, std::string>& str_error
+	
+	) : translator(translator)
+		, change_to_language(change_to_language)
+		, jsonH(jsonH)
+		, str_error(str_error)
+	{};
+	
+	std::string get_log() const override {
+		return cmd_log.str();
+	};
+	
+	void execute() override{
+		
+		bool is_possible_language = std::any_of(
+			translator->dict_language.begin(), translator->dict_language.end(),
+			[this](const auto& language){
+				return language.second == change_to_language;
+			}
+		);
+		
+                    
+        if(!is_possible_language){
+           std::stringstream ss;
+           ss << "\nPossible Languages:\n";
+			for(const auto& str : translator->dict_language){
+				 ss << " > " << str.second << '\n';
+			}                             
+			throw std::runtime_error{str_error.at(error::unknown_language) + ss.str()};
+        }
 
+        change_config_json_language();
+	};
+	
+
+private:
+	std::shared_ptr<Translator> translator;
+	std::string change_to_language;
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::map<error, std::string> str_error;
+	
+	void change_config_json_language(){
+		std::map<std::string, std::string> new_data = {
+			  {"config_filepath", jsonH->get_config_filepath()}
+			, {"entity_filepath", jsonH->get_entity_filepath()}
+			, {"accounts_filepath", jsonH->get_accounts_filepath()}
+			, {"language", change_to_language} // <- Change Language
+			, {"automation_filepath", jsonH->get_automatic_config_filepath()}
+		};
+		jsonH->save_config_file(new_data);
+	}
+	
+}; // ChangeLanguage_Command
+
+
+#ifdef __linux__
 class TouchDevice_Command : public Command{
 public:
 	TouchDevice_Command(
@@ -83,13 +145,16 @@ public:
 
 		    
 		    std::vector<float> output_sensor = device.check_device(arg);
-
+			if(output_sensor.empty()){
+				throw std::runtime_error{"TouchDevice_Command " + str_error.at(error::sensor)};
+			}
+			
 		    std::stringstream output_str;
 					    
 			output_str 
-			<< "Temperature" << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-			<< "Pressure" << ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-			<< "Humidity" << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+			<< "Temperature"<< ": " << std::fixed 	<< std::setprecision(2) << output_sensor[0] << " °C || "
+			<< "Pressure" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[1] << " hPa || "
+			<< "Humidity" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[2] << " %\n";
 					        
 			cmd_log << output_str.str() << std::endl;
 					    
@@ -100,7 +165,9 @@ private:
 	std::map<error, std::string> str_error;
 	std::string arg;
 	
-};
+}; // TouchDevice_Command
+#endif // __linux__
+
 
 class Show_Command : public Command{
 public:
@@ -157,6 +224,16 @@ public:
 		cmd_log << str_argv[2] << " show activated\n";
 	};
 	
+
+private:
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::vector<std::string> str_argv;
+	std::map<command, std::regex> regex_pattern;
+	OutputBitset& output_flags;
+	std::vector<Time_Account> all_accounts;
+	std::map<error, std::string> str_error;
+	
+	
 	std::vector<Time_Account> check_for_alias(const std::string& alias){
 		std::vector<Time_Account> matching_accounts;
 			
@@ -170,15 +247,8 @@ public:
 		
 		return matching_accounts;
 	}
-
-private:
-	std::shared_ptr<JSON_Handler> jsonH;
-	std::vector<std::string> str_argv;
-	std::map<command, std::regex> regex_pattern;
-	OutputBitset& output_flags;
-	std::vector<Time_Account> all_accounts;
-	std::map<error, std::string> str_error;
-};
+	
+}; // Show_Command
 
 class Delete_Command : public Command{
 public:
@@ -191,7 +261,8 @@ public:
 	) : all_accounts(all_accounts),
 		jsonH(std::move(jsonH)),
 		str_error(str_error),
-		alias_to_delete(alias_to_delete) {};
+		alias_to_delete(alias_to_delete) 
+	{};
 	
 	void execute() override{
 		cmd_log << "execute Delete_Command\n";
@@ -369,6 +440,10 @@ public:
 	
 	std::string get_log() const;
 	
+	std::string get_user_output_log() const {
+		return user_output_log.str();
+	}
+	
 private:
 
 #ifdef __linux__
@@ -378,6 +453,8 @@ private:
 	std::unique_ptr<Command> cmd;
 	OutputBitset output_flags;
 	std::stringstream arg_manager_log;
+	std::stringstream user_output_log;
+	
 	
 	std::shared_ptr<Cmd_Ctrl> ctrl;
 	std::vector<Time_Account> all_accounts;
@@ -389,8 +466,6 @@ private:
 	bool run_env = false;
 	
 	Clock clock{};
-
-	void change_config_json_language(const std::string& to_language);
 
 	void change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath);
 
