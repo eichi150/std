@@ -49,6 +49,7 @@ enum class command{
 	, automatic
 	, environment
 	, show_all_log
+	, integer
 };
 
 namespace CTRL{
@@ -78,6 +79,7 @@ public:
 			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
 			, { command::show_all_log, 		std::regex{R"(^--?debug$)", std::regex_constants::icase} }
+			, { command::integer, 			std::regex{R"(^\d+$)"} }
 		};
 		//Error Outputs
 		str_error = {
@@ -145,9 +147,6 @@ public:
 	std::map<command, std::regex> get_regex_pattern() const {
 		return regex_pattern;
 	}
-	std::regex get_integer_pattern() const {
-		return integer_pattern;
-	}
 	
 	std::map<command, std::regex> get_specific_regex_pattern(const std::vector<command>& command_list) const {
 		std::map<command, std::regex> pattern;
@@ -164,9 +163,6 @@ public:
 protected:
 	bool show_ctrl_log = false;
 	std::string ctrl_log;
-	
-	Clock clock{};
-	std::regex integer_pattern{R"(^\d+$)"};
 	
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
@@ -192,8 +188,6 @@ protected:
 		}
 		return false;
 	}
-	
-	
 
 };//Ctrl
 }; //namespace CTRL

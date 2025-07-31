@@ -301,7 +301,7 @@ std::string CLI_UI::create_alias_table(){
 	std::string t_alias = "@ " + alias;
 	
 	std::string entity = account->get_entity();
-	std::string tag = account->get_tag();
+	std::string tag = " -|- Tag: " + account->get_tag();
 	
 	//Read Automation_Config.json File
 	std::string automation_table_str = create_automation_table(alias);

@@ -62,7 +62,8 @@ public:
 	
 	
 private:
-	
+	std::regex integer_pattern = regex_pattern.at(command::integer);
+	Clock clock{};
 	
 	std::string name;
 	std::string error_prompt;

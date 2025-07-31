@@ -176,6 +176,7 @@ std::pair<std::string, bool> Device_Ctrl::get_user_crontag_line(const std::vecto
 
 	bool found_command = false;
 	
+	
 	for(size_t i{1}; i < str_argv.size(); ++i){
 
 		

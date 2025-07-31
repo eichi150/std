@@ -93,7 +93,7 @@ std -add <entity> <alias>
 
 ### ❌ Alias löschen
 ```bash
-std -del <alias>
+std <alias> -del
 ```
 
 ### ⏱️ Zeit eintragen (Stunden oder Minuten)
