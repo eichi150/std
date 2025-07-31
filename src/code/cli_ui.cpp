@@ -9,32 +9,44 @@ void CLI_UI::update(){
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_help)) ){
 		
+		ui_interface_log <<  "show help\n";
 		show_help();
 	}
 	if(flags.test(static_cast<size_t>(OutputType::show_filepaths)) ){
 		
+		ui_interface_log <<  "show filepaths\n";
 		show_filepaths();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_language)) ){
 		
+		ui_interface_log <<  "show language\n";
 		show_language();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_alias_table)) ){
 		
+		ui_interface_log <<  "show alias Table\n";
 		show_alias_table();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_alias_automation)) ){
 		
+		ui_interface_log <<  "show alias automation table\n";
 		show_alias_automation_table();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_all_accounts))){
 		
+		ui_interface_log <<  "show all_accounts\n";
 		show_all_accounts();
 		
+	}
+	
+	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
+		
+		ui_interface_log << "show cmd user output\n";
+		std::cout << arg_man->get_user_output_log() << std::endl;
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
@@ -50,11 +62,6 @@ void CLI_UI::update(){
 			<< std::endl;
 	}
 	
-	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
-		
-		std::cout << arg_man->get_user_output_log() << std::endl;
-	}
-	
 	arg_man->clear_output_flags();
 }
 
@@ -65,16 +72,16 @@ void CLI_UI::show_help(){
 void CLI_UI::show_filepaths() {
 	std::cout 
         << "Config: " << arg_man->jsonH->get_config_filepath() << '\n'
-        << arg_man->translator.language_pack.at("entity") << ": " << arg_man->jsonH->get_entity_filepath() << '\n' 
+        << arg_man->translator->language_pack.at("entity") << ": " << arg_man->jsonH->get_entity_filepath() << '\n' 
         << "Accounts: " << arg_man->jsonH->get_accounts_filepath() << std::endl;
 }
 
 
 void CLI_UI::show_language() {
     std::cout 
-		<< arg_man->translator.language_pack.at("str_language")
+		<< arg_man->translator->language_pack.at("str_language")
 		<< ": " 
-		<< arg_man->translator.language_pack.at("language") << std::endl;
+		<< arg_man->translator->language_pack.at("language") << std::endl;
 }
 
 void CLI_UI::show_all_accounts(){
@@ -226,7 +233,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 			max_length_comment = d_str_size;
 			std::stringstream ss_timepoint;
 			
-			std::string time_format = arg_man->translator.language_pack.at("timepoint");
+			std::string time_format = arg_man->translator->language_pack.at("timepoint");
 			ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
 			std::stringstream ss_hours;
 			ss_hours << std::setprecision(3) << entry.hours;
@@ -247,7 +254,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 		
 		std::stringstream ss_timepoint;
 		
-		std::string time_format = arg_man->translator.language_pack.at("timepoint");
+		std::string time_format = arg_man->translator->language_pack.at("timepoint");
 		ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
 						  
 		ss_body << std::left
@@ -360,8 +367,8 @@ std::string CLI_UI::create_all_accounts_table(){
 	
 	const std::string INDEX_str{"Index"};
 	const std::string ALIAS_str{"Alias"};
-	std::string entity_str = arg_man->translator.language_pack.at("entity");
-	std::string total_hours_str = arg_man->translator.language_pack.at("total_hours");
+	std::string entity_str = arg_man->translator->language_pack.at("entity");
+	std::string total_hours_str = arg_man->translator->language_pack.at("total_hours");
 	
 	int index{0};
 	if(table_width == 0){

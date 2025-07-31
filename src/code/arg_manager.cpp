@@ -7,13 +7,17 @@
 
 Arg_Manager::Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr): jsonH(jH), ctrl(ctrl_ptr)
 {
-
+    arg_manager_log << "read_all_accounts\n";
     jsonH->read_all_accounts(all_accounts);
-	
+    
     str_error = ctrl->get_str_error();
     
-    translator.set_language(jsonH->get_config_language());
-
+    arg_manager_log << "build Translator\n";
+    translator = std::make_shared<Translator>();
+    
+    arg_manager_log << "set language\n";
+    translator->set_language(jsonH->get_config_language());
+    
 };
 
 void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string>& argv){
@@ -72,13 +76,13 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	);
 	
 	if(cmd){
-	    arg_manager_log << "show flags set\n";
+	    arg_manager_log << "show flags got set\n";
 	}
     }
     
     
     if(!cmd){
-    switch(argc){
+	switch(argc){
     
         case 2:
             {
@@ -115,11 +119,11 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
 		    
 		    arg_manager_log << "Change Language\n";
-		    cmd = std::make_unique<ChangeLanguage_Command>(
-			std::make_shared<Translator>(translator)
-			, str_argv[2]
-			, jsonH
+		    cmd = std::make_unique<Language_Change_Command>(
+			jsonH
 			, str_error
+			, translator
+			, str_argv[2]
 		    );
 		    
 		    user_output_log << "Language changed to " << str_argv[2] << '\n';
@@ -139,7 +143,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		    );
 		#else
 		    arg_manager_log << "-touch <device> Only available for Linux" << std::endl;
-		    throw std::runtime_error{"Only available for Linux"};
+		    user_output_log << "Only available for Linux\n";
 		#endif // __linux__
 		
 		    break;
@@ -150,12 +154,12 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 if(std::regex_match(str_argv[2], regex_pattern.at(command::measure_sensor))){
                 
 		#ifdef __linux__
-		    cmd = std::make_unique<AddSensorData_Alias_Command>(
+		    cmd = std::make_unique<SensorData_Add_Alias_Command>(
 			all_accounts
 			, str_argv
 			, str_error
 			, jsonH
-			, std::make_shared<Translator>(translator)
+			, translator
 		    );
 		#else
 			arg_manager_log << "Only available for Linux\n";
@@ -170,21 +174,26 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 
         case 4:
             {
-    
                 //-f <entityFilepath> <accountsFilepath>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::user_filepath))){
-    /* BUILD UP */            
-                    user_change_filepaths(str_argv[2], str_argv[3]);
-                    
-                    arg_manager_log << str_argv[2] << '\n' << str_argv[3] << std::endl;
+
+		    arg_manager_log << "user change entity and account filepath";
+		    
+		    cmd = std::make_unique<UserFilepath_Change_Command>(
+			jsonH
+			, str_error
+			, translator
+			, str_argv
+		    );
                     break;
                 }
+		
                 //Neuen Account hinzufügen
                 //add <entity> <alias> -tag ' '
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::add))){
 		    
 		    arg_manager_log << "add_account_noTag\n";
-		    cmd = std::make_unique<Add_Command>(
+		    cmd = std::make_unique<Add_Alias>(
 			all_accounts
 			, jsonH
 			, str_error
@@ -212,13 +221,13 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			};
 			
 			arg_manager_log << "add hours with comment\n";
-			cmd = std::make_unique<AddHours_Alias_Command>(
+			cmd = std::make_unique<Hours_Add_Alias_Command>(
 			    all_accounts
 			    , str_argv
 			    , jsonH
 			    , ctrl->get_specific_regex_pattern(commands)
 			    , str_error
-			    , std::make_shared<Translator>(translator)
+			    , translator
 			);
 			break;
 		    }
@@ -233,7 +242,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                	{
 
 		    arg_manager_log << "add Tag to account\n"; 
-		    cmd = std::make_unique<AddTag_Alias_Command>(
+		    cmd = std::make_unique<Tag_Add_Alias_Command>(
 			all_accounts
 			, str_argv
 			, jsonH
@@ -251,15 +260,26 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
             {
                 //-cf <configFilepath> <entityFilepath> <accountsFilepath>
                 if(std::regex_match(str_argv[1], regex_pattern.at(command::config_filepath))){
-    /* BUILD UP */           
-                    change_config_json_file(str_argv[2], str_argv[3], str_argv[4]);
+		    
+		    arg_manager_log << "user change entity and account filepath";
+		    
+		    cmd = std::make_unique<UserFilepath_Change_Command>(
+			jsonH
+			, str_error
+			, translator
+			, str_argv
+		    );
                     
-                    arg_manager_log << str_argv[2] << '\n' << str_argv[3] << '\n' << str_argv[4] << std::endl;
+                    arg_manager_log 
+			<< str_argv[2] << '\n' 
+			<< str_argv[3] << '\n' 
+			<< str_argv[4] 
+			<< std::endl;
                     break;
                 }
     
                 //Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
-                //-h -m
+                //<alias> 'time' -h -m
                 if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
                     || std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
                 {
@@ -272,13 +292,13 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 			};
 			
 			arg_manager_log << "add hours without comment\n";
-			cmd = std::make_unique<AddHours_Alias_Command>(
+			cmd = std::make_unique<Hours_Add_Alias_Command>(
 			    all_accounts
 			    , str_argv
 			    , jsonH
 			    , ctrl->get_specific_regex_pattern(commands)
 			    , str_error
-			    , std::make_shared<Translator>(translator)
+			    , translator
 			);
 			break;
 		    }
@@ -326,7 +346,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                	{
 		    arg_manager_log << "add_account_withTag " << all_accounts.size() << '\n';
 		    	    
-		    cmd = std::make_unique<Add_Command>(
+		    cmd = std::make_unique<Add_Alias>(
 			all_accounts
 			, jsonH
 			, str_error
@@ -346,10 +366,14 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
             {	
 		arg_manager_log << "error: switchCase default\n";
                 throw std::runtime_error{str_error.at(error::untitled_error)};
-		
 	    }
-    };
+	};
     }
+    
+    arg_manager_log
+	<< "\n===== JsonHandler_Log: =====\n" 
+	<< jsonH->get_log();
+	    
     if(cmd){
 	cmd->execute();
 	arg_manager_log
@@ -358,6 +382,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	
 	user_output_log << cmd->get_user_log();
 	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
+	
     }else{
 	bool throw_error = true;
 	for(int i{0}; i < static_cast<int>(OutputType::COUNT); ++i){
@@ -378,11 +403,8 @@ std::string Arg_Manager::get_log() const {
     std::ostringstream log;
     log 
     << "Arg_Manager:\n"
-    << arg_manager_log.str()
-    << "\nJSON_Handler:\n"
-    << jsonH->get_log()
-    << std::endl;
-			
+    << arg_manager_log.str();
+    
     return log.str();
 }
 
@@ -428,26 +450,3 @@ std::vector<Time_Account> Arg_Manager::get_all_accounts() const {
 std::vector<std::string> Arg_Manager::get_str_argv() const {
     return str_argv;
 }
-
-
-void Arg_Manager::change_config_json_file(const std::string& conf_filepath, const std::string& ent_filepath, const std::string& acc_filepath){
-	
-    std::map<std::string, std::string> new_data = {
-          {"config_filepath", conf_filepath}
-        , {"entity_filepath", ent_filepath}
-        , {"accounts_filepath", acc_filepath}
-        , {"language", translator.get_str_language()}
-        , {"automation_filepath", std::string{ent_filepath + "automation_config.json"}}
-    };
-    jsonH->save_config_file(new_data);
-
-}
-
-void Arg_Manager::user_change_filepaths(const std::string& ent_filepath, const std::string& acc_filepath){
-    std::map<std::string, std::string> new_filepaths = {
-          {"entity_filepath", ent_filepath}
-        , {"accounts_filepath", acc_filepath}
-    };
-    jsonH->save_config_file(new_filepaths);
-}
-

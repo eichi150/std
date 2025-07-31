@@ -21,6 +21,7 @@ public:
 	void update() override;
 	
 private:
+	
 	std::string ctrl_log;
 	
 	std::shared_ptr<Arg_Manager> arg_man;

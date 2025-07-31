@@ -269,7 +269,6 @@ void JSON_Handler::save_json_entity(const std::vector<Time_Account>& all_account
         jsonH_log << "##Fehler beim Öffnen der Datei: " << entity_filepath_total << std::endl;
     }
 
-
 }
 
 
@@ -291,9 +290,9 @@ void JSON_Handler::save_json_accounts(const std::vector<Time_Account>& all_accou
     if (file.is_open()) {
         file << daten.dump(4);
         file.close();
-        jsonH_log << "Accounts-Datei gespeichert." << std::endl;
+        jsonH_log << "Accounts-Datei gespeichert.\n";
     } else {
-        jsonH_log << "##Fehler beim oeffnen der Datei." << std::endl;
+        jsonH_log << "##Fehler beim oeffnen der Datei.\n";
     }
 }
 
@@ -348,6 +347,9 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
             }
         }
     }
+    if(!all_accounts.empty()){
+        jsonH_log << "entitys loaded\n";
+    }
 }
 
 void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
@@ -377,6 +379,7 @@ void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
             
             all_accounts.push_back(account);
         }
+        jsonH_log << "all_accounts loaded\n";
         
     } catch (const json::parse_error& e) {
         jsonH_log << "##JSON-Fehler: " << e.what() << std::endl;
