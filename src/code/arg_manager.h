@@ -56,6 +56,12 @@ private:
 	std::map<error, std::string> str_error;
 	std::shared_ptr<Cmd_Ctrl> ctrl;
 	
+	bool check_two_args();
+	bool check_three_args();
+	bool check_four_args();
+	bool check_five_args();
+	bool check_six_args();
+	
 	//All Accounts
 	std::vector<Time_Account> all_accounts;
 	
@@ -68,6 +74,4 @@ private:
 	bool run_env = false;
 	
 };//Arg_Manager
-
-
 #endif // ARG_MANAGER_H

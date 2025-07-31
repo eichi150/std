@@ -48,7 +48,7 @@ enum class command{
 	, i2c
 	, automatic
 	, environment
-	, show_all_log
+	, debug
 	, integer
 };
 
@@ -78,7 +78,7 @@ public:
 			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
-			, { command::show_all_log, 		std::regex{R"(^--?debug$)", std::regex_constants::icase} }
+			, { command::debug, 			std::regex{R"(^--?debug$)", std::regex_constants::icase} }
 			, { command::integer, 			std::regex{R"(^\d+$)"} }
 		};
 		//Error Outputs

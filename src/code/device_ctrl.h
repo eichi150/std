@@ -1,4 +1,4 @@
-#ifdef __linux__ // LINUX ONLY
+#ifdef __linux__ // LINUX ONLY cause of Crontab and I2C for BME280 Sensor
 #ifndef DEVICE_CTRL_H
 #define DEVICE_CTRL_H
 

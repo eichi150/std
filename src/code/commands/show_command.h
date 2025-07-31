@@ -45,12 +45,12 @@ public:
 		, const std::map<error, std::string>& str_error
 		
 	) : str_argv(str_argv)
-	, all_accounts(all_accounts)
-	, jsonH(jsonH)
-	, argc(argc)
-	, regex_pattern(regex_pattern)
-	, output_flags(output_flags)
-	, str_error(str_error)	
+		, all_accounts(all_accounts)
+		, jsonH(jsonH)
+		, argc(argc)
+		, regex_pattern(regex_pattern)
+		, output_flags(output_flags)
+		, str_error(str_error)	
 	{};
 	
 	std::string get_log() const override {
