@@ -15,7 +15,7 @@ public:
 	
 	std::string get_log() const override{
 		if(show_ctrl_log){
-			return ctrl_log;
+			return ctrl_log.str();
 		}
 		return {};
 	}
@@ -56,11 +56,9 @@ public:
 			argv = {};
 			
 			//Log Output
-			ctrl_log.append(std::to_string(argc));
-			ctrl_log.append("\n");
+			ctrl_log << std::to_string(argc) << "\n";
 			for(const auto& str : str_argv){
-				ctrl_log.append(str);
-				ctrl_log.append("\n");
+				ctrl_log << str << "\n";
 			}
 		return str_argv;
 	}

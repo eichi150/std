@@ -45,11 +45,14 @@ enum class command{
 	, touch_sensor
 	, measure_sensor
 	, activate
+	, deactivate
 	, i2c
 	, automatic
 	, environment
 	, debug
 	, integer
+	, all
+	, detail
 };
 
 namespace CTRL{
@@ -75,11 +78,14 @@ public:
 			, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
 			, { command::measure_sensor,	std::regex{R"(^(--?me(asure)?)$)", std::regex_constants::icase } }
 			, { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
+			, { command::deactivate,		std::regex{R"(^(--?dea(ctivate)?)$)", std::regex_constants::icase } }
 			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
 			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
 			, { command::debug, 			std::regex{R"(^--?debug$)", std::regex_constants::icase} }
 			, { command::integer, 			std::regex{R"(^\d+$)"} }
+			, { command::all, 				std::regex{R"(^--?all$)", std::regex_constants::icase } }
+			, { command::detail, 			std::regex{R"(^--?detail$)", std::regex_constants::icase } }
 		};
 		//Error Outputs
 		str_error = {
@@ -89,7 +95,7 @@ public:
 			, {error::unknown_alias_or_entity, "Alias or Entity not found"}
 			, {error::user_input_is_command, "Rejected Input"}
 			, {error::not_found, "Not found"}
-			, {error::synthax, "Synthax wrong"}
+			, {error::synthax, "Syntax wrong"}
 			, {error::untitled_error,"Untitled Error"}
 			, {error::unknown, "Unknown Command"}
 			, {error::unknown_alias, "Unknown Alias"}
@@ -162,7 +168,7 @@ public:
 	
 protected:
 	bool show_ctrl_log = false;
-	std::string ctrl_log;
+	std::stringstream ctrl_log;
 	
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;

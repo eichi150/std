@@ -2,12 +2,12 @@
 
 Arg_Manager::Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr): jsonH(jH), ctrl(ctrl_ptr)
 {
-    arg_manager_log << "read_all_accounts\n";
+    arg_manager_log << "read_all_accounts -- ";
     jsonH->read_all_accounts(all_accounts);
     
     str_error = ctrl->get_str_error();
     
-    arg_manager_log << "build Translator\n";
+    arg_manager_log << "build Translator -- ";
     translator = std::make_shared<Translator>();
     
     arg_manager_log << "set language\n";
@@ -163,11 +163,11 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 
 bool Arg_Manager::check_two_args(){
     
-    if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
+    /*if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
 	run_env = true;
 	arg_manager_log << "start environment\n";
 	return true;
-    }
+    }*/
     
     return false;
 }
@@ -384,31 +384,47 @@ bool Arg_Manager::check_five_args(){
     //Automation konfigurieren
     //<alias> -a -mes "time_config"
     //<alias> -activate -measure
-    if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) ){
     #ifdef __linux__
+    if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) 
+	|| std::regex_match(str_argv[2], regex_pattern.at(command::deactivate)) )
+    {
+	arg_manager_log << "Interact: Activate/ Deactivate\n";
 	std::vector<command> commands = {
-	    command::logfile
+	    command::activate
+	    , command::deactivate
+	    , command::all
+	    , command::detail
+	    , command::logfile
 	    , command::minutes
 	    , command::hours
 	    , command::clock
 	    , command::day
 	    , command::measure_sensor
+	    , command::integer
 	};
-			
-	arg_manager_log << "Activate_Command\n";
-	cmd = std::make_unique<Activate_Alias_Command>(
+	
+	//get split_line() Pointer
+	std::function<std::vector<std::string>(const std::string&, const std::regex&)> split_line = 
+	    [this](const std::string& s, const std::regex& r){
+		return this->ctrl->split_line(s, r);
+	    };
+	
+	cmd = std::make_unique<Interact_Alias_Command>(
 	    all_accounts
 	    , str_argv
 	    , ctrl->get_specific_regex_pattern(commands)
 	    , str_error
 	    , jsonH
+	    , split_line
 	);
+	return true;
+    }
+    
     #else
 	arg_manager_log << "Only for Linux\n";
 	user_output_log << "Only for Linux\n";
     #endif // __linux
-	return true;
-    }
+    
     
     return false;
 }

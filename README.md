@@ -157,7 +157,12 @@ std CH -mes               # Messwerte für CH speichern
 
 ### Aktivierung der Automatisierung
 ```bash
-std <alias> -activate -mes "time_config"
+std <alias> -activate -measure "time_config"
+```
+
+### Deaktivierung der Automatisierung
+```bash
+std <alias> -deactivate -measure -all
 ```
 
 | Beschreibung               | "time_config"    |
@@ -181,22 +186,6 @@ std -auto <crontab_command> -mes
 ```bash
 crontab -e
 systemctl status cron
-```
-
----
-
-## 🐚 std Environment
-
-> Konsolenmodus mit interaktiven Befehlen
-
-### Start:
-```bash
-std -env
-```
-
-### Beenden:
-```bash
-@std > exit
 ```
 
 ---

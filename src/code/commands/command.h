@@ -19,7 +19,6 @@ struct Add_account{
 	std::string entity;
 	std::string alias;
 	std::string tag;
-	
 };
 
 class Add_Alias : public Command{

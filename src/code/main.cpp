@@ -1,10 +1,11 @@
 #ifdef _WIN32
 	#include <windows.h>
+#endif // _WIN32
 
-#else
+#ifdef __linux__
 	#include <limits.h>
 	#include <unistd.h>
-#endif
+#endif // __linux
 
 #include <iostream>
 #include <string>
@@ -18,6 +19,7 @@
 #include <memory>
 #include <regex>
 #include <map>
+#include <cstdlib>
 
 #include "json.hpp"
 
@@ -38,7 +40,6 @@ int main(int argc, char* argv[]){
 	if(argc > 1){
 		std::shared_ptr<Cmd_Ctrl> ctrl = std::make_shared<Cmd_Ctrl>();
 		try{
-			
 			//Argumente entgegen nehmen und Parsen
 			std::vector<std::string> str_argv = ctrl->parse_argv(argc, argv);
 			if(ctrl->is_argument_valid(str_argv)){
@@ -59,30 +60,27 @@ int main(int argc, char* argv[]){
 					
 					return 0;
 				}
-
 		#endif //__linux__
 				
 				//Init Argument Manager
 				std::shared_ptr<Arg_Manager> arg_man = std::make_shared<Arg_Manager>(jsonH, ctrl);
-				
 				arg_man->proceed_inputs(argc, str_argv);
+				
 				//CLI UserInterface & ConsoleOutput				
 				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(arg_man, ctrl->get_log());
 				cli->update();
 				
 				return 0;
 			}
-			
 			throw std::runtime_error{ctrl->get_str_error().at(error::unknown)};
 			
 		//Error Output	
 		}catch(const std::runtime_error& re){
 			std::cerr << "**" << re.what() << "\n" << ctrl->get_log() << std::endl;
 		}
-		
+	}else{
+		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 	}
-	
-	std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 	
 	return 0;
 }

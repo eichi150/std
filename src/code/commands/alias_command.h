@@ -9,7 +9,9 @@
 #include <map>
 #include <bitset>
 #include <sstream>
+#include <functional>
 
+#include "../time_account.h"
 #include "../json_handler.h"
 #include "../translator.h"
 #include "../clock.h"
@@ -53,7 +55,7 @@ protected:
 	std::vector<std::string> str_argv;	
 };
 
-
+//Delete Alias out of Registry
 class Delete_Alias_Command : public Alias_Command{
 public:
 	Delete_Alias_Command(
@@ -112,30 +114,33 @@ public:
 		cmd_log << " deleted\n";//translator.language_pack.at("deleted_out_of_accounts.json") << std::endl;
 	}
 	
-	
 private:
-
 	std::shared_ptr<JSON_Handler> jsonH;
-	const std::map<error, std::string>& str_error;
+	std::map<error, std::string> str_error;
 	
 }; // Delete_Alias_Command
 
 #ifdef __linux__
-#include "../device_ctrl.h"
-class Activate_Alias_Command : public Alias_Command{
+	#include "handle_crontab.h"
+#else
+	#include "interaction.h"
+#endif // __linux__
+
+class Interact_Alias_Command : public Alias_Command{
 public:
-	Activate_Alias_Command(
+	Interact_Alias_Command(
 		std::vector<Time_Account>& all_accounts
-		, std::vector<std::string>& str_argv
+		, const std::vector<std::string>& str_argv
 		, const std::map<command, std::regex>& regex_pattern
 		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<JSON_Handler> jsonH
+		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> callback
 
 	) : Alias_Command(std::move(str_argv), all_accounts)
 		, regex_pattern(regex_pattern)
 		, str_error(str_error)
 		, jsonH(jsonH)
-		
+		, _split_line(callback)
 	{};
 	
 	std::string get_log() const override {
@@ -150,62 +155,75 @@ public:
 		if( std::regex_match(str_argv[3], regex_pattern.at(command::measure_sensor)) ){
 		#ifdef __linux__   
 			cmd_log << "measure_sensor\n";
-			configure_BME280();
-		    
+			
+		    interact_with_Crontab();
 		#else
 		    cmd_log << "Only available for Linux" << std::endl;
 		    user_output_log << "Only available for Linux" << std::endl;
 		    
 		#endif // __linux__
+		}
+		
+		if(interaction){
+			interaction->interact();
+			cmd_log << interaction->get_log();
+			user_output_log << interaction->get_user_output_log();
 		}else{
 			cmd_log << str_error.at(error::synthax) << "\n";
 			throw std::runtime_error{str_error.at(error::synthax)};
 		}	
 	};
 	
-	void configure_BME280(){
-		
-		cmd_log << "start configuration BME280";
-		
-		str_argv[2] = "BME280";
-		
-		Device_Ctrl device{str_error.at(error::sensor)};
-		
-		if(account){
-			//an den beginn von str_argv die entity speichern -> für automation_config file
-			this->str_argv[0] = account->get_entity();
-		}else{
-			throw std::runtime_error{ str_error.at(error::unknown_alias) };
-		}
-		    
-		std::vector<command> commands = {
-			command::logfile
-			, command::minutes
-			, command::hours
-			, command::clock
-			, command::day
-		};
-		
-		//SET Device Settings
-		std::stringstream ss;
-		ss << device.set_user_automation_crontab(
-		    str_argv
-		    , jsonH
-		    , device.get_specific_regex_pattern(commands)
-		);
-		
-		user_output_log << ss.str();
-		cmd_log << ss.str() << "configuration end";
-	}
-private:
-
-	const std::map<command, std::regex>& regex_pattern;
-	const std::map<error, std::string>& str_error;
-	std::shared_ptr<JSON_Handler> jsonH;
 	
-}; // Activate_Alias_Command
-#endif // __linux__
-
-
+private:
+	std::stringstream user_output_log;
+	std::unique_ptr<Interaction> interaction;
+	
+	std::map<command, std::regex> regex_pattern;
+	std::map<error, std::string> str_error;
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line;
+	
+	#ifdef __linux__
+	void interact_with_Crontab(){
+		
+		if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) ){
+			
+			cmd_log << "Activate Crontab  - - ";
+			str_argv[2] = "BME280";
+			if(account){
+				//an den beginn von str_argv die entity speichern -> für automation_config file
+				str_argv[0] = account->get_entity();
+			}else{
+				throw std::runtime_error{ str_error.at(error::unknown_alias) };
+			}
+			
+			cmd_log << "- WriteInto Crontab - configuration BME280\n";
+			interaction = std::make_unique<write_into_Crontab>(
+				str_argv
+				, regex_pattern
+				, str_error
+				, jsonH
+				, _split_line
+			);
+			return;
+		}
+		
+		if( std::regex_match(str_argv[2], regex_pattern.at(command::deactivate)) ){
+			
+			cmd_log << "deactivate Crontab\n";
+			interaction = std::make_unique<delete_task_from_Crontab>(
+				str_argv
+				, regex_pattern
+				, str_error
+				, jsonH
+				, _split_line
+			);
+			return;
+		}
+	}
+	#endif // __linux__
+	
+}; // Interact_Alias_Command
 
 #endif // COMMAND_ALIAS_H

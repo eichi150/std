@@ -106,15 +106,15 @@ std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
 
 
 void JSON_Handler::save_automation_config_file(const std::vector<Automation_Config>& automation_config){
-	if(automation_config.empty()){
+	/*if(automation_config.empty()){
 		throw std::runtime_error{"##Automation_Config Error"};
-	}
+	}*/
 
 	json eintrag = json::array();
 	std::map<std::string, json> grouped_configs;
 
 	// Gruppieren nach "connection"
-	for (const auto& auto_config : automation_config) {
+	for(const auto& auto_config : automation_config) {
 		json cfg = {
 			{"entity", auto_config.entity},
 			{"alias", auto_config.alias},

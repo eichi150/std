@@ -9,6 +9,7 @@
 #include <map>
 #include <bitset>
 #include <sstream>
+#include <functional>
 
 #include "json_handler.h"
 #include "translator.h"
@@ -41,7 +42,8 @@ public:
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
 	
 	//TO_DO
-	bool run_environment() const { return run_env; }
+	//bool run_environment() const { return run_env; }
+	//bool run_env = false;
 private:
 	//log
 	std::stringstream arg_manager_log;
@@ -70,8 +72,6 @@ private:
 	
 	//OutputFlags
 	OutputBitset output_flags;
-	
-	bool run_env = false;
 	
 };//Arg_Manager
 #endif // ARG_MANAGER_H
