@@ -1,4 +1,4 @@
-
+```bash
 COMMAND                  ← Oberbefehl / Einstiegspunkt
 │
 ├── : SHOW               ← Zeige Informationen (z. B. Konfig, Crontab, etc.)
@@ -43,3 +43,4 @@ COMMAND                  ← Oberbefehl / Einstiegspunkt
     }
   }
 }
+```
