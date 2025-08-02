@@ -24,41 +24,47 @@ public:
 		std::vector<Time_Account>& all_accounts
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
-		, const std::map<error, std::string>& str_error
 		
 	) : Alias_Command(std::move(str_argv), all_accounts)
 		, jsonH(jsonH)
-		, str_error(str_error)
-	{};
+	{
+		log("Add--Alias_Command BaseClass for adding Data to Alias");
+	};
 	
-	std::string get_log() const override = 0;
 	std::string get_user_log() const override = 0;
 	void execute() override = 0;
 	
 	//Save to file
 	void finalize() {
-		if(account){
-			std::any_of(
-				all_accounts.begin(), all_accounts.end(),
-				[this](auto& acc){
-					if(acc.get_alias() == account->get_alias()){
-						acc = *account;
-						return true;
-					}
-					return false;
-				}
-			);
-			//Save Account Entity File
-			jsonH->save_json_entity(all_accounts, account->get_entity());
-		}else{
-			
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
+		if(!account){
+			throw Logged_Error("Unknown Alias", logger);	
 		}
+		add_alias();
 	}
 	
 protected:
-	std::map<error, std::string> str_error;
 	std::shared_ptr<JSON_Handler> jsonH;
+	
+private:
+
+	void add_alias(){
+		std::any_of(
+			all_accounts.begin(), all_accounts.end(),
+			[this](auto& acc){
+				if(acc.get_alias() == account->get_alias()){
+					acc = *account;
+					return true;
+				}
+				return false;
+			}
+		);
+		//Save Account Entity File
+		if(!jsonH){
+			throw Logged_Error("jsonH missing", logger);
+		}
+		jsonH->save_json_entity(all_accounts, account->get_entity());
+	}
+	
 }; // Add_Alias_Command
 
 
@@ -70,17 +76,17 @@ public:
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
 		, const std::map<command, std::regex>& regex_pattern
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<Translator> translator
 		
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH, str_error)
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH)
 		, regex_pattern(regex_pattern)
 		, translator(translator)
-	{};
-	
-	std::string get_log() const override {
-		return cmd_log.str();
+	{
+		log("add Hours to Alias");
+		Clock clock{};
+		localTime = clock.get_time();
 	};
+	
 	std::string get_user_log() const override {
 		return user_output_log.str();
 	}
@@ -88,18 +94,36 @@ public:
 	void execute() override {
 		
 		if(!account){
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
+			throw Logged_Error("Unknown Alias", logger);
 		}
 		
 		if(!std::regex_match(str_argv[2], regex_pattern.at(command::integer)) ){
 			user_output_log << "insert number for time value\n";
-			cmd_log << "insert number for time value\n";
+			log("insert number for time value");
 			
-			throw std::runtime_error{"insert number for time value"};
+			throw Logged_Error("insert number for time value", logger);
 		}
 		
-		Clock clock{};
-		auto localTime = clock.get_time();
+		add_hours();
+		
+		//Save to file
+		finalize();
+		//Save All_Accounts
+		
+		jsonH->save_json_accounts(all_accounts);
+		
+		if(!translator){
+			throw Logged_Error("Translator missing", logger);
+		}
+		user_output_log 
+			<< std::put_time(&localTime, translator->language_pack.at("timepoint").c_str()) << '\n'
+			<< translator->language_pack.at("time_saved")
+			<< std::endl;
+    }
+    
+private:
+
+	void add_hours(){
 		
 		float time_float;
 		try{
@@ -107,8 +131,9 @@ public:
 			if (std::regex_match(str_argv[3], regex_pattern.at(command::minutes))){
 				time_float /= 60.f;
 			}
-		}catch(const std::runtime_error& re){
-			cmd_log << "error addhours string_to_float "<< re.what() << "\n";
+		}catch(const std::out_of_range& re){
+			log("error addhours string_to_float " + std::string{re.what()} );
+			throw Logged_Error("insert number for time value", logger);
 		}
 				
 		std::stringstream description;
@@ -120,24 +145,12 @@ public:
 				
 		Entry entry{time_float, description.str(), localTime};
 		account->add_entry(entry);
-		
-		//Save to file
-		finalize();
-		
-		//Save All_Accounts
-		jsonH->save_json_accounts(all_accounts);
-		
-		cmd_log 
-			<< std::put_time(&localTime, translator->language_pack.at("timepoint").c_str()) << '\n'
-			<< translator->language_pack.at("time_saved")
-			<< std::endl;
-			
-		user_output_log << cmd_log.str();
-    }
-    
+	}
+
 private:
 	std::map<command, std::regex> regex_pattern;
 	std::shared_ptr<Translator> translator;
+	std::tm localTime;
 	
 }; // AddHours_Alias_Command
 
@@ -148,14 +161,13 @@ public:
 		std::vector<Time_Account>& all_accounts
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
-		, const std::map<error, std::string>& str_error
 	
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH, str_error)
-	{};
-	
-	std::string get_log() const override {
-		return cmd_log.str();
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH)
+	{
+		log("add Tag to Alias");
 	};
+	
+	
 	std::string get_user_log() const override {
 		return user_output_log.str();
 	}
@@ -163,7 +175,7 @@ public:
 	void execute() override{
 	
 		if(!account){
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
+			throw Logged_Error("Unknown Alias", logger);
 		}
 		
 		account->set_tag(str_argv[3]);
@@ -171,8 +183,12 @@ public:
 		//Save to file
 		finalize();
 		
-		user_output_log << "Tag: " << account->get_tag() << " to " << account->get_alias() << " added" << std::endl;
-		cmd_log << "Tag: " << account->get_tag() << " to " << account->get_alias() << " added" << std::endl;
+		user_output_log 
+			<< "Tag: " 
+			<< account->get_tag() << " to " 
+			<< account->get_alias() << " added" 
+			<< std::endl;
+		log(user_output_log.str());
 		
 	};
 	
@@ -187,44 +203,36 @@ public:
 	SensorData_Add_Alias_Command(
 		std::vector<Time_Account>& all_accounts
 		, const std::vector<std::string>& str_argv
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 		
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH, str_error)
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH)
 		, translator(translator)
-	{};
-	
-	std::string get_log() const override {
-		return cmd_log.str();
+		
+	{
+		log("add Sensordata to Alias");
+		Clock clock{};
+		localTime = clock.get_time();
 	};
+	
 	std::string get_user_log() const override{
 		return user_output_log.str();
 	}
 	
 	void execute() override {
-		if(!account){
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
-		}
-		Clock clock{};
-		Device_Ctrl device{str_error.at(error::sensor)};
 		
-		auto localTime = clock.get_time();
-		std::stringstream output_str;
-
-		std::vector<float> output_sensor = device.check_device("BME280");
-				
-		output_str 
-			<< translator->language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
-			<< translator->language_pack.at("Pressure") << ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
-			<< translator->language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
-					
-		Entry entry{0.f, output_str.str(), localTime};
-		account->add_entry(entry);
+		if(!account){
+			throw Logged_Error("Unknown Alias", logger);
+		}
+		//add data
+		add_sensor_data();
 		
 		//Save to file
 		finalize();
 		
+		if(!translator){
+			throw Logged_Error("Translator missing", logger);
+		}
 		std::stringstream output;
 		output
 			<< std::put_time(&localTime, translator->language_pack.at("timepoint").c_str()) << '\n'
@@ -232,12 +240,35 @@ public:
 			<< output_str.str()
 			<< std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n';
 
-		cmd_log << output.str() << device.get_name() << " Connection closed\n";
+		log(output.str() + device.get_name() + " Connection closed");
 		user_output_log << output.str();
 	};
+
+private:
 	
+	void add_sensor_data(){
+		
+		log("check Sensor for Data");
+		
+		std::vector<float> output_sensor = device.check_device("BME280");
+		
+		if(output_sensor.size() < 3){
+			throw Logged_Error("No Sensor output", logger);
+		}
+		output_str 
+			<< translator->language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
+			<< translator->language_pack.at("Pressure") << ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "
+			<< translator->language_pack.at("Humidity") << ": "  << std::fixed << std::setprecision(2) << output_sensor[2] << " %\n";
+					
+		Entry entry{0.f, output_str.str(), localTime};
+		account->add_entry(entry);
+	}
+
 private:
 	std::shared_ptr<Translator> translator;
+	std::tm localTime;
+	Device_Ctrl device{};
+	std::stringstream output_str;
 	
 }; // SensorData_Add_Alias_Command
 #endif // __linux__

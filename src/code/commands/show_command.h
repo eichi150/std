@@ -15,6 +15,7 @@
 #include "../translator.h"
 #include "../cmd_ctrl.h"
 #include "command.h"
+#include "../exception/exception.h"
 
 enum class OutputType{
 	show_all_accounts = 0
@@ -24,7 +25,6 @@ enum class OutputType{
 	, show_specific_table
 	, show_alias_table
 	, show_alias_automation
-	, show_all_log
 	, show_user_output_log
 	, COUNT //maxSize Bitset
 };
@@ -42,7 +42,6 @@ public:
 		, int argc
 		, const std::map<command, std::regex>& regex_pattern
 		, OutputBitset& output_flags
-		, const std::map<error, std::string>& str_error
 		
 	) : str_argv(str_argv)
 		, all_accounts(all_accounts)
@@ -50,61 +49,49 @@ public:
 		, argc(argc)
 		, regex_pattern(regex_pattern)
 		, output_flags(output_flags)
-		, str_error(str_error)	
 	{};
-	
-	std::string get_log() const override {
-		return cmd_log.str();
-	}
+
 	std::string get_user_log() const override{	
 		return user_output_log.str();
 	}
 	
-void execute() override {
-	cmd_log << "execute Show_Command\n";
-		
-	switch(argc){
-		case 2:
-		{
-			with_2_args();
-			break;
-                }
-		case 3:
-		{
-			with_3_args();
-			break;
-		}
-		case 4:
-		{
-			with_4_args();
-			break;
-		}
-		default:
-		{
-			cmd_log << "nothing activated to be shown\n";
-			break;
-		}
+	void execute() override {
+		log("execute Show_Command");
+			
+		switch(argc){
+			case 2:
+			{
+				with_2_args();
+				break;
+					}
+			case 3:
+			{
+				with_3_args();
+				break;
+			}
+			case 4:
+			{
+				with_4_args();
+				break;
+			}
+			default:
+			{
+				throw Logged_Error("Nothing chosen", logger);
+			}
 	};
 };
 
 private:
-	std::vector<Time_Account>& all_accounts;
-	std::vector<std::string> str_argv;
-	std::shared_ptr<JSON_Handler> jsonH;
-	int argc;
-	std::map<command, std::regex> regex_pattern;
-	OutputBitset& output_flags;
-	std::map<error, std::string> str_error;
-	
+
 	void with_2_args(){
 		//Zeige alle <entity> und <alias> an
         //show
         if (std::regex_match(str_argv[1], regex_pattern.at(command::show))) {
 			output_flags.set(static_cast<size_t>(OutputType::show_all_accounts));
-		    cmd_log << "show all accounts\n";
+		    log("show all accounts");
             return;
         }
-        throw std::runtime_error{str_error.at(error::synthax)};
+        throw SyntaxError{""};
     }
 
 	void with_3_args(){
@@ -113,14 +100,14 @@ private:
         if(std::regex_match(str_argv[2], regex_pattern.at(command::config_filepath))){
                     
             output_flags.set(static_cast<size_t>(OutputType::show_filepaths));
-            cmd_log << str_argv[2] << " show config_filepath.json\n";
+            log(str_argv[2] + " show config_filepath.json");
 			return;
         }
         //language anzeigen
         if(std::regex_match(str_argv[2], regex_pattern.at(command::language))){
                                        
 			output_flags.set(static_cast<size_t>(OutputType::show_language));
-			cmd_log << str_argv[2] << " show language_setting\n";
+			log(str_argv[2] + " show language_setting");
             return;    
         }
         //Zeige spezifischen Account an
@@ -128,10 +115,10 @@ private:
         if(find_alias()){
 			output_flags.set(static_cast<size_t>(OutputType::show_alias_table));
 			
-			cmd_log << str_argv[2] << " show alias table\n";
+			log(str_argv[2] + " show alias table");
 			return;
 		}else{
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
+			throw Logged_Error("Unknown Alias", logger);
 		}	
 	}
 	
@@ -143,11 +130,11 @@ private:
         {  
 			
 			output_flags.set(static_cast<size_t>(OutputType::show_alias_automation));
-			cmd_log << "show automation from alias table\n";
+			log("show automation from alias table");
 			return;
 			
 		}
-		throw std::runtime_error{str_error.at(error::synthax)};
+		throw SyntaxError{""};
 	}
 	
 	bool find_alias(){
@@ -161,8 +148,16 @@ private:
         if(it != all_accounts.end()){
 			return true;
 		}
-		throw std::runtime_error{str_error.at(error::unknown_alias)};
+		throw Logged_Error("Unknown Alias", logger);
 	}
+	
+private:
+	std::vector<Time_Account>& all_accounts;
+	std::vector<std::string> str_argv;
+	std::shared_ptr<JSON_Handler> jsonH;
+	int argc;
+	std::map<command, std::regex> regex_pattern;
+	OutputBitset& output_flags;
 		
 }; // Show_Command
 

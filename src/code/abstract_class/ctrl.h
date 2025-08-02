@@ -11,23 +11,6 @@
 #include "../clock.h"
 #include "../bme280/bme280_sensor.h"
 
-enum class error{
-	  ok = 0
-	, unknown
-	, not_found
-	, synthax
-	, untitled_error
-	, double_entity
-	, double_alias
-	, unknown_alias
-	, unknown_alias_or_entity
-	, alias_equal_entity
-	, user_input_is_command
-	, unknown_language
-	, sensor
-	, tag_not_found
-};
-
 enum class command{
 	  help = 0
 	, add
@@ -62,46 +45,30 @@ public:
 	Ctrl(){
 		//zulässige Eingabe RegexPattern
 		regex_pattern = {
-			  { command::help,      		std::regex{R"(^--?help$)", std::regex_constants::icase } }
-			, { command::add,       		std::regex{R"(^--?add$)", std::regex_constants::icase } }
-			, { command::show,      		std::regex{R"(^(--?show|--?sh|show|sh)$)" , std::regex_constants::icase }}
-			, { command::delete_,   		std::regex{R"(^(--?del(ete)?)$)", std::regex_constants::icase } }
-			, { command::hours, 			std::regex{R"(^(--?h(ours)?)$)", std::regex_constants::icase } }
-			, { command::minutes, 			std::regex{R"(^(--?m(inutes)?)$)", std::regex_constants::icase } }
-			, { command::day, 				std::regex{R"(^--?day$)", std::regex_constants::icase} }
-			, { command::logfile, 			std::regex{R"(^--?log$)", std::regex_constants::icase} }
-			, { command::clock, 			std::regex{R"(^--?clock$)", std::regex_constants::icase} }
-			, { command::config_filepath, 	std::regex{R"(^--?cf$)", std::regex_constants::icase } }
-			, { command::user_filepath,  	std::regex{R"(^(--?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
-			, { command::language,  		std::regex{R"(^(--?l(anguage)?|language)$)", std::regex_constants::icase } }
-			, { command::tag,				std::regex{R"(^--?tag$)", std::regex_constants::icase } }
-			, { command::touch_sensor, 		std::regex{R"(^--?touch$)", std::regex_constants::icase } }
-			, { command::measure_sensor,	std::regex{R"(^(--?me(asure)?)$)", std::regex_constants::icase } }
-			, { command::activate,			std::regex{R"(^(--?a(ctivate)?)$)", std::regex_constants::icase } }
-			, { command::deactivate,		std::regex{R"(^(--?dea(ctivate)?)$)", std::regex_constants::icase } }
-			, { command::i2c, 				std::regex{R"(^--?i2c$)", std::regex_constants::icase } }
-			, { command::automatic, 		std::regex{R"(^--?auto$)", std::regex_constants::icase } }
-			, { command::environment, 		std::regex{R"(^--?env$)", std::regex_constants::icase } }
-			, { command::debug, 			std::regex{R"(^--?debug$)", std::regex_constants::icase} }
+			  { command::help,      		std::regex{R"(^-?help$)", std::regex_constants::icase } }
+			, { command::add,       		std::regex{R"(^-?add$)", std::regex_constants::icase } }
+			, { command::show,      		std::regex{R"(^(-?show|--?sh|show|sh)$)" , std::regex_constants::icase }}
+			, { command::delete_,   		std::regex{R"(^(-?del(ete)?)$)", std::regex_constants::icase } }
+			, { command::hours, 			std::regex{R"(^(-?h(ours)?)$)", std::regex_constants::icase } }
+			, { command::minutes, 			std::regex{R"(^(-?m(inutes)?)$)", std::regex_constants::icase } }
+			, { command::day, 				std::regex{R"(^-?day$)", std::regex_constants::icase} }
+			, { command::logfile, 			std::regex{R"(^-?log$)", std::regex_constants::icase} }
+			, { command::clock, 			std::regex{R"(^-?clock$)", std::regex_constants::icase} }
+			, { command::config_filepath, 	std::regex{R"(^-?cf$)", std::regex_constants::icase } }
+			, { command::user_filepath,  	std::regex{R"(^(-?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
+			, { command::language,  		std::regex{R"(^(-?l(anguage)?|language)$)", std::regex_constants::icase } }
+			, { command::tag,				std::regex{R"(^-?tag$)", std::regex_constants::icase } }
+			, { command::touch_sensor, 		std::regex{R"(^-?touch$)", std::regex_constants::icase } }
+			, { command::measure_sensor,	std::regex{R"(^(-?me(asure)?)$)", std::regex_constants::icase } }
+			, { command::activate,			std::regex{R"(^(-?a(ctivate)?)$)", std::regex_constants::icase } }
+			, { command::deactivate,		std::regex{R"(^(-?dea(ctivate)?)$)", std::regex_constants::icase } }
+			, { command::i2c, 				std::regex{R"(^-?i2c$)", std::regex_constants::icase } }
+			, { command::automatic, 		std::regex{R"(^-?auto$)", std::regex_constants::icase } }
+			, { command::environment, 		std::regex{R"(^-?env$)", std::regex_constants::icase } }
+			, { command::debug, 			std::regex{R"(^-?debug$)", std::regex_constants::icase} }
 			, { command::integer, 			std::regex{R"(^\d+$)"} }
-			, { command::all, 				std::regex{R"(^--?all$)", std::regex_constants::icase } }
-			, { command::detail, 			std::regex{R"(^--?detail$)", std::regex_constants::icase } }
-		};
-		//Error Outputs
-		str_error = {
-			  {error::double_entity, "Entity already taken"}
-			, {error::double_alias, "Alias already taken"}
-			, {error::alias_equal_entity, "Alias cant be equal to any Entity"}
-			, {error::unknown_alias_or_entity, "Alias or Entity not found"}
-			, {error::user_input_is_command, "Rejected Input"}
-			, {error::not_found, "Not found"}
-			, {error::synthax, "Syntax wrong"}
-			, {error::untitled_error,"Untitled Error"}
-			, {error::unknown, "Unknown Command"}
-			, {error::unknown_alias, "Unknown Alias"}
-			, {error::unknown_language, "Unknown Language"}
-			, {error::sensor, "Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."}
-			, {error::tag_not_found, "Unknown Tag"}
+			, { command::all, 				std::regex{R"(^-?all$)", std::regex_constants::icase } }
+			, { command::detail, 			std::regex{R"(^-?detail$)", std::regex_constants::icase } }
 		};
 		
 		//Alle externen Geräte
@@ -118,9 +85,6 @@ public:
 	
 	virtual ~Ctrl(){};
 	
-	virtual std::string get_log() const = 0;
-	virtual void show_log(bool set_to) = 0;
-	
 	virtual std::vector<float> check_device(const std::string& name){
 		throw std::runtime_error{"Not implemented"};
 	};
@@ -133,7 +97,7 @@ public:
 	}
 	
 	//split string an regex_pattern
-	virtual std::vector<std::string> split_line(const std::string& line, const std::regex& re){
+	std::vector<std::string> split_line(const std::string& line, const std::regex& re){
 		std::vector<std::string> result;
 		std::sregex_token_iterator it(line.begin(), line.end(), re, -1);
 		std::sregex_token_iterator end;
@@ -147,9 +111,6 @@ public:
 		return result;
 	}
 	
-	std::map<error, std::string> get_str_error() const { 
-		return str_error; 
-	}
 	std::map<command, std::regex> get_regex_pattern() const {
 		return regex_pattern;
 	}
@@ -167,11 +128,10 @@ public:
 	std::map<std::string, std::regex> device_regex_pattern;
 	
 protected:
-	bool show_ctrl_log = false;
+
 	std::stringstream ctrl_log;
 	
 	std::map<command, std::regex> regex_pattern;
-	std::map<error, std::string> str_error;
 	
 	template <typename T>
 	std::shared_ptr<T> get_sensor_with_name(const std::string& name) {

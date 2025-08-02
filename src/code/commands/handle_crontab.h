@@ -39,18 +39,21 @@ enum class months{
 	, december
 };
 
+enum class to_do{
+	erase_all = 0
+	, erase_detail
+};
+
 class Crontab : public Interaction{
 public:
 	Crontab(
 		std::vector<std::string>& str_argv
 		, const std::map<command, std::regex>& regex_pattern
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line
 			
 	) : str_argv(str_argv)
 		, regex_pattern(regex_pattern)
-		, str_error(str_error)
 		, jsonH(jsonH)
 		, _split_line(_split_line)
 		
@@ -123,7 +126,6 @@ protected:
 	//container
 	std::vector<std::string>& str_argv;
 	std::map<command, std::regex> regex_pattern;
-	std::map<error, std::string> str_error;
 	std::shared_ptr<JSON_Handler> jsonH;
 	
 	//__container
@@ -237,8 +239,8 @@ protected:
 					result.pop_back();
 					result.append(str_weekday.at(day));
 					
-				}catch(const std::runtime_error& re){
-					std::cerr << re.what();
+				}catch(const std::out_of_range& re){
+					std::cerr << "Insert valid number "<< re.what();
 				}
 			}
 		}
@@ -270,23 +272,16 @@ private:
 	
 };
 
-enum class to_do{
-	erase_all = 0
-	, erase_detail
-};
-
 class delete_task_from_Crontab : public Crontab{
 public:
 	delete_task_from_Crontab(
 		std::vector<std::string>& str_argv
 		, const std::map<command, std::regex>& regex_pattern
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line
 	) : Crontab(
 		  str_argv
 		, regex_pattern
-		, str_error
 		, jsonH
 		, _split_line
 		)
@@ -311,7 +306,7 @@ public:
 			}
 		);
 		if(!found_alias){
-			throw std::runtime_error{str_error.at(error::unknown_alias)};
+			throw std::invalid_argument{"Unknown Alias"};
 		}
 		
 		// <alias> -deactivate -measure -all
@@ -352,7 +347,9 @@ public:
 			
 				
 		}else{
-			throw std::runtime_error{str_error.at(error::synthax)};
+			throw SyntaxError{
+				"> <alias> -deactivate -measure -all\n> <alias> -deactivate -measure -detail"
+			};
 		}
 	};
 	
@@ -409,7 +406,7 @@ private:
 		}
 
 		if (choose_one.empty()) {
-			throw std::runtime_error{"Kein Eintrag mit diesem Alias vorhanden"};
+			throw std::invalid_argument{"Kein Eintrag mit diesem Alias vorhanden"};
 		}
 		//create Listbox for User
 		Listbox listbox{choose_one};
@@ -542,19 +539,15 @@ public:
 	write_into_Crontab(
 		std::vector<std::string>& str_argv
 		, const std::map<command, std::regex>& regex_pattern
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line
 		
 	) : Crontab(
 		  str_argv
 		, regex_pattern
-		, str_error
 		, jsonH
 		, _split_line)
-		
 	{
-		
 		connection_type = "I2C";
 		entity = str_argv[0];
 		alias = str_argv[1];
@@ -580,11 +573,12 @@ private:
 	std::string entity;
 	std::string alias;
 	std::string device_name;
+	std::pair<std::string, bool> crontab_line;
 	
 	void set_user_automation_crontab(){
 		
 		//Verarbeite User Arguments
-		std::pair<std::string, bool> crontab_line;
+		
 		crontab_line = get_user_crontab_line();
 		
 		//write Command into Crontab
@@ -596,7 +590,6 @@ private:
 			
 			interaction_log << "Crontab existiert bereits\n";
 			user_output_log << "Crontab existiert bereits. Kein neuer Eintrag in Crontab erforderlich\n";
-			
 		}
 		
 		Automation_Config new_cfg{
@@ -664,7 +657,7 @@ private:
 			if(std::regex_match(str_argv[i], regex_pattern.at(command::minutes)) ){
 				
 				if(!std::regex_match(parameter, integer_pattern)){
-					throw std::runtime_error{"Number for Minutes required"};			
+					throw std::invalid_argument{"Number for Minutes required"};			
 				}
 				
 				crontab[0].append("/" + check_that_between_A_B(parameter, 0, 59, "Minutes"));
@@ -705,11 +698,11 @@ private:
 				if( !std::regex_match(hours, integer_pattern) 
 					|| !std::regex_match(minutes, integer_pattern) )
 				{
-					throw std::runtime_error{"Number for time value required"};
+					throw std::invalid_argument{"Number for time value required"};
 				}
 				
 				if(hours.size() > 2 || minutes.size() > 2){
-					throw std::runtime_error{"Number to big for HH::MM format"};
+					throw std::invalid_argument{"Number to big for HH::MM format"};
 				}
 				
 				crontab[0] = check_that_between_A_B(minutes, 0, 59, "Clock Minutes");
@@ -777,7 +770,7 @@ private:
 		}
 
 		if(!found_command){
-			throw std::runtime_error{str_error.at(error::synthax)};
+			throw SyntaxError{"[time_value] Syntax wrong"};
 		}
 		
 		std::string crontab_line;
@@ -796,11 +789,11 @@ private:
 			num = stoi(str);
 			
 		}catch(const std::runtime_error& re){
-			throw std::runtime_error{error_prompt + " isnt a number"};
+			throw std::invalid_argument{error_prompt + " isnt a number"};
 		}
 		
 		if(num < A || num > B){
-			throw std::runtime_error{error_prompt + " allowed between " + std::to_string(A) + " - " + std::to_string(B)};
+			throw std::invalid_argument{error_prompt + " allowed between " + std::to_string(A) + " - " + std::to_string(B)};
 		}
 		return std::to_string(num);
 	}

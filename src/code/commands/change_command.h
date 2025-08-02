@@ -17,46 +17,43 @@ class Change_Command : public Command{
 public:
 	Change_Command( 
 		std::shared_ptr<JSON_Handler> jsonH
-		, const std::map<error, std::string>& str_error
 		
 	) : jsonH(jsonH)
-		, str_error(str_error)
 	{};
-	
-	std::string get_log() const override = 0;
+
 	std::string get_user_log() const override = 0;
 	
 	void execute() override = 0;
 	
 	void finalize() {
+		log("change finalize");
+		if(!jsonH){
+			throw Logged_Error("Unknown Alias", logger);
+		}
 		jsonH->save_config_file(new_data);
-		cmd_log << "change finalized\n";
+		
 	}
 	
 protected:
 	std::map<std::string, std::string> new_data;
 	
 	std::shared_ptr<JSON_Handler> jsonH;
-	std::map<error, std::string> str_error;
+
 }; // Change_Command
 
 class UserFilepath_Change_Command : public Change_Command{
 public:
 	UserFilepath_Change_Command(
 		std::shared_ptr<JSON_Handler> jsonH
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<Translator> translator
 		, const std::vector<std::string>& str_argv
 		
 		
-	) : Change_Command(jsonH, str_error)
+	) : Change_Command(jsonH)
 		, translator(translator)
 		, str_argv(str_argv)
 	{};
 	
-	std::string get_log() const override {
-		return cmd_log.str();
-	};
 	std::string get_user_log() const override{
 		return user_output_log.str();
 	}
@@ -64,7 +61,7 @@ public:
 	void execute() override {
 		
 		if(str_argv.size() > 4){
-			
+			log("Change: config, entity, accounts filepath");
 			new_data = {
 				  {"config_filepath", str_argv[2]} // <- Change Config_Filepath
 				, {"entity_filepath", str_argv[3]} // <- Change Entity_Filepath
@@ -79,10 +76,10 @@ public:
 				<< std::string{str_argv[3] + "automation_config.json"}
 				<< "\n";
 				
-			cmd_log << ss.str();
+			log(ss.str());
 			user_output_log	<< ss.str();
 		}else{
-			
+			log("Change: entity, account filepath");
 			new_data = {
 				  {"config_filepath", jsonH->get_config_filepath()}
 				, {"entity_filepath", str_argv[2]} // <- Change Entity_Filepath
@@ -93,11 +90,11 @@ public:
 			std::stringstream ss;
 			ss  << str_argv[2] << "\n"
 				<< str_argv[3] << "\n" 
-				<< str_argv[4] << "\n"
+				<< translator->get_str_language() << "\n"
 				<< std::string{str_argv[3] + "automation_config.json"}
 				<< "\n";
 				
-			cmd_log << ss.str();
+			log(ss.str());
 			user_output_log	<< ss.str();
 		}
 		
@@ -114,25 +111,20 @@ class Language_Change_Command : public Change_Command{
 public:
 	Language_Change_Command(
 		std::shared_ptr<JSON_Handler> jsonH
-		, const std::map<error, std::string>& str_error
 		, std::shared_ptr<Translator> translator
 		, const std::string& change_to_language
 		
-	
-	) : Change_Command(jsonH, str_error)
+	) : Change_Command(jsonH)
 		, translator(translator)
 		, change_to_language(change_to_language)
 	{};
-	
-	std::string get_log() const override {
-		return cmd_log.str();
-	};
+
 	std::string get_user_log() const override{
 		return user_output_log.str();
 	}
 	
 	void execute() override {
-		
+		log("try to change language");
 		bool is_possible_language = std::any_of(
 			translator->dict_language.begin(), translator->dict_language.end(),
 			[this](const auto& language){
@@ -142,12 +134,13 @@ public:
 		     
         if(!is_possible_language){
 			std::stringstream ss;
-			ss << "\nPossible Languages:\n";
+			ss << "Possible Languages:\n";
 			for(const auto& str : translator->dict_language){
 				 ss << " > " << str.second << '\n';
-			}          
-			cmd_log << change_to_language << " -> language unknown\n";                   
-			throw std::runtime_error{str_error.at(error::unknown_language) + ss.str()};
+			}
+			user_output_log << ss.str();
+			log("Unknown Language: " + change_to_language);                   
+			throw Logged_Error(ss.str(), logger);
         }
 		
         new_data = {

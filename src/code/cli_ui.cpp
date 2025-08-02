@@ -2,12 +2,10 @@
 
 CLI_UI::CLI_UI(
 		std::shared_ptr<Arg_Manager> manager
-		, const std::string& ctrl_log
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 	
 	) : arg_man(std::move(manager))
-		, ctrl_log(ctrl_log)
 		, jsonH(jsonH)
 		, translator(translator)
 	{};
@@ -58,7 +56,7 @@ void CLI_UI::update(){
 		std::cout << arg_man->get_user_output_log() << std::endl;
 	}
 	
-	if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
+	/*if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
 		
 		std::cout 
 			<< "\n===== Control_Log: =====\n"
@@ -69,7 +67,7 @@ void CLI_UI::update(){
 			<< ui_interface_log.str()
 			<< "\n===== Log_Ende ====="
 			<< std::endl;
-	}
+	}*/
 	
 	arg_man->clear_output_flags();
 }

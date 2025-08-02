@@ -11,17 +11,11 @@
 #include <cstdio>
 
 #include "./abstract_class/ctrl.h"
+#include "./exception/exception.h"
 
 class Device_Ctrl : public CTRL::Ctrl{
 public:
-	Device_Ctrl(const std::string& error_prompt);
-	
-	void show_log(bool set_to) override {
-		show_ctrl_log = set_to;
-	}
-	std::string get_log() const override{
-		return ctrl_log.str();
-	}
+
 	
 	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command);
 	
@@ -33,7 +27,8 @@ private:
 	Clock clock{};
 	
 	std::string name;
-	std::string error_prompt;
+	std::string error_prompt{"Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."};
+
 	std::vector<Automation_Config> all_automations;
 	std::vector<Time_Account> all_accounts;
 };

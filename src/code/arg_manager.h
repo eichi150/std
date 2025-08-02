@@ -16,6 +16,8 @@
 #include "clock.h"
 #include "cmd_ctrl.h"
 
+#include "./exception/exception.h"
+
 #include "./commands/command.h"
 #include "./commands/show_command.h"
 #include "./commands/alias_command.h"
@@ -24,7 +26,12 @@
 
 class Arg_Manager{
 public:
-	Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr);
+	Arg_Manager(
+		std::shared_ptr<ErrorLogger> logger
+		, std::shared_ptr<ErrorLogger> output_logger
+		, std::shared_ptr<JSON_Handler> jH
+		, std::shared_ptr<Cmd_Ctrl> ctrl_ptr
+	);
 	
 	//Methods
 	void proceed_inputs(const int& _argc, const std::vector<std::string>& argv);
@@ -33,7 +40,6 @@ public:
 	void clear_output_flags();
 	std::vector<Time_Account> get_all_accounts() const;
 	std::vector<std::string> get_str_argv() const;
-	std::string get_log() const;
 	std::string get_user_output_log() const;
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
 	std::shared_ptr<Translator> get_translator_ptr() const;
@@ -42,6 +48,13 @@ public:
 	//bool run_env = false;
 	
 private:
+	//logger
+	void log(const std::string& msg);
+	void set_logger(std::shared_ptr<ErrorLogger> log);
+	
+	void add_output(const std::string& output);
+	void set_output_logger(std::shared_ptr<ErrorLogger> log);
+	//process args
 	bool check_two_args();
 	bool check_three_args();
 	bool check_four_args();
@@ -50,10 +63,11 @@ private:
 
 private:
 	//Variables
+	std::shared_ptr<ErrorLogger> logger;
+	std::shared_ptr<ErrorLogger> output_logger;
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::shared_ptr<Translator> translator;
 	//log
-	std::stringstream arg_manager_log;
 	std::stringstream user_output_log;
 
 	//arguments
@@ -62,14 +76,13 @@ private:
 	
 	//controle instance
 	std::map<command, std::regex> regex_pattern;
-	std::map<error, std::string> str_error;
 	std::shared_ptr<Cmd_Ctrl> ctrl;
 	
 	//All Accounts
 	std::vector<Time_Account> all_accounts;
 	
 	//cmd to be executed
-	std::unique_ptr<Command> cmd;
+	std::shared_ptr<Command> cmd;
 	
 	//OutputFlags
 	OutputBitset output_flags;

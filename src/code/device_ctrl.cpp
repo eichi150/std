@@ -1,8 +1,6 @@
 #ifdef __linux__
 #include "device_ctrl.h"
 
-Device_Ctrl::Device_Ctrl(const std::string& error_prompt) : error_prompt(error_prompt){};
-
 std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command){
 
 	//auto Accounts lesen
@@ -26,7 +24,7 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	//Sensor Werte abfragen
 	std::vector<float> output_sensor = check_device(device_name);
 	if(output_sensor.empty()){
-		throw std::runtime_error{"§§ No Sensor Output"};
+		throw DeviceConnectionError{"§§ No Sensor Output"};
 	}
 	std::stringstream ss;
 	ss << "Temperature: " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
@@ -60,23 +58,23 @@ std::vector<float> Device_Ctrl::check_device(const std::string& name) {
 
 	auto it = all_devices.find(name);
 	if (it == all_devices.end()) {
-		throw std::runtime_error{"Sensor not registered: " + name};
+		throw DeviceConnectionError{"Sensor not registered: " + name};
 	}
 
 	auto sensor_ptr = it->second;
 
 	if (!sensor_ptr) {
-		throw std::runtime_error{"Sensor pointer is null"};
+		throw DeviceConnectionError{"Sensor pointer is null"};
 	}
 
 	// optional: dynamisch casten
 	auto bme_ptr = std::dynamic_pointer_cast<BME_Sensor>(sensor_ptr);
 	if (!bme_ptr) {
-		throw std::runtime_error{"Sensor is not a BME_Sensor"};
+		throw DeviceConnectionError{"Sensor is not a BME_Sensor"};
 	}
 
 	if (bme_ptr->scan_sensor(output_sensor) == 1) {
-		throw std::runtime_error{error_prompt};
+		throw DeviceConnectionError{error_prompt};
 	}
 
 	return output_sensor;
