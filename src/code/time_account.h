@@ -18,6 +18,15 @@ struct Automation_Config{
 	std::string crontab_command;
 	std::string logfile;
 	std::string device_name;
+	
+	bool operator==(const Automation_Config& other) const {
+		return {
+			connection == other.connection
+			&& entity == other.entity
+			&& alias == other.alias
+			&& crontab_command == other.crontab_command
+		};
+	}
 };
 
 class Time_Account{

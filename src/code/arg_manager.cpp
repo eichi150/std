@@ -403,7 +403,7 @@ bool Arg_Manager::check_five_args(){
 	    , command::integer
 	};
 	
-	//get split_line() Pointer
+	//creates split_line() Pointer
 	std::function<std::vector<std::string>(const std::string&, const std::regex&)> split_line = 
 	    [this](const std::string& s, const std::regex& r){
 		return this->ctrl->split_line(s, r);
@@ -499,7 +499,11 @@ void Arg_Manager::clear_output_flags(){
 std::vector<Time_Account> Arg_Manager::get_all_accounts() const {
     return all_accounts;
 }
-	
+
+std::shared_ptr<Translator> Arg_Manager::get_translator_ptr() const {
+    return translator;
+}
+
 std::vector<std::string> Arg_Manager::get_str_argv() const {
     return str_argv;
 }

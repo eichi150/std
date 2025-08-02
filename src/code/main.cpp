@@ -67,7 +67,12 @@ int main(int argc, char* argv[]){
 				arg_man->proceed_inputs(argc, str_argv);
 				
 				//CLI UserInterface & ConsoleOutput				
-				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(arg_man, ctrl->get_log());
+				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(
+					arg_man
+					, ctrl->get_log()
+					, jsonH
+					, arg_man->get_translator_ptr()
+				);
 				cli->update();
 				
 				return 0;

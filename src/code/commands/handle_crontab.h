@@ -2,15 +2,17 @@
 #define HANDLE_CRONTAB_H
 
 #include "../abstract_class/interaction.h"
-#ifdef __linux__
-#include "../device_ctrl.h"
 
+#ifdef __linux__
 #include <functional>
 #include <vector>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <cstdlib>
+
+#include "../device_ctrl.h"
+#include "listbox.h"
 
 enum class weekday{
 	sunday = 0
@@ -59,6 +61,34 @@ public:
 		}catch(const std::runtime_error& re){
 			interaction_log << re.what();
 		}
+		
+		integer_pattern = regex_pattern.at(command::integer);
+		
+		str_weekday = {
+			  {weekday::sunday, 	"sunday"}
+			, {weekday::monday, 	"monday"}
+			, {weekday::tuesday, 	"tuesday"}
+			, {weekday::wednesday, 	"wednesday"}
+			, {weekday::thursday, 	"thursday"}
+			, {weekday::friday, 	"friday"}
+			, {weekday::saturday, 	"saturday"}
+		};
+			
+		str_months = {
+			  {months::january, 	"january"}
+			, {months::february,	"february"}
+			, {months::march, 		"march"}
+			, {months::april, 		"april"}
+			, {months::may, 		"may"}
+			, {months::june, 		"june"}
+			, {months::july, 		"july"}
+			, {months::august, 		"august"}
+			, {months::september, 	"september"}
+			, {months::october, 	"october"}
+			, {months::november, 	"november"}
+			, {months::december, 	"december"}
+		};
+		
 	};
 	
 	std::string get_log() const override {
@@ -74,14 +104,14 @@ public:
 		
 		interaction_log << "save automation_config.json\n";
 		jsonH->save_automation_config_file(automation_config);
-			
+		 
 		//neue Zeile anhängen
 		std::ofstream out("/tmp/mycron", std::ios::app);
 		out << cronLine;
 		out << '\n';
 		out.close();
 		
-		interaction_log << "finalize change crontab config\n";
+		interaction_log << "change crontab config\n";
 		//Neue Crontab setzen
 		system("crontab /tmp/mycron");
 		
@@ -95,6 +125,12 @@ protected:
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
 	std::shared_ptr<JSON_Handler> jsonH;
+	
+	//__container
+	std::regex integer_pattern;
+	std::map<weekday, std::string> str_weekday;
+	std::map<months, std::string> str_months;
+	
 	//func ptr
 	std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line;
 	
@@ -126,6 +162,87 @@ protected:
 			}
 		}
 		return false;
+	}
+	
+	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line){
+		std::string result;
+		// 0 */1 * * *
+		// Every 1 hour @0 minutes 
+		std::vector<std::string> splitted_crontab = _split_line(crontab_line, std::regex{R"([\s]+)"});
+		
+		for(size_t i{0}; i < splitted_crontab.size(); ++i){
+
+			if(splitted_crontab[i] == "*"){
+				continue;
+			}
+			
+			bool every_x = false;
+			
+			if(std::regex_match(splitted_crontab[i], integer_pattern)){
+				result.append("@ ");
+			}else{
+
+				std::string temp;
+				bool found = false;
+				for(const auto& c : splitted_crontab[i]){
+					if(found){
+						temp += c;
+					}
+					if(c == '/'){
+						found = true;
+						result.append("Every ");
+						if(i == 0 || i == 1){
+							every_x = true;
+						}
+					}
+				}
+				splitted_crontab[i] = temp;
+									
+			}
+			//Uhrzeit //hours : minutes
+			if(i == 1 && !every_x){
+				result = {};	
+				result.append(splitted_crontab[1] + ":" + splitted_crontab[0] + " o'clock");
+
+			//Every or at X minutes
+			}else if(i == 0){
+				result.append(splitted_crontab[i]);
+				result.append(" minutes ");	
+			}
+			//Every X hours
+			else if(i == 1){
+				result.append(splitted_crontab[i]);
+				result.append(" hours ");
+			}
+
+			//Every or at X day of month
+			if(i == 2){
+				result.append(splitted_crontab[i]);
+				result.append(" day of month ");			
+			}
+			//Every or at X months
+			if(i == 3){
+				result.append(splitted_crontab[i]);
+				result.append(" month ");			
+			}
+			//Every or at X weekday
+			if(i == 4){
+				result.append(splitted_crontab[i]);
+				
+				int int_day;
+				try{
+					int_day = std::stoi(result.substr(result.size() -1));
+					
+					weekday day = static_cast<weekday>(int_day);
+					result.pop_back();
+					result.append(str_weekday.at(day));
+					
+				}catch(const std::runtime_error& re){
+					std::cerr << re.what();
+				}
+			}
+		}
+		return result;
 	}
 	
 private:
@@ -187,6 +304,16 @@ public:
 		
 	void interact() override {
 		
+		bool found_alias = std::any_of(
+			automation_config.begin(), automation_config.end(),
+			[this](const auto& config){
+				return config.alias == this->alias;
+			}
+		);
+		if(!found_alias){
+			throw std::runtime_error{str_error.at(error::unknown_alias)};
+		}
+		
 		// <alias> -deactivate -measure -all
 		if( std::regex_match(str_argv[4], regex_pattern.at(command::all)) ){
 			to_do_flags.set(static_cast<int>(to_do::erase_all));
@@ -200,8 +327,47 @@ public:
 			interaction_log << "Delete Detail of " << alias << " from Crontab and automation_config\n";
 		}
 		
+		if( to_do_flags.test(static_cast<int>(to_do::erase_all))
+			|| to_do_flags.test(static_cast<int>(to_do::erase_detail)) )
+		{
+			//process delete
+			process_delete();
 		
+			//Collect Output
+			user_output_log << "Crontab Task is ";
+			if(automation_config.empty()){		
+				user_output_log 
+					<< "NOT in use\n"
+					<< "Deleted " << alias << " from "
+					<< (is_cut_out_automations ? "automation_config.json " : "")
+					<< "and Crontab automated measuring\n";
+				return;
+			}
+			user_output_log 
+				<< (is_crontab_command_still_needed ? "NOT in use\n" : "in use\n")
+				<< alias << " from "
+				<< (is_cut_out_automations ? "automation_config.json " : "")
+				<< (is_crontab_command_still_needed ? "and Crontab " : "")
+				<< "automated measuring deleted\n";
+			
+				
+		}else{
+			throw std::runtime_error{str_error.at(error::synthax)};
+		}
+	};
+	
+private:
+	std::bitset<4> to_do_flags;
+	std::string alias;
+	std::vector<std::string> str_command;
+	bool is_cut_out_automations{false};
+	bool is_crontab_command_still_needed{false};
+	std::vector<std::string> obsolete_cmds;
+	std::vector<std::string> output_vector;
+	
+	void process_delete(){
 		
+		//Process ALL
 		if( to_do_flags.test(static_cast<int>(to_do::erase_all)) ){
 			erase_complete_alias_out_automation_config();
 			check_is_crontab_task_used();
@@ -212,71 +378,61 @@ public:
 			}else{
 				output_vector = erase_out_crontab();
 			}
-			
-			
-		}else if( to_do_flags.test(static_cast<int>(to_do::erase_detail)) ){
+		}
+		//Process DETAIL
+		if( to_do_flags.test(static_cast<int>(to_do::erase_detail)) ){
 			erase_detail_out_automation_config();
 			check_is_crontab_task_used();
 			
-			output_vector = erase_out_crontab();
-			
-		}else{
-			throw std::runtime_error{str_error.at(error::synthax)};
+			output_vector = erase_out_crontab();	
 		}
 		
+		//push crontab vector in a single string
 		write_cronLine();
-		user_output_log << "Crontab Task is " << (is_crontab_command_still_needed ? "in use\n" : "NOT in use\n")
-			<< alias << " from "
-			<< (is_cut_out_automations ? "automation_config.json " : "")
-			<< (is_crontab_command_still_needed ? "" : "and Crontab ")
-			<< "automated measuring deleted\n";
-				
+		
+		//finalize -> Save Files	
 		finalize();
-			
-	};
-	
-private:
-	std::string alias;
-	std::vector<std::string> str_command;
-	bool is_cut_out_automations{false};
-	bool is_crontab_command_still_needed{false};
-	std::vector<std::string> obsolete_cmds;
-	std::vector<std::string> output_vector;
-	
-	std::bitset<4> to_do_flags;
+	}
 	
 	void erase_detail_out_automation_config(){
 		
 		std::vector<Automation_Config> vec = automation_config;
-		
-		//Get User Input
-		std::string _input;
-		std::cout << "Which one you like to delete?\n";
-		for(size_t i{0}; i < vec.size(); ++i){
-			if(vec[i].alias == alias){
-				std::cout << i << " = " << vec[i].crontab_command << '\n';
+
+		// Auswahl vorbereiten
+		std::vector<std::string> choose_one;
+		std::vector<std::string> chosen_as_cmd;
+		for (const auto& cfg : vec) {
+			if (cfg.alias == alias) {
+				choose_one.push_back(convert_crontabLine_to_speeking_str(cfg.crontab_command));
+				chosen_as_cmd.push_back(cfg.crontab_command);
 			}
 		}
-		std::cin >> _input;
-			
-		int index;
-		try{
-			index = stoi(_input);
-			if (index < vec.size()) {
-				str_command.push_back(vec[index].crontab_command);
-				vec.erase(vec.begin() + index);
-				
-			}
-		}catch(const std::runtime_error& re){
-			throw std::runtime_error{"insert number\n"};
+
+		if (choose_one.empty()) {
+			throw std::runtime_error{"Kein Eintrag mit diesem Alias vorhanden"};
 		}
-			
-		interaction_log << "Automation_Config size: " << vec.size() << "\n";
-			
-		if(vec.size() < automation_config.size()){
+		//create Listbox for User
+		Listbox listbox{choose_one};
+		int index = listbox.select_option();
+		std::string chosen = choose_one[index];
+		std::string chosen_cmd = chosen_as_cmd[index];
+
+		user_output_log << "Du hast gewählt: " << " (" << chosen << ")\n";
+		interaction_log << chosen_cmd << " [Index " << index << "]\n";
+		// Command merken, um aus Crontab zu löschen
+		str_command.push_back(chosen_cmd);
+
+		// Aus automation_config löschen
+		auto it = std::remove_if(vec.begin(), vec.end(),
+			[&](const Automation_Config& config){
+				return config.alias == alias && config.crontab_command == chosen_cmd;
+			});
+
+		if (it != vec.end()) {
+			vec.erase(it, vec.end());
 			is_cut_out_automations = true;
 			automation_config = vec;
-		}else{
+		} else {
 			throw std::runtime_error{"Nothing to delete\n"};
 		}
 	}
@@ -314,7 +470,6 @@ private:
 		//MUSS DER CRONTAB GELÖSCHT WERDEN?? oder gibts andere alias die den crontabcommand nutzen?
 		
 		std::vector<std::string> still_used;
-		
 		for (const auto& cmd : str_command) {
 			//auch den letzten eitnrag entfernen
 			if(automation_config.empty()){
@@ -341,7 +496,7 @@ private:
 		
 		interaction_log << "Obsolete commands: " << obsolete_cmds.size() << "\n";
 		interaction_log << "Still used commands: " << still_used.size() << "\n";
-		interaction_log << "Crontab Task is " << (is_crontab_command_still_needed ? "in use\n" : "NOT in use\n");
+		interaction_log << "Crontab Task is " << (is_crontab_command_still_needed ? "NOT in use\n" : "in use\n");
 	}
 	
 	std::vector<std::string> erase_out_crontab(){
@@ -350,7 +505,6 @@ private:
 		interaction_log << "Crontab size before delete: " << current_Crontab.size() << "\n";
 		
 		std::vector<std::string> vec = current_Crontab;
-
 		vec.erase(
 			std::remove_if(
 				vec.begin(),
@@ -400,32 +554,6 @@ public:
 		, _split_line)
 		
 	{
-		integer_pattern = regex_pattern.at(command::integer);
-		
-		str_weekday = {
-			  {weekday::sunday, 	"sunday"}
-			, {weekday::monday, 	"monday"}
-			, {weekday::tuesday, 	"tuesday"}
-			, {weekday::wednesday, 	"wednesday"}
-			, {weekday::thursday, 	"thursday"}
-			, {weekday::friday, 	"friday"}
-			, {weekday::saturday, 	"saturday"}
-		};
-			
-		str_months = {
-			  {months::january, 	"january"}
-			, {months::february,	"february"}
-			, {months::march, 		"march"}
-			, {months::april, 		"april"}
-			, {months::may, 		"may"}
-			, {months::june, 		"june"}
-			, {months::july, 		"july"}
-			, {months::august, 		"august"}
-			, {months::september, 	"september"}
-			, {months::october, 	"october"}
-			, {months::november, 	"november"}
-			, {months::december, 	"december"}
-		};
 		
 		connection_type = "I2C";
 		entity = str_argv[0];
@@ -443,7 +571,7 @@ public:
 	void interact() override {
 		interaction_log << "Crontab Interaktion\n";		
 		set_user_automation_crontab();
-		
+		//save files
 		finalize();
 	};
 		
@@ -453,16 +581,11 @@ private:
 	std::string alias;
 	std::string device_name;
 	
-	//container
-	std::regex integer_pattern;
-	std::map<weekday, std::string> str_weekday;
-	std::map<months, std::string> str_months;
-	
 	void set_user_automation_crontab(){
 		
 		//Verarbeite User Arguments
 		std::pair<std::string, bool> crontab_line;
-		crontab_line = get_user_crontag_line();
+		crontab_line = get_user_crontab_line();
 		
 		//write Command into Crontab
 		if( write_Crontab(jsonH, crontab_line.first, alias, crontab_line.second) ){
@@ -475,15 +598,25 @@ private:
 			user_output_log << "Crontab existiert bereits. Kein neuer Eintrag in Crontab erforderlich\n";
 			
 		}
-		automation_config.push_back(
-			Automation_Config{
-				  connection_type
-				, entity, alias 
-				, crontab_line.first
-				,(crontab_line.second ? "true" : "false")
-				, device_name
+		
+		Automation_Config new_cfg{
+			  connection_type
+			, entity, alias 
+			, crontab_line.first
+			,(crontab_line.second ? "true" : "false")
+			, device_name
+		};
+		bool already_in = std::any_of(
+			automation_config.begin(), automation_config.end(),
+			[&new_cfg](const Automation_Config& cfg){
+				return cfg == new_cfg;
 			}
 		);
+		if(already_in){
+			throw std::runtime_error{"Automation Config already set"};
+		}
+		//automation hinzufügen
+		automation_config.push_back(new_cfg);
 		
 		std::stringstream output;
 		output 
@@ -498,7 +631,7 @@ private:
 		user_output_log << output.str();
 	}
 	
-	std::pair<std::string, bool> get_user_crontag_line(){
+	std::pair<std::string, bool> get_user_crontab_line(){
 
 		std::vector<std::string> crontab = {
 			{
@@ -696,87 +829,6 @@ private:
 		return true;
 	}
 	
-	
-	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line){
-		std::string result;
-		// 0 */1 * * *
-		// Every 1 hour @0 minutes 
-		std::vector<std::string> splitted_crontab = _split_line(crontab_line, std::regex{R"([\s]+)"});
-		
-		for(size_t i{0}; i < splitted_crontab.size(); ++i){
-
-			if(splitted_crontab[i] == "*"){
-				continue;
-			}
-			
-			bool every_x = false;
-			
-			if(std::regex_match(splitted_crontab[i], integer_pattern)){
-				result.append("@ ");
-			}else{
-
-				std::string temp;
-				bool found = false;
-				for(const auto& c : splitted_crontab[i]){
-					if(found){
-						temp += c;
-					}
-					if(c == '/'){
-						found = true;
-						result.append("Every ");
-						if(i == 0 || i == 1){
-							every_x = true;
-						}
-					}
-				}
-				splitted_crontab[i] = temp;
-									
-			}
-			//Uhrzeit //hours : minutes
-			if(i == 1 && !every_x){
-				result = {};	
-				result.append(splitted_crontab[1] + ":" + splitted_crontab[0] + " o'clock");
-
-			//Every or at X minutes
-			}else if(i == 0){
-				result.append(splitted_crontab[i]);
-				result.append(" minutes ");	
-			}
-			//Every X hours
-			else if(i == 1){
-				result.append(splitted_crontab[i]);
-				result.append(" hours ");
-			}
-
-			//Every or at X day of month
-			if(i == 2){
-				result.append(splitted_crontab[i]);
-				result.append(" day of month ");			
-			}
-			//Every or at X months
-			if(i == 3){
-				result.append(splitted_crontab[i]);
-				result.append(" month ");			
-			}
-			//Every or at X weekday
-			if(i == 4){
-				result.append(splitted_crontab[i]);
-				
-				int int_day;
-				try{
-					int_day = std::stoi(result.substr(result.size() -1));
-					
-					weekday day = static_cast<weekday>(int_day);
-					result.pop_back();
-					result.append(str_weekday.at(day));
-					
-				}catch(const std::runtime_error& re){
-					std::cerr << re.what();
-				}
-			}
-		}
-		return result;
-	}
 };
 #endif // __linux__
 

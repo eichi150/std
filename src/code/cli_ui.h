@@ -16,18 +16,16 @@
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI::UI_Interface{
 public:
-	explicit CLI_UI(std::shared_ptr<Arg_Manager> manager, const std::string& ctrl_log);
+	explicit CLI_UI(
+		std::shared_ptr<Arg_Manager> manager
+		, const std::string& ctrl_log
+		, std::shared_ptr<JSON_Handler> jsonH
+		, std::shared_ptr<Translator> translator
+	);
 
 	void update() override;
 	
 private:
-	
-	std::string ctrl_log;
-	
-	std::shared_ptr<Arg_Manager> arg_man;
-	std::vector<Automation_Config> all_automations;
-	
-	int table_width = 0;
 	//Build Tabellenausgabe
 	std::string create_alias_table();
 	std::string create_automation_table(const std::string& account_alias);
@@ -45,6 +43,16 @@ private:
 	void show_alias_automation_table();
 	void show_filepaths();
 	void show_language();
+	
+private:
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::shared_ptr<Translator> translator;
+	std::string ctrl_log;
+	
+	std::shared_ptr<Arg_Manager> arg_man;
+	std::vector<Automation_Config> all_automations;
+	
+	int table_width = 0;
 	
 	const std::string help = {
     "add 			Add new Entity give it a Alias\n"

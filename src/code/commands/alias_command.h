@@ -166,7 +166,9 @@ public:
 		
 		if(interaction){
 			interaction->interact();
-			cmd_log << interaction->get_log();
+			cmd_log 
+				<< "\n===== Interaction_Log: =====\n" 
+				<< interaction->get_log();
 			user_output_log << interaction->get_user_output_log();
 		}else{
 			cmd_log << str_error.at(error::synthax) << "\n";

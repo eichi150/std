@@ -1,7 +1,16 @@
 #include "cli_ui.h"
 
-CLI_UI::CLI_UI(std::shared_ptr<Arg_Manager> manager, const std::string& ctrl_log) 
-	: arg_man(std::move(manager)), ctrl_log(ctrl_log){};
+CLI_UI::CLI_UI(
+		std::shared_ptr<Arg_Manager> manager
+		, const std::string& ctrl_log
+		, std::shared_ptr<JSON_Handler> jsonH
+		, std::shared_ptr<Translator> translator
+	
+	) : arg_man(std::move(manager))
+		, ctrl_log(ctrl_log)
+		, jsonH(jsonH)
+		, translator(translator)
+	{};
 
 void CLI_UI::update(){
 	
@@ -71,17 +80,17 @@ void CLI_UI::show_help(){
 
 void CLI_UI::show_filepaths() {
 	std::cout 
-        << "Config: " << arg_man->jsonH->get_config_filepath() << '\n'
-        << arg_man->translator->language_pack.at("entity") << ": " << arg_man->jsonH->get_entity_filepath() << '\n' 
-        << "Accounts: " << arg_man->jsonH->get_accounts_filepath() << std::endl;
+        << "Config: " << jsonH->get_config_filepath() << '\n'
+        << translator->language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
+        << "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
 }
 
 
 void CLI_UI::show_language() {
     std::cout 
-		<< arg_man->translator->language_pack.at("str_language")
+		<< translator->language_pack.at("str_language")
 		<< ": " 
-		<< arg_man->translator->language_pack.at("language") << std::endl;
+		<< translator->language_pack.at("language") << std::endl;
 }
 
 void CLI_UI::show_all_accounts(){
@@ -130,7 +139,7 @@ std::string CLI_UI::create_automation_table(const std::string& account_alias){
 	try{
 	//Read Automation_Config.json
 	if(all_automations.empty()){
-		all_automations = arg_man->jsonH->read_automation_config_file();
+		all_automations = jsonH->read_automation_config_file();
 	}
 	
 	}catch(const std::runtime_error& re){
@@ -233,7 +242,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 			max_length_comment = d_str_size;
 			std::stringstream ss_timepoint;
 			
-			std::string time_format = arg_man->translator->language_pack.at("timepoint");
+			std::string time_format = translator->language_pack.at("timepoint");
 			ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
 			std::stringstream ss_hours;
 			ss_hours << std::setprecision(3) << entry.hours;
@@ -254,7 +263,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 		
 		std::stringstream ss_timepoint;
 		
-		std::string time_format = arg_man->translator->language_pack.at("timepoint");
+		std::string time_format = translator->language_pack.at("timepoint");
 		ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
 						  
 		ss_body << std::left
@@ -367,15 +376,21 @@ std::string CLI_UI::create_all_accounts_table(){
 	
 	const std::string INDEX_str{"Index"};
 	const std::string ALIAS_str{"Alias"};
-	std::string entity_str = arg_man->translator->language_pack.at("entity");
-	std::string total_hours_str = arg_man->translator->language_pack.at("total_hours");
+	std::string entity_str = translator->language_pack.at("entity");
+	std::string total_hours_str = translator->language_pack.at("total_hours");
 	
 	int index{0};
 	if(table_width == 0){
 		
 		int hold_width;
 		for(const auto& account : all_accounts){
-			hold_width = get_sum_str_size({std::to_string(index), account.get_alias(), account.get_entity(), std::to_string( static_cast<int>(account.get_hours()) )});
+			hold_width = get_sum_str_size(
+				{std::to_string(index)
+					, account.get_alias()
+					, account.get_entity()
+					, std::to_string( static_cast<int>(account.get_hours()) )
+					}
+				);
 			
 			if(hold_width > table_width){
 				table_width = hold_width;

@@ -26,10 +26,6 @@ class Arg_Manager{
 public:
 	Arg_Manager(std::shared_ptr<JSON_Handler> jH, std::shared_ptr<Cmd_Ctrl> ctrl_ptr);
 	
-	//Variables
-	std::shared_ptr<JSON_Handler> jsonH;
-	std::shared_ptr<Translator> translator;
-	
 	//Methods
 	void proceed_inputs(const int& _argc, const std::vector<std::string>& argv);
 	void set_output_flag(OutputType flag, bool value = true); 
@@ -40,11 +36,22 @@ public:
 	std::string get_log() const;
 	std::string get_user_output_log() const;
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
-	
+	std::shared_ptr<Translator> get_translator_ptr() const;
 	//TO_DO
 	//bool run_environment() const { return run_env; }
 	//bool run_env = false;
+	
 private:
+	bool check_two_args();
+	bool check_three_args();
+	bool check_four_args();
+	bool check_five_args();
+	bool check_six_args();
+
+private:
+	//Variables
+	std::shared_ptr<JSON_Handler> jsonH;
+	std::shared_ptr<Translator> translator;
 	//log
 	std::stringstream arg_manager_log;
 	std::stringstream user_output_log;
@@ -57,12 +64,6 @@ private:
 	std::map<command, std::regex> regex_pattern;
 	std::map<error, std::string> str_error;
 	std::shared_ptr<Cmd_Ctrl> ctrl;
-	
-	bool check_two_args();
-	bool check_three_args();
-	bool check_four_args();
-	bool check_five_args();
-	bool check_six_args();
 	
 	//All Accounts
 	std::vector<Time_Account> all_accounts;
