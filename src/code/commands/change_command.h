@@ -17,9 +17,12 @@ class Change_Command : public Command{
 public:
 	Change_Command( 
 		std::shared_ptr<JSON_Handler> jsonH
-		
-	) : jsonH(jsonH)
-	{};
+		, std::shared_ptr<ErrorLogger> logger
+	) : Command(std::move(logger))
+		, jsonH(jsonH)
+	{
+		log(std::string{__FILE__} + " - Change_Command");
+	};
 
 	void execute() override = 0;
 	
@@ -45,12 +48,14 @@ public:
 		std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 		, const std::vector<std::string>& str_argv
+		, std::shared_ptr<ErrorLogger> logger
 		
-		
-	) : Change_Command(jsonH)
+	) : Change_Command(jsonH, std::move(logger))
 		, translator(translator)
 		, str_argv(str_argv)
-	{};
+	{
+		log(std::string{__FILE__} + " - UserFilepath_Change_Command");
+	};
 	
 	void execute() override {
 		
@@ -107,11 +112,14 @@ public:
 		std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 		, const std::string& change_to_language
+		, std::shared_ptr<ErrorLogger> logger
 		
-	) : Change_Command(jsonH)
+	) : Change_Command(jsonH, std::move(logger))
 		, translator(translator)
 		, change_to_language(change_to_language)
-	{};
+	{
+		log(std::string{__FILE__} + " - Language_Change_Command");
+	};
 
 	
 	void execute() override {

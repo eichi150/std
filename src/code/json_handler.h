@@ -19,11 +19,12 @@
 #include "json.hpp"
 #include "translator.h"
 #include "time_account.h"
-
+#include "./exception/exception.h"
 
 class JSON_Handler{
 public:
-
+	JSON_Handler(std::shared_ptr<ErrorLogger> logger_);
+	
 	void read_all_accounts(std::vector<Time_Account>& all_accounts);
 	
 	std::string get_config_filepath() const;
@@ -58,13 +59,12 @@ public:
 	void save_automation_config_file(const std::vector<Automation_Config>& automation_config);
 	std::vector<Automation_Config> read_automation_config_file();
 	
-	std::string get_log() const {
-		return jsonH_log.str();
-	}
-	
+
 private:
-	
-	std::stringstream jsonH_log;
+	void log(const std::string& msg) const;
+
+private:
+	std::shared_ptr<ErrorLogger> logger;
 	
 	std::string config_filepath{"../config.json"};
 	

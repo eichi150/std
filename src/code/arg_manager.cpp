@@ -5,13 +5,17 @@ Arg_Manager::Arg_Manager(
     , std::shared_ptr<ErrorLogger> output_logger
     , std::shared_ptr<JSON_Handler> jH
     , std::shared_ptr<Cmd_Ctrl> ctrl_ptr
+    
 ) : logger(std::move(logger))
     , output_logger(std::move(output_logger))
     , jsonH(jH)
     , ctrl(ctrl_ptr)
 {
+    log("===== Arg_Manager_Log: =====");
+    log(std::string{__FILE__} + " - Arg_Manager");
+    
+    log("===== JsonHandler_Log: =====");
     jsonH->read_all_accounts(all_accounts);
-    log( std::string{"===== JsonHandler_Log: =====\n"  + jsonH->get_log()} );
     
     translator = std::make_shared<Translator>();
     log("set language");
@@ -58,10 +62,10 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	    , argc
 	    , ctrl->get_specific_regex_pattern(commands)
 	    , output_flags
+	    , logger
 	);
 	
 	if(cmd){
-	    cmd->set_logger(logger);
 	    log("show flags got set");
 	}
     }
@@ -83,7 +87,6 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
                 if(check_three_args()){
 		    break;
 		}
-		//arg_manager_log << "error: Syntax wrong\n";
 		std::stringstream syntax;
 		syntax 
 		    << "> <alias> -delete\n> <alias> -measure\n"
@@ -141,9 +144,9 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
     }
     
     if(cmd){
-	cmd->set_logger(logger);
+	
 	cmd->set_output_logger(output_logger);
-	log("===== Command_Log: =====");
+	
 	cmd->execute();
 	
 	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
@@ -187,6 +190,7 @@ bool Arg_Manager::check_three_args(){
 	    , str_argv
 	    , jsonH
 	    , str_argv[1]
+	    , logger
 	);
 	return true;
 	
@@ -201,6 +205,7 @@ bool Arg_Manager::check_three_args(){
 	    , str_argv
 	    , jsonH
 	    , str_argv[2]
+	    , logger
 	);
 	
 	return true;
@@ -215,6 +220,7 @@ bool Arg_Manager::check_three_args(){
 	    jsonH
 	    , translator
 	    , str_argv[2]
+	    , logger
 	);
 		    
 	add_output("Language changed to " + str_argv[2]);
@@ -226,15 +232,16 @@ bool Arg_Manager::check_three_args(){
     //-touch BME280
     if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
 				
-    #ifdef __linux__
+#ifdef __linux__
 	log("-touch" + str_argv[2]);
 	cmd = std::make_shared<TouchDevice_Command>(
 	    str_argv[2]
+	    , logger
 	);
-    #else
-	log("-touch <device> Only available for Linux");
-	add_output("Only available for Linux");
-    #endif // __linux__
+#else
+log("-touch <device> Only available for Linux");
+add_output("Only available for Linux");
+#endif // __linux__
 		
 	return true;
     }
@@ -243,18 +250,19 @@ bool Arg_Manager::check_three_args(){
     // <alias> -mes
     if(std::regex_match(str_argv[2], regex_pattern.at(command::measure_sensor))){
                 
-    #ifdef __linux__
+#ifdef __linux__
 	cmd = std::make_shared<SensorData_Add_Alias_Command>(
 	    all_accounts
 	    , str_argv
 	    , jsonH
 	    , translator
 	    , str_argv[1]
+	    , logger
 	);
-    #else
-	log("<alias> -measure Only available for Linux");
-	add_output("Only available for Linux");
-    #endif // __linux__
+#else
+log("<alias> -measure Only available for Linux");
+add_output("Only available for Linux");
+#endif // __linux__
 		
 	return true;
     }
@@ -271,6 +279,7 @@ bool Arg_Manager::check_four_args(){
 	    jsonH
 	    , translator
 	    , str_argv
+	    , logger
 	);
 	return true;
     }
@@ -283,11 +292,11 @@ bool Arg_Manager::check_four_args(){
 	cmd = std::make_shared<Add_Alias>(
 	    all_accounts
 	    , jsonH
-	    , Add_account{str_argv[2], str_argv[3], ""}
+	    , Add_Alias::Add_account{str_argv[2], str_argv[3], ""}
 	    , regex_pattern
+	    , logger
 	);
-                    
-	add_output("Account added" + str_argv[2] + " -> " + str_argv[3]);
+
 	log( std::string{ "NewAccount for: " + str_argv[2] + " " + str_argv[3]} );
 	return true;
     }
@@ -314,6 +323,7 @@ bool Arg_Manager::check_four_args(){
 		, ctrl->get_specific_regex_pattern(commands)
 		, translator
 		, str_argv[1]
+		, logger
 	    );
 	    return true;
 	}
@@ -333,6 +343,7 @@ bool Arg_Manager::check_four_args(){
 	    , str_argv
 	    , jsonH
 	    , str_argv[1]
+	    , logger
 	);
 	return true;
     }
@@ -350,6 +361,7 @@ bool Arg_Manager::check_five_args(){
 	    jsonH
 	    , translator
 	    , str_argv
+	    , logger
 	);
                     
 	std::stringstream ss; 
@@ -382,6 +394,7 @@ bool Arg_Manager::check_five_args(){
 		, ctrl->get_specific_regex_pattern(commands)
 		, translator
 		, str_argv[1]
+		, logger
 	    );
 	    return true;
 	}
@@ -393,11 +406,12 @@ bool Arg_Manager::check_five_args(){
     //Automation konfigurieren
     //<alias> -activate -measure [time_value]
     //<alias> -deactivate -measure -all/ -detail 
-    #ifdef __linux__
+    
     if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) 
 	|| std::regex_match(str_argv[2], regex_pattern.at(command::deactivate)) )
     {
 	log("Interact: Activate/ Deactivate");
+#ifdef __linux__
 	std::vector<command> commands = {
 	    command::activate
 	    , command::deactivate
@@ -425,13 +439,15 @@ bool Arg_Manager::check_five_args(){
 	    , jsonH
 	    , split_line
 	    , str_argv[1]
+	    , logger
 	);
+	
+#else
+log("Only for Linux");
+add_output("Only for Linux");
+#endif // __linux	
 	return true;
     }
-    #else
-	log("Only for Linux");
-	add_output("Only for Linux");
-    #endif // __linux
     
     return false;
 }
@@ -448,8 +464,9 @@ bool Arg_Manager::check_six_args(){
 	cmd = std::make_shared<Add_Alias>(
 	    all_accounts
 	    , jsonH
-	    , Add_account{str_argv[2], str_argv[3], str_argv[5]}
+	    , Add_Alias::Add_account{str_argv[2], str_argv[3], str_argv[5]}
 	    , regex_pattern
+	    , logger
 	);
 	std::stringstream ss;
 	ss << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << " | Tag: " << str_argv[5];

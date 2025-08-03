@@ -1,5 +1,13 @@
 #include "cmd_ctrl.h"
 
+Cmd_Ctrl::Cmd_Ctrl(
+	std::shared_ptr<ErrorLogger> logger_
+
+) : logger(std::move(logger_))
+{
+	log(std::string{__FILE__} + " - Cmd_Ctrl");
+};
+
 // Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
 std::vector<std::string> Cmd_Ctrl::split_input(const std::string& input) {
 	std::vector<std::string> result;
@@ -26,7 +34,7 @@ bool Cmd_Ctrl::is_argument_valid(int& argc, std::vector<std::string>& str_argv){
 	for(const auto& pattern : regex_pattern){
 		for(size_t i{0}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
-				
+				log("arguments valid");
 				return  true;
 			}	
 		}
@@ -36,7 +44,7 @@ bool Cmd_Ctrl::is_argument_valid(int& argc, std::vector<std::string>& str_argv){
 	for(const auto& pattern : device_regex_pattern){
 		for(size_t i{0}; i < str_argv.size(); ++i){
 			if(std::regex_match(str_argv[i], pattern.second)){
-
+				log("device argument valid");
 				return  true;
 			}	
 		}
@@ -56,9 +64,11 @@ void Cmd_Ctrl::check_debug_mode(int& argc, std::vector<std::string>& str_argv){
 		return true;
 	    }
 	    
-	    //this->output_flags.set(static_cast<size_t>(OutputType::show_all_log));
 	    argc -= 1;
-		debug_enable = true;
+		if(!logger){
+			throw std::runtime_error{"Logger missing in Cmd_Ctrl"};
+		}
+		logger->set_debug_to(true);
 	    return false;
         }
     );

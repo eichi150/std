@@ -15,6 +15,8 @@
 #include "../translator.h"
 #include "../cmd_ctrl.h"
 #include "command.h"
+#include "entity_command.h"
+
 #include "../exception/exception.h"
 
 enum class OutputType{
@@ -26,6 +28,7 @@ enum class OutputType{
 	, show_alias_table
 	, show_alias_automation
 	, show_user_output_log
+	, show_entity
 	, COUNT //maxSize Bitset
 };
 
@@ -42,14 +45,18 @@ public:
 		, int argc
 		, const std::map<command, std::regex>& regex_pattern
 		, OutputBitset& output_flags
+		, std::shared_ptr<ErrorLogger> logger
 		
-	) : str_argv(str_argv)
+	) : Command(std::move(logger))
+		, str_argv(str_argv)
 		, all_accounts(all_accounts)
 		, jsonH(jsonH)
 		, argc(argc)
 		, regex_pattern(regex_pattern)
 		, output_flags(output_flags)
-	{};
+	{
+		log(std::string{__FILE__} + " - Show_Command");
+	};
 	
 	void execute() override {
 		log("execute Show_Command");
@@ -108,13 +115,28 @@ private:
         }
         //Zeige spezifischen Account an
         //show <alias>
-        if(find_alias()){
+        if(find_alias(str_argv[2])){
 			output_flags.set(static_cast<size_t>(OutputType::show_alias_table));
 			
 			log(str_argv[2] + " show alias table");
 			return;
+		
+		}else if(find_entity(str_argv[2])){
+			output_flags.set(static_cast<size_t>(OutputType::show_entity));
+			log(str_argv[2] + " show entity table");
+			
+			log("all_accounts: " + std::to_string(all_accounts.size()));
+			Entity_Command sh_entity{
+				str_argv
+				, all_accounts
+				, str_argv[2]
+				, logger
+			};
+			all_accounts = sh_entity.get_entity_accounts();
+			log("all_accounts: " + std::to_string(all_accounts.size()));
+			return;
 		}else{
-			throw Logged_Error("Unknown Alias", logger);
+			throw Logged_Error("Unknown Entity | Unknown Alias", logger);
 		}	
 	}
 	
@@ -122,7 +144,7 @@ private:
 		//show automation für alias
 		//.std sh <alias> -activate
         if( std::regex_match(str_argv[3], regex_pattern.at(command::activate)) 
-			&& find_alias() ) 
+			&& find_alias(str_argv[2]) ) 
         {  
 			
 			output_flags.set(static_cast<size_t>(OutputType::show_alias_automation));
@@ -133,8 +155,24 @@ private:
 		throw SyntaxError{""};
 	}
 	
-	bool find_alias(){
-		std::string alias = str_argv[2];
+	bool find_entity(const std::string& __entity){
+		std::string entity = __entity;
+        auto it = std::find_if(
+			all_accounts.begin(), all_accounts.end(),
+			[&entity](const Time_Account& acc){
+				return acc.get_entity() == entity;
+			}
+        );
+        if(it != all_accounts.end()){
+			
+			return true;
+		}
+		return false;
+		//throw Logged_Error("Unknown Entity", logger);
+	}
+	
+	bool find_alias(const std::string& __alias){
+		std::string alias = __alias;
         auto it = std::find_if(
 			all_accounts.begin(), all_accounts.end(),
 			[&alias](const Time_Account& acc){
@@ -144,7 +182,8 @@ private:
         if(it != all_accounts.end()){
 			return true;
 		}
-		throw Logged_Error("Unknown Alias", logger);
+		return false;
+		//throw Logged_Error("Unknown Alias", logger);
 	}
 	
 private:

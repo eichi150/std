@@ -91,6 +91,11 @@ std -l english
 std -add <entity> <alias>
 ```
 
+### ❌ Entität löschen
+```bash
+std -del <entity>
+```
+
 ### ❌ Alias löschen
 ```bash
 std <alias> -del

@@ -24,11 +24,17 @@ public:
 		const std::vector<std::string>& str_argv
 		, std::vector<Time_Account>& all_accounts
 		, const std::string& arg_alias
-	) : str_argv(str_argv)
+		, std::shared_ptr<ErrorLogger> logger
+		
+	) : Command(std::move(logger))
+		, str_argv(str_argv)
 		, all_accounts(all_accounts)
 		, alias(arg_alias)
 	
 	{
+		
+		log(std::string{__FILE__} + " - Alias_Command");
+	
 		log("search account with alias");
 		get_account_from_alias();
 	};
@@ -78,10 +84,13 @@ public:
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
 		, const std::string& arg_alias
+		, std::shared_ptr<ErrorLogger> logger
 		
-	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias)
+	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias, std::move(logger))
 		, jsonH(jsonH)
-	{};
+	{
+		log(std::string{__FILE__} + " - Delete_Alias_Command");
+	};
 	
 	
 	void execute() override{
@@ -166,22 +175,39 @@ public:
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> callback
 		, const std::string& arg_alias
+		, std::shared_ptr<ErrorLogger> logger
 		
-	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias)
+	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias, std::move(logger))
 		, regex_pattern(regex_pattern)
 		, jsonH(jsonH)
 		, _split_line(callback)
 	{
-		log("Interact_Alias_Command");
+		log(std::string{__FILE__} + " - Interact_Alias_Command");
 	};
-
 	void execute() override{
 		
 		if( std::regex_match(str_argv[3], regex_pattern.at(command::measure_sensor)) ){
-		#ifdef __linux__   
 			log("measure_sensor");
 			
-		    interact_with_Crontab();
+			log("read automation_config");
+			automation_config = jsonH->read_automation_config_file();
+			
+			if(automation_config.empty()){
+				add_output("No Automations saved");
+				log("No Automations saved");
+			} 
+			
+		#ifdef __linux__  
+			
+			std::string executioner = "Crontab";
+			
+			if(executioner == "Crontab"){
+				
+				interact_with_Crontab();
+			}else{
+				throw Logged_Error("Executioner " + executioner + " doesnt match", logger);
+			}
+			
 		#else
 		    log("Only available for Linux");
 		    add_output("Only available for Linux");
@@ -197,15 +223,16 @@ public:
 			interaction->interact();
 			
 		}else{
-			log("Syntax wrong");
-			throw Logged_Error("Syntax wrong", logger);
+			log("No Interaction to execute");
+			throw Logged_Error("No Interaction to execute", logger);
 		}	
 	};
 	
 private:
-
 #ifdef __linux__
+
 	void interact_with_Crontab(){
+		
 		if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) ){
 			
 			log("Activate Crontab  - - ");
@@ -223,11 +250,16 @@ private:
 				, regex_pattern
 				, jsonH
 				, _split_line
+				, automation_config
 			);
-			return;
+			
 		}
 		
 		if( std::regex_match(str_argv[2], regex_pattern.at(command::deactivate)) ){
+			
+			if(automation_config.empty()){
+				throw Logged_Error("No Automations saved", logger);
+			}
 			
 			log("deactivate Crontab");
 			interaction = std::make_shared<delete_task_from_Crontab>(
@@ -235,15 +267,19 @@ private:
 				, regex_pattern
 				, jsonH
 				, _split_line
+				, automation_config
 			);
-			return;
+			
 		}
+		
 	}
 	
 #endif // __linux__
 
 private:
 	std::shared_ptr<Interaction> interaction;
+	std::vector<Automation_Config> automation_config;
+	std::vector<Automation_Config> only_crontabs;
 	
 	std::map<command, std::regex> regex_pattern;
 	std::shared_ptr<JSON_Handler> jsonH;

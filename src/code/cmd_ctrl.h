@@ -5,20 +5,15 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <memory>
+
 #include "./abstract_class/ctrl.h"
+#include "./exception/exception.h"
 
 class Cmd_Ctrl : public CTRL::Ctrl{
 public:
 	
-	bool debug_enable = false;
-
-	
-	/*std::string get_log() const override{
-		if(show_ctrl_log){
-			return ctrl_log.str();
-		}
-		return {};
-	}*/
+	Cmd_Ctrl(std::shared_ptr<ErrorLogger> logger_);
 	
 	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
 	std::vector<std::string> split_input(const std::string& input);
@@ -62,7 +57,15 @@ public:
 			}
 		return str_argv;
 	}
+
+private:
+	std::shared_ptr<ErrorLogger> logger;
 	
+	void log(const std::string& msg){
+		if(logger){
+			logger->log(msg);
+		}
+	}
 };
 
 #endif // CMD_CTRL_H

@@ -13,13 +13,19 @@
 
 class Command{
 public:
+	Command(
+		std::shared_ptr<ErrorLogger> set_log
+		
+	) : logger(set_log)
+	{
+		log("===== Command_Log: =====");
+		log(std::string{__FILE__} + " - Command");
+	};
+	
 	virtual ~Command() = default;
 	
 	virtual void execute() = 0;
 	
-	void set_logger(std::shared_ptr<ErrorLogger> log){
-		logger = std::move(log);
-	}
 	void log(const std::string& msg){
 		if(logger){
 			logger->log(msg);
@@ -48,27 +54,32 @@ protected:
 	
 }; // Command
 
-struct Add_account{
-	std::string entity;
-	std::string alias;
-	std::string tag;
-};
+
 
 class Add_Alias : public Command{
 public:
+	struct Add_account{
+		std::string entity;
+		std::string alias;
+		std::string tag;
+	};
+	
 	Add_Alias(
 		std::vector<Time_Account>& all_accounts
 		, std::shared_ptr<JSON_Handler> jsonH
-		, const Add_account& add
+		, const Add_account& add_info
 		, const std::map<command, std::regex>& pattern
+		, std::shared_ptr<ErrorLogger> logger
 	
-	) : all_accounts(all_accounts),
-		jsonH(jsonH),
-		add(add),
-		regex_pattern(pattern) 
+	) : Command(std::move(logger))
+		, all_accounts(all_accounts)
+		, jsonH(std::move(jsonH))
+		, add(add_info)
+		, regex_pattern(pattern) 
 	{
-		log("Add_Command");
+		log(std::string{__FILE__} + " - Add_Alias");
 	};
+	
 	
 	void execute() override{
 	
@@ -77,7 +88,8 @@ public:
 		check_input();
 		
 		create_new_account();
-
+		
+		log("save to files");
 		jsonH->save_json_accounts(all_accounts);
 		jsonH->save_json_entity(all_accounts, add.entity);
 	};
@@ -102,7 +114,7 @@ private:
 		if(is_entity || is_alias){
 			
 			log("Names like commands blocked");
-			throw Logged_Error("Add_Alias failed", logger);
+			throw Logged_Error("Entity's or Alias's named like commands are forbidden", logger);
 		}	
 		
 		//Entity or Alias already taken?
@@ -125,19 +137,25 @@ private:
 		std::stringstream ss;
 		
 		Time_Account new_account{add.entity, add.alias};
-		ss << add.entity << "-> " 
-			<< add.alias;
-		
+		size_t size_before = all_accounts.size();
+		all_accounts.push_back(new_account);
+
+		if(size_before == all_accounts.size()){
+			std::stringstream ss_log;
+			ss_log << "size_before: " << size_before << " size_after: " << all_accounts.size();
+			log("push_back: new_account" + ss_log.str());
+			throw Logged_Error("Insert the Account failed", logger);
+		}
+		log(add.entity + " -> " + add.alias);
+		ss << "Entity: " << add.entity 
+			<< "\nAlias: " << add.alias;
 		if(!add.tag.empty()){
 			new_account.set_tag(add.tag);
-			ss <<  " -tag= " << add.tag;
+			ss <<  "\nTag: " << add.tag;
 		}
-		ss << " Saved";
-		log(ss.str());
+		ss << "\nSaved - Call the Account by its Alias";
+			
 		add_output(ss.str());
-		
-		log("save to all_accounts and files");
-		all_accounts.push_back(new_account);
 	}
 
 private:
@@ -154,7 +172,15 @@ private:
 #include "../device_ctrl.h"
 class TouchDevice_Command : public Command{
 public:
-	TouchDevice_Command(const std::string& device_name) : arg(device_name) {};
+	TouchDevice_Command(
+		const std::string& device_name
+		, std::shared_ptr<ErrorLogger> logger
+	
+	) : Command(std::move(logger))
+		, arg(device_name) 
+	{
+		log(std::string{__FILE__} + " - TouchDevice_Command");
+	};
 	
 	void execute() override {
 		

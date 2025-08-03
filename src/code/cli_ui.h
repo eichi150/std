@@ -8,10 +8,10 @@
 #include <ostream>
 #include <vector>
 #include <string>
+#include <algorithm>
 
 #include "./abstract_class/ui_interface.h"
 #include "arg_manager.h"
-
 
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI::UI_Interface{
@@ -26,7 +26,17 @@ public:
 	void update() override;
 	
 private:
+	void show_help();
+	void show_all_accounts();
+	void show_entity_table();
+	void show_alias_table();
+	void show_alias_automation_table();
+	void show_filepaths();
+	void show_language();
+	
+private:
 	//Build Tabellenausgabe
+	std::string create_entity_table();
 	std::string create_alias_table();
 	std::string create_automation_table(const std::string& account_alias);
 	std::string create_data_table(const std::string& alias);
@@ -34,16 +44,9 @@ private:
 	
 	std::string create_line(int width, const char& symbol);
 	
-	size_t scale_str_size(const std::string& str);
+	int scale_str_size(const std::string& str);
 	int get_sum_str_size(const std::vector<std::string>& multiple_str);
-	
-	void show_help();
-	void show_all_accounts();
-	void show_alias_table();
-	void show_alias_automation_table();
-	void show_filepaths();
-	void show_language();
-	
+
 private:
 	std::shared_ptr<ErrorLogger> output_logger;
 	std::shared_ptr<JSON_Handler> jsonH;

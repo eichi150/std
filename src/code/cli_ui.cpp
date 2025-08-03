@@ -52,23 +52,21 @@ void CLI_UI::update(){
 		
 	}
 	
+	if(flags.test(static_cast<size_t>(OutputType::show_entity))){
+		ui_interface_log << "show_entitiy";
+		show_entity_table();
+	}
 	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
 		
 		ui_interface_log << "show cmd user output\n";
-		//std::cout << arg_man->get_user_output_log() << std::endl;
 		std::cout << output_logger->get_logs() << std::endl;
 	}
 	
 	/*if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
 		
 		std::cout 
-			<< "\n===== Control_Log: =====\n"
-			<< ctrl_log
-			<< "\n===== Arg_Manager_Log: =====\n"
-			<< arg_man->get_log() 
 			<< "\n===== UI_Interface_Log: =====\n"
 			<< ui_interface_log.str()
-			<< "\n===== Log_Ende ====="
 			<< std::endl;
 	}*/
 	
@@ -109,7 +107,9 @@ void CLI_UI::show_alias_automation_table(){
 void CLI_UI::show_alias_table(){
 	std::cout << create_alias_table() << std::endl;
 }
-
+void CLI_UI::show_entity_table(){
+	std::cout << create_entity_table() << std::endl;
+}
 
 std::string CLI_UI::create_line(int width, const char& symbol){
 	std::ostringstream output_stream;
@@ -120,7 +120,7 @@ std::string CLI_UI::create_line(int width, const char& symbol){
        
      return output_stream.str();
 }
-size_t CLI_UI::scale_str_size(const std::string& str){
+int CLI_UI::scale_str_size(const std::string& str){
 	
 	float scaled_comment = static_cast<float>(str.size()) * 1.5f;
 	
@@ -150,10 +150,10 @@ std::string CLI_UI::create_automation_table(const std::string& account_alias){
 	//HEAD Parameter
 	const std::string INDEX_str{"Index"};
 	const std::string DEVICE_str{"Device"};
-	const std::string CRON_TASK_str{"Crontab Task"};
+	const std::string EXE_TASK_str{"Executioner"};
 	const std::string CRON_CMD_str{"Crontab Command"};
 	
-	table_width = get_sum_str_size({INDEX_str, DEVICE_str, CRON_TASK_str, CRON_CMD_str});
+	table_width = get_sum_str_size({INDEX_str, DEVICE_str, EXE_TASK_str, CRON_CMD_str});
 	
 	//BODY
 	std::stringstream ss_body;
@@ -164,15 +164,12 @@ std::string CLI_UI::create_automation_table(const std::string& account_alias){
 		if(automation.alias != account_alias){
 			continue;
 		}
-		
-		std::string crontab_task = "Crontab_Task";
-			
 							  
 		ss_body << std::left
 			<< std::setw(scale_str_size(INDEX_str)) << index << '|' 
 			<< std::setw(scale_str_size(DEVICE_str)) << automation.device_name << '|' 
-			<< std::setw(scale_str_size(CRON_TASK_str)) << crontab_task << '|'
-			<< std::setw(scale_str_size(CRON_CMD_str)) << automation.crontab_command
+			<< std::setw(scale_str_size(EXE_TASK_str)) << automation.executioner << '|'
+			<< std::setw(scale_str_size(CRON_CMD_str)) << automation.crontab_command_speeking
 			
 			<< create_line(table_width, '-') << '\n';
 				                  
@@ -192,12 +189,12 @@ std::string CLI_UI::create_automation_table(const std::string& account_alias){
 		//empty Strings
 		<< std::setw(scale_str_size(INDEX_str)) << std::string{" "} << std::setfill(' ') << '|' 
 		<< std::setw(scale_str_size(DEVICE_str)) << std::string{" "} << std::setfill(' ') << '|'
-		<< std::setw(scale_str_size(CRON_TASK_str)) << std::string{" "} << std::setfill(' ') << '|'
+		<< std::setw(scale_str_size(EXE_TASK_str)) << std::string{" "} << std::setfill(' ') << '|'
 		<< '\n'
 		
 		<< std::setw(scale_str_size(INDEX_str)) << INDEX_str << '|' 
 		<< std::setw(scale_str_size(DEVICE_str)) << DEVICE_str << '|'
-		<< std::setw(scale_str_size(CRON_TASK_str)) << CRON_TASK_str << '|'
+		<< std::setw(scale_str_size(EXE_TASK_str)) << EXE_TASK_str << '|'
 		<< std::setw(scale_str_size(CRON_CMD_str)) << CRON_CMD_str
 		
 		<< create_line(table_width, '=') << '\n';
@@ -307,6 +304,85 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 		<< ss_body.str();
 	
 	return table.str();
+}
+
+std::string CLI_UI::create_entity_table(){
+	
+	// ------------------------------------------------------------
+	// Tabellenaufbau: Index | Alias
+	// Dynamische Breitenanpassung je nach Inhalt
+	// ------------------------------------------------------------
+
+	const std::string INDEX_str = "Index";
+	const std::string ALIAS_str = "Alias";
+	const std::string SEP = "|";
+
+	// Hilfsfunktion: Summe der Lngen von Strings (inkl. optionaler Separatoren)
+	auto get_sum_str_size = [](const std::vector<std::string>& parts, const std::string& sep = "") -> int {
+		int total = 0;
+		for (const auto& part : parts) {
+			total += static_cast<int>(part.size());
+		}
+		if (!sep.empty()) {
+			total += static_cast<int>(sep.size()) * static_cast<int>(parts.size() - 1);
+		}
+		return total;
+	};
+
+	
+	// Bestimme maximale Breite der Tabelle (Initial mit Header)
+	int max_data_width = get_sum_str_size({INDEX_str, ALIAS_str}, SEP) + 6; // +6 fr Puffer/Padding
+
+	// BODY-Daten vorbereiten
+	std::stringstream ss_body;
+	int index = 0;
+	auto all_accounts = arg_man->get_all_accounts();
+
+	for (const auto& account : all_accounts) {
+		std::string alias = account.get_alias();
+
+		// Berechne benätigte Breite fr diese Zeile
+		int body_data_width = get_sum_str_size({std::to_string(index), alias}, SEP);
+
+		// Skaliere Alias-L#nge leicht, um optische Anpassung zu simulieren
+		int scaled_alias_width = static_cast<int>(static_cast<float>(alias.size()) * 1.5f);
+		body_data_width += scaled_alias_width;
+
+		// Falls grer als bisher bekannte Breite ? bernehmen
+		max_data_width = std::max(max_data_width, body_data_width);
+
+		++index;
+	}
+
+	// Tabelle entsprechend der maximalen Breite setzen
+	int table_width = max_data_width;
+
+	//BODY
+	index = 0;
+	for (const auto& account : all_accounts) {
+		ss_body << std::left
+				<< std::setw(8) << index          
+				<< SEP << " "
+				<< std::setw(table_width - 12) << account.get_alias() 
+				<< SEP << '\n'
+				<< std::string(table_width, '-') << '\n';
+		++index;
+	}
+
+	//HEAD
+	std::string entity = all_accounts.front().get_entity();
+	std::stringstream ss_head;
+	ss_head << std::string(table_width, '=') << '\n'
+			<< std::setw(table_width) << std::left << entity << '\n'
+			<< std::string(table_width, '=') << '\n';
+
+	//TABLE
+	std::ostringstream table;
+	table << ss_head.str()
+		  << ss_body.str();
+
+	return table.str();
+
 }
 
 std::string CLI_UI::create_alias_table(){

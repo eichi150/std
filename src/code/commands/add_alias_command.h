@@ -25,7 +25,9 @@ public:
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
 		, const std::string& arg_alias
-	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias)
+		, std::shared_ptr<ErrorLogger> logger
+		
+	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias, std::move(logger))
 		, jsonH(jsonH)
 	{
 		log("Add--Alias_Command BaseClass for adding Data to Alias");
@@ -77,7 +79,9 @@ public:
 		, const std::map<command, std::regex>& regex_pattern
 		, std::shared_ptr<Translator> translator
 		, const std::string& arg_alias
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias)
+		, std::shared_ptr<ErrorLogger> logger
+		
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias, std::move(logger))
 		, regex_pattern(regex_pattern)
 		, translator(translator)
 	{
@@ -158,8 +162,9 @@ public:
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
 		, const std::string& arg_alias
-	
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias)
+		, std::shared_ptr<ErrorLogger> logger
+		
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias, std::move(logger))
 	{
 		log("add Tag to Alias");
 	};
@@ -201,8 +206,9 @@ public:
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 		, const std::string& arg_alias
+		, std::shared_ptr<ErrorLogger> logger
 		
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias)
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias, std::move(logger))
 		, translator(translator)
 		
 	{

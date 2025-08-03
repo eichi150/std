@@ -7,12 +7,62 @@
 #include <vector>
 #include <memory>
 
+
+#define LOG_INFO(msg) std::clog << "[INFO] " << msg << std::endl
+#define LOG_ERROR(msg) std::cerr << "[ERROR]\n" << msg << std::endl
+#define LOG_DEBUG(msg) std::clog << "[DEBUG]\n" << msg << std::endl
+
 class ErrorLogger{
 public:
 	virtual ~ErrorLogger() = default;
 	virtual void log(const std::string& _log) = 0;
 	virtual std::string get_logs() const = 0;
+	
+	
+	void set_debug_to(bool to_){
+		debug_enable = to_;
+	}
+	bool is_debug_enabled() const  {
+		return debug_enable;
+	}
+	
+	enum class Mode{
+	info = 0
+	, error
+	, debug
+};
+
+	static void dump_log_for_Mode(
+		const std::shared_ptr<ErrorLogger>& logger
+		, Mode mode
+	)
+	{
+		if(logger){
+			if(logger->is_debug_enabled()){
+				std::string msg = logger->get_logs();
+				
+				switch(mode){
+					case Mode::info:
+						LOG_INFO(msg);
+						break;
+					case Mode::debug:
+						LOG_DEBUG(msg);
+						break;
+					case Mode::error:
+						LOG_ERROR(msg);
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	} // void dump_log
+
+private:
+	bool debug_enable = false;
+	
 }; //ErrorLogger
+
 
 class User_Logger : public ErrorLogger{
 public:
@@ -84,7 +134,7 @@ public:
 private:
 	static std::string formatMessage(const std::string& msg){
 		if(msg.empty()){
-			return "SyntaxError: Syntax wrong";
+			return "SyntaxError (Default Output)";
 		}
 		return "SyntaxError:\n" + msg;
 	}

@@ -15,52 +15,56 @@
 #include "../device_ctrl.h"
 #include "listbox.h"
 
-enum class weekday{
-	sunday = 0
-	, monday
-	, tuesday
-	, wednesday
-	, thursday
-	, friday
-	, saturday
-};
-
-enum class months{
-	january = 1
-	, february
-	, march
-	, april
-	, may
-	, june
-	, july
-	, august
-	, september
-	, october
-	, november
-	, december
-};
-
-enum class to_do{
-	erase_all = 0
-	, erase_detail
-};
-
 class Crontab : public Interaction{
+protected:
+	enum class weekday{
+		sunday = 0
+		, monday
+		, tuesday
+		, wednesday
+		, thursday
+		, friday
+		, saturday
+	};
+
+	enum class months{
+		january = 1
+		, february
+		, march
+		, april
+		, may
+		, june
+		, july
+		, august
+		, september
+		, october
+		, november
+		, december
+	};
+	
+	enum class to_do{
+		erase_all = 0
+		, erase_detail
+	};
+	
+	
 public:
 	Crontab(
 		std::vector<std::string>& str_argv
 		, const std::map<command, std::regex>& regex_pattern
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line
-			
+		, std::vector<Automation_Config>& automations
+		
 	) : str_argv(str_argv)
 		, regex_pattern(regex_pattern)
 		, jsonH(jsonH)
 		, _split_line(_split_line)
+		, automation_config(automations)
 		
 	{
 		try{
-			automation_config = jsonH->read_automation_config_file();
+			//automation_config = jsonH->read_automation_config_file();
 			current_Crontab = get_current_Crontab();
 		}catch(const std::runtime_error& re){
 			log(re.what());
@@ -114,6 +118,7 @@ public:
 		system("crontab /tmp/mycron");
 		
 		//aufräumen
+		log("clean tmp Crontabfile");
 		system("rm /tmp/mycron");
 	}
 	
@@ -132,7 +137,7 @@ protected:
 	std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line;
 	
 	//loaded data
-	std::vector<Automation_Config> automation_config;
+	std::vector<Automation_Config>& automation_config;
 	std::vector<std::string> current_Crontab;
 	//created data
 	std::string cronLine;
@@ -257,9 +262,9 @@ private:
 
 		char buffer[128];
 		while(fgets(buffer, sizeof(buffer), pipe.get()) != nullptr){
-			if(std::string(buffer).empty() || std::string(buffer) == "\n"){
+			/*if(std::string(buffer).empty() || std::string(buffer) == "\n"){
 				continue;
-			}
+			}*/
 			lines.push_back(std::string(buffer));
 		}
 		
@@ -275,12 +280,13 @@ public:
 		, const std::map<command, std::regex>& regex_pattern
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line
+		, std::vector<Automation_Config>& automations
 	) : Crontab(
 		  str_argv
 		, regex_pattern
 		, jsonH
 		, _split_line
-		)
+		, automations)
 	{
 		alias = str_argv[1];
 		to_do_flags.reset();
@@ -296,7 +302,7 @@ public:
 			}
 		);
 		if(!found_alias){
-			throw std::invalid_argument{"Unknown Alias"};
+			throw Logged_Error("Alias has no Crontab automations", logger);
 		}
 		
 		// <alias> -deactivate -measure -all
@@ -534,14 +540,17 @@ public:
 		, const std::map<command, std::regex>& regex_pattern
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> _split_line
+		, std::vector<Automation_Config>& automations
 		
 	) : Crontab(
 		  str_argv
 		, regex_pattern
 		, jsonH
-		, _split_line)
+		, _split_line
+		, automations)
 	{
 		connection_type = "I2C";
+		executioner = "Crontab";
 		entity = str_argv[0];
 		alias = str_argv[1];
 		device_name = str_argv[2];
@@ -557,6 +566,7 @@ public:
 		
 private:
 	std::string connection_type;
+	std::string executioner;
 	std::string entity;
 	std::string alias;
 	std::string device_name;
@@ -582,7 +592,9 @@ private:
 		Automation_Config new_cfg{
 			  connection_type
 			, entity, alias 
+			, executioner
 			, crontab_line.first
+			, convert_crontabLine_to_speeking_str(crontab_line.first)
 			,(crontab_line.second ? "true" : "false")
 			, device_name
 		};
@@ -602,7 +614,7 @@ private:
 		output 
 			<< device_name << " measures for " << alias << " from "<< entity << " over " << connection_type
 			<< "\n"
-			<< "Time to execute: " 
+			<< "Time for " << executioner << " to execute: "
 			<< convert_crontabLine_to_speeking_str(crontab_line.first)
 			<< (crontab_line.second ? " with Logfile" : "");
 				
@@ -795,7 +807,7 @@ private:
 				
 		//alte Crontab sichern
 		system("crontab -l > /tmp/mycron");
-
+		
 		if(crontab_contains(current_Crontab, {__cronLine, str_command}) ){
 			return false;
 		}

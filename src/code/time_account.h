@@ -15,7 +15,9 @@ struct Automation_Config{
 	std::string connection;
 	std::string entity;
 	std::string alias;
+	std::string executioner;
 	std::string crontab_command;
+	std::string crontab_command_speeking;
 	std::string logfile;
 	std::string device_name;
 	
