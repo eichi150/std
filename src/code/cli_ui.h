@@ -17,7 +17,8 @@
 class CLI_UI : public UI::UI_Interface{
 public:
 	explicit CLI_UI(
-		std::shared_ptr<Arg_Manager> manager
+		std::shared_ptr<ErrorLogger> output_logger
+		, std::shared_ptr<Arg_Manager> manager
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 	);
@@ -44,8 +45,11 @@ private:
 	void show_language();
 	
 private:
+	std::shared_ptr<ErrorLogger> output_logger;
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::shared_ptr<Translator> translator;
+	
+	std::shared_ptr<Time_Account> account;
 	
 	std::shared_ptr<Arg_Manager> arg_man;
 	std::vector<Automation_Config> all_automations;

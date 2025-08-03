@@ -27,7 +27,7 @@ public:
 		}
 		return ss.str();
 	}
-	
+    
 private:
 	std::vector<std::string> _output;
 };

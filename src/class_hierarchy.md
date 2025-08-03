@@ -5,8 +5,8 @@ Default_Logger                 ← BaseLevel / Logs halten
 │   ├── get_logs()     
 │   └── log()
 │
-│
-└── : COMMAND                  ← Oberbefehl / Einstiegspunkt
+
+      COMMAND                  ← Oberbefehl / Einstiegspunkt
       │
       ├── : SHOW               ← Zeige Informationen (z. B. Konfig, Crontab, Alias Daten etc.)
       │

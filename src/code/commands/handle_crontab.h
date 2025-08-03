@@ -2,6 +2,7 @@
 #define HANDLE_CRONTAB_H
 
 #include "../abstract_class/interaction.h"
+#include "../exception/exception.h"
 
 #ifdef __linux__
 #include <functional>
@@ -62,7 +63,7 @@ public:
 			automation_config = jsonH->read_automation_config_file();
 			current_Crontab = get_current_Crontab();
 		}catch(const std::runtime_error& re){
-			interaction_log << re.what();
+			log(re.what());
 		}
 		
 		integer_pattern = regex_pattern.at(command::integer);
@@ -94,18 +95,12 @@ public:
 		
 	};
 	
-	std::string get_log() const override {
-		return interaction_log.str();
-	}
-	std::string get_user_output_log() const override {
-		return user_output_log.str();
-	};
 	
 	void interact() override = 0;
 	
 	void finalize(){
 		
-		interaction_log << "save automation_config.json\n";
+		log("save automation_config.json");
 		jsonH->save_automation_config_file(automation_config);
 		 
 		//neue Zeile anhängen
@@ -114,7 +109,7 @@ public:
 		out << '\n';
 		out.close();
 		
-		interaction_log << "change crontab config\n";
+		log("change crontab config");
 		//Neue Crontab setzen
 		system("crontab /tmp/mycron");
 		
@@ -153,13 +148,13 @@ protected:
 			if(searched_targets.size() >= 1){
 				//targetLine in crontab?
 				if(line.find(searched_targets[1]) != std::string::npos){
-					interaction_log << "searched command: " << searched_targets[1] << "\n";
+					log("searched command: " + searched_targets[1]);
 					return true;
 				}
 			}	
 			
 			if(line.find(searched_targets[0]) != std::string::npos){
-				interaction_log << "searched line: " << searched_targets[0] << "\n";
+				log("searched line: " + searched_targets[0]);
 				return true;
 			}
 		}
@@ -240,7 +235,8 @@ protected:
 					result.append(str_weekday.at(day));
 					
 				}catch(const std::out_of_range& re){
-					std::cerr << "Insert valid number "<< re.what();
+					add_output("Insert valid number ");
+					log(re.what());
 				}
 			}
 		}
@@ -290,12 +286,6 @@ public:
 		to_do_flags.reset();
 	};
 	
-	std::string get_log() const override {
-		return interaction_log.str();
-	}
-	std::string get_user_output_log() const override{
-		return user_output_log.str();
-	}
 		
 	void interact() override {
 		
@@ -312,14 +302,14 @@ public:
 		// <alias> -deactivate -measure -all
 		if( std::regex_match(str_argv[4], regex_pattern.at(command::all)) ){
 			to_do_flags.set(static_cast<int>(to_do::erase_all));
-			interaction_log << "Delete All " << alias << " from Crontab and automation_config\n";
+			log("Delete All " + alias + " from Crontab and automation_config");
 		}
 		
 		
 		// <alias> -deactivate -measure -detail
 		if( std::regex_match(str_argv[4], regex_pattern.at(command::detail)) ){
 			to_do_flags.set(static_cast<int>(to_do::erase_detail));				
-			interaction_log << "Delete Detail of " << alias << " from Crontab and automation_config\n";
+			log("Delete Detail of " + alias + " from Crontab and automation_config");
 		}
 		
 		if( to_do_flags.test(static_cast<int>(to_do::erase_all))
@@ -329,23 +319,23 @@ public:
 			process_delete();
 		
 			//Collect Output
-			user_output_log << "Crontab Task is ";
+			std::stringstream ss;
+			ss << "Crontab Task is ";
 			if(automation_config.empty()){		
-				user_output_log 
-					<< "NOT in use\n"
+				ss << "NOT in use\n"
 					<< "Deleted " << alias << " from "
 					<< (is_cut_out_automations ? "automation_config.json " : "")
-					<< "and Crontab automated measuring\n";
+					<< "and Crontab automated measuring";
+				add_output(ss.str());	
 				return;
 			}
-			user_output_log 
-				<< (is_crontab_command_still_needed ? "NOT in use\n" : "in use\n")
+			ss << (is_crontab_command_still_needed ? "NOT in use\n" : "in use\n")
 				<< alias << " from "
 				<< (is_cut_out_automations ? "automation_config.json " : "")
 				<< (is_crontab_command_still_needed ? "and Crontab " : "")
-				<< "automated measuring deleted\n";
+				<< "automated measuring deleted";
 			
-				
+			add_output(ss.str());
 		}else{
 			throw SyntaxError{
 				"> <alias> -deactivate -measure -all\n> <alias> -deactivate -measure -detail"
@@ -370,7 +360,7 @@ private:
 			check_is_crontab_task_used();
 			if(is_crontab_command_still_needed){
 					
-				interaction_log << "only delete out of automation_config.json\n";
+				log("only delete out of automation_config.json");
 				output_vector = current_Crontab;
 			}else{
 				output_vector = erase_out_crontab();
@@ -413,9 +403,10 @@ private:
 		int index = listbox.select_option();
 		std::string chosen = choose_one[index];
 		std::string chosen_cmd = chosen_as_cmd[index];
-
-		user_output_log << "Du hast gewählt: " << " (" << chosen << ")\n";
-		interaction_log << chosen_cmd << " [Index " << index << "]\n";
+	
+		add_output(std::string{"Du hast gewählt: (" + chosen + ')' });
+		log(std::string{chosen_cmd + " [Index " + std::to_string(index) + "]"});
+		
 		// Command merken, um aus Crontab zu löschen
 		str_command.push_back(chosen_cmd);
 
@@ -430,7 +421,7 @@ private:
 			is_cut_out_automations = true;
 			automation_config = vec;
 		} else {
-			throw std::runtime_error{"Nothing to delete\n"};
+			throw std::runtime_error{"Nothing to delete"};
 		}
 	}
 		
@@ -438,7 +429,7 @@ private:
 		
 		//erase Alias Config out of automation_config.json
 		std::vector<Automation_Config> fresh_automation_config;
-		interaction_log << "Automation size before delete: " << automation_config.size() << "\n";		
+		log("Automation size before delete: " + std::to_string(automation_config.size()));		
 		
 		std::remove_copy_if(
 			automation_config.begin(), automation_config.end(),
@@ -453,13 +444,13 @@ private:
 				return false;
 			}
 		);
-		interaction_log << "Automation size after delete: " << fresh_automation_config.size() << "\n";
+		log("Automation size after delete: " + std::to_string(fresh_automation_config.size()) );
 		
 		if(fresh_automation_config.size() < automation_config.size()){
 			is_cut_out_automations = true;
 			automation_config = fresh_automation_config;
 		}else{
-			throw std::runtime_error{"Nothing to delete\n"};
+			throw std::runtime_error{"Nothing to delete"};
 		}
 	}
 	
@@ -490,16 +481,18 @@ private:
 		if(!automation_config.empty()){
 			is_crontab_command_still_needed = !obsolete_cmds.empty() && still_used.empty();
 		}
+		std::stringstream ss_log;
+		ss_log << "Obsolete commands: " << obsolete_cmds.size() << "\n"
+			<< "Still used commands: " << still_used.size() << "\n"
+			<< "Crontab Task is " << (is_crontab_command_still_needed ? "NOT in use" : "in use");
 		
-		interaction_log << "Obsolete commands: " << obsolete_cmds.size() << "\n";
-		interaction_log << "Still used commands: " << still_used.size() << "\n";
-		interaction_log << "Crontab Task is " << (is_crontab_command_still_needed ? "NOT in use\n" : "in use\n");
+		log(ss_log.str());
 	}
 	
 	std::vector<std::string> erase_out_crontab(){
 			
 		//erase out of crontab config
-		interaction_log << "Crontab size before delete: " << current_Crontab.size() << "\n";
+		log("Crontab size before delete: " + std::to_string(current_Crontab.size()) );
 		
 		std::vector<std::string> vec = current_Crontab;
 		vec.erase(
@@ -517,7 +510,7 @@ private:
 			),
 			vec.end()
 		);
-		interaction_log << "Crontab size after: " << vec.size() << "\n";
+		log("Crontab size after: " +  std::to_string(vec.size()) );
 			
 		return vec;
 	}
@@ -553,16 +546,10 @@ public:
 		alias = str_argv[1];
 		device_name = str_argv[2];
 	};
-		
-	std::string get_log() const override {
-		return interaction_log.str();
-	}
-	std::string get_user_output_log() const override{
-		return user_output_log.str();
-	}
+
 		
 	void interact() override {
-		interaction_log << "Crontab Interaktion\n";		
+		log("Crontab Interaktion");		
 		set_user_automation_crontab();
 		//save files
 		finalize();
@@ -584,12 +571,12 @@ private:
 		//write Command into Crontab
 		if( write_Crontab(jsonH, crontab_line.first, alias, crontab_line.second) ){
 			
-			interaction_log << "Crontab written\n";
-			user_output_log << "Crontab written\n";
+			log("Crontab written");
+			add_output("Crontab written");
 		}else{
 			
-			interaction_log << "Crontab existiert bereits\n";
-			user_output_log << "Crontab existiert bereits. Kein neuer Eintrag in Crontab erforderlich\n";
+			log("Crontab existiert bereits");
+			add_output("Crontab existiert bereits. Kein neuer Eintrag in Crontab erforderlich");
 		}
 		
 		Automation_Config new_cfg{
@@ -617,11 +604,10 @@ private:
 			<< "\n"
 			<< "Time to execute: " 
 			<< convert_crontabLine_to_speeking_str(crontab_line.first)
-			<< (crontab_line.second ? " with Logfile\n" : "\n");
+			<< (crontab_line.second ? " with Logfile" : "");
 				
 		//Print
-		interaction_log << output.str();
-		user_output_log << output.str();
+		add_output(output.str());
 	}
 	
 	std::pair<std::string, bool> get_user_crontab_line(){
@@ -801,12 +787,11 @@ private:
 	bool write_Crontab(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& str_command, const std::string& alias, bool logfile){
 			
 		std::string exe_filepath = jsonH->getExecutableDir() + "/";
-		interaction_log << "Crontab Exe Filepath " << exe_filepath << std::endl;
+		log("Crontab Exe Filepath " + exe_filepath);
 			
 		std::string __cronLine = str_command + " " + exe_filepath + "std -auto " + "\"" + str_command + "\"" + " -me";
 		logLine = " >> " + exe_filepath + alias + "_std.log 2>&1";
-		interaction_log << __cronLine << "\n"
-			<< logLine << "\n";
+		log(__cronLine + "\n" + logLine);
 				
 		//alte Crontab sichern
 		system("crontab -l > /tmp/mycron");

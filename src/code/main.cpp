@@ -42,7 +42,6 @@ int main(int argc, char* argv[]){
 		std::shared_ptr<ErrorLogger> logger = std::make_shared<Default_Logger>();
 		std::shared_ptr<ErrorLogger> output_logger = std::make_shared<User_Logger>();
 		
-		
 		std::shared_ptr<Cmd_Ctrl> ctrl = std::make_shared<Cmd_Ctrl>();
 		
 		try{
@@ -79,7 +78,8 @@ int main(int argc, char* argv[]){
 				
 				//CLI UserInterface & ConsoleOutput				
 				std::unique_ptr<CLI_UI> cli = std::make_unique<CLI_UI>(
-					arg_man
+					output_logger
+					, arg_man
 					, jsonH
 					, arg_man->get_translator_ptr()
 				);
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
 			if(ctrl->debug_enable){
 				auto logger = le.get_logger();
 				if(logger){
-					std::cout << "===== LOG =====\n"
+					std::cout << "===== LOG ====="
 						<< logger->get_logs()
 						<< std::endl;
 				}

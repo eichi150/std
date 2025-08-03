@@ -24,14 +24,13 @@ public:
 		std::vector<Time_Account>& all_accounts
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
-		
-	) : Alias_Command(std::move(str_argv), all_accounts)
+		, const std::string& arg_alias
+	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias)
 		, jsonH(jsonH)
 	{
 		log("Add--Alias_Command BaseClass for adding Data to Alias");
 	};
 	
-	std::string get_user_log() const override = 0;
 	void execute() override = 0;
 	
 	//Save to file
@@ -77,8 +76,8 @@ public:
 		, std::shared_ptr<JSON_Handler> jsonH
 		, const std::map<command, std::regex>& regex_pattern
 		, std::shared_ptr<Translator> translator
-		
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH)
+		, const std::string& arg_alias
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias)
 		, regex_pattern(regex_pattern)
 		, translator(translator)
 	{
@@ -86,11 +85,7 @@ public:
 		Clock clock{};
 		localTime = clock.get_time();
 	};
-	
-	std::string get_user_log() const override {
-		return user_output_log.str();
-	}
-	
+
 	void execute() override {
 		
 		if(!account){
@@ -98,7 +93,7 @@ public:
 		}
 		
 		if(!std::regex_match(str_argv[2], regex_pattern.at(command::integer)) ){
-			user_output_log << "insert number for time value\n";
+			add_output("insert number for time value");
 			log("insert number for time value");
 			
 			throw Logged_Error("insert number for time value", logger);
@@ -115,10 +110,11 @@ public:
 		if(!translator){
 			throw Logged_Error("Translator missing", logger);
 		}
-		user_output_log 
+		std::stringstream ss;
+		ss
 			<< std::put_time(&localTime, translator->language_pack.at("timepoint").c_str()) << '\n'
-			<< translator->language_pack.at("time_saved")
-			<< std::endl;
+			<< translator->language_pack.at("time_saved");
+		add_output(ss.str());
     }
     
 private:
@@ -161,16 +157,13 @@ public:
 		std::vector<Time_Account>& all_accounts
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
+		, const std::string& arg_alias
 	
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH)
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias)
 	{
 		log("add Tag to Alias");
 	};
 	
-	
-	std::string get_user_log() const override {
-		return user_output_log.str();
-	}
 	
 	void execute() override{
 	
@@ -183,13 +176,15 @@ public:
 		//Save to file
 		finalize();
 		
-		user_output_log 
+		std::stringstream ss;
+		ss 
 			<< "Tag: " 
 			<< account->get_tag() << " to " 
 			<< account->get_alias() << " added" 
 			<< std::endl;
-		log(user_output_log.str());
-		
+			
+		log(ss.str());
+		add_output(ss.str());
 	};
 	
 }; // Tag_Add_Alias_Command
@@ -205,8 +200,9 @@ public:
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
+		, const std::string& arg_alias
 		
-	) : Add_Alias_Command(all_accounts, str_argv, jsonH)
+	) : Add_Alias_Command(all_accounts, str_argv, jsonH, arg_alias)
 		, translator(translator)
 		
 	{
@@ -214,10 +210,7 @@ public:
 		Clock clock{};
 		localTime = clock.get_time();
 	};
-	
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
+
 	
 	void execute() override {
 		
@@ -238,10 +231,10 @@ public:
 			<< std::put_time(&localTime, translator->language_pack.at("timepoint").c_str()) << '\n'
 			<< translator->language_pack.at("time_saved") << '\n'
 			<< output_str.str()
-			<< std::setfill('=') << std::setw(10) << "=" << std::setfill(' ') << '\n';
+			<< std::setfill('=') << std::setw(10) << "=" << std::setfill(' ');
 
 		log(output.str() + device.get_name() + " Connection closed");
-		user_output_log << output.str();
+		add_output(output.str());
 	};
 
 private:
@@ -255,6 +248,7 @@ private:
 		if(output_sensor.size() < 3){
 			throw Logged_Error("No Sensor output", logger);
 		}
+		
 		output_str 
 			<< translator->language_pack.at("Temperature") << ": " << std::fixed << std::setprecision(2) << output_sensor[0] << " °C || "
 			<< translator->language_pack.at("Pressure") << ": "  << std::fixed << std::setprecision(2) << output_sensor[1] << " hPa || "

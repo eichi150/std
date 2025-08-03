@@ -1,11 +1,13 @@
 #include "cli_ui.h"
 
 CLI_UI::CLI_UI(
-		std::shared_ptr<Arg_Manager> manager
+		std::shared_ptr<ErrorLogger> output_logger
+		, std::shared_ptr<Arg_Manager> manager
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::shared_ptr<Translator> translator
 	
-	) : arg_man(std::move(manager))
+	) : output_logger(output_logger)
+		, arg_man(std::move(manager))
 		, jsonH(jsonH)
 		, translator(translator)
 	{};
@@ -53,7 +55,8 @@ void CLI_UI::update(){
 	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
 		
 		ui_interface_log << "show cmd user output\n";
-		std::cout << arg_man->get_user_output_log() << std::endl;
+		//std::cout << arg_man->get_user_output_log() << std::endl;
+		std::cout << output_logger->get_logs() << std::endl;
 	}
 	
 	/*if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
@@ -150,9 +153,8 @@ std::string CLI_UI::create_automation_table(const std::string& account_alias){
 	const std::string CRON_TASK_str{"Crontab Task"};
 	const std::string CRON_CMD_str{"Crontab Command"};
 	
-	if(table_width == 0){
-		table_width = get_sum_str_size({INDEX_str, DEVICE_str, CRON_TASK_str, CRON_CMD_str});
-	}
+	table_width = get_sum_str_size({INDEX_str, DEVICE_str, CRON_TASK_str, CRON_CMD_str});
+	
 	//BODY
 	std::stringstream ss_body;
 	
@@ -223,8 +225,9 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 	
 	std::stringstream ss_body;
 		
-	std::shared_ptr<Time_Account> account = arg_man->get_account_with_alias(alias);
-		
+	if(!account){
+		account = arg_man->get_account_with_alias(alias);
+	}	
 	int index = 0;	
 	for(const auto& entry : account->get_entry()){
 		
@@ -309,14 +312,16 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 std::string CLI_UI::create_alias_table(){
 	//DATA
 	std::string alias = arg_man->get_str_argv()[2];
-	
-	std::shared_ptr<Time_Account> account = arg_man->get_account_with_alias(alias);
-	
+	if(!account){
+		account = arg_man->get_account_with_alias(alias);
+	}
 	std::string t_alias = "@ " + alias;
 	
 	std::string entity = account->get_entity();
 	std::string tag = " -|- Tag: " + account->get_tag();
 	
+	//Daten Tabelle bauen. Breite entscheidet table_width
+ 	std::string data_table = create_data_table(alias);
 	//Read Automation_Config.json File
 	std::string automation_table_str = create_automation_table(alias);
 	
@@ -332,18 +337,17 @@ std::string CLI_UI::create_alias_table(){
 		}
 	);
 	
-	
 	std::string t_automation = "Automation: " + (is_automation ? device_name : "None");
 	
 	std::vector<std::string> table_strings = {
 		t_alias, tag, entity, t_automation
 	};
-	//Daten Tabelle bauen. Breite entscheidet table_width
- 	std::string data_table = create_data_table(alias);
+
  	
- 	if(table_width == 0){
-		table_width = get_sum_str_size(table_strings);
-	}
+ 	/*int _width = get_sum_str_size(table_strings);
+ 	if(table_width < _width){
+		table_width = _width;
+	}*/
  	//HEAD
 	std::stringstream ss_head;
 	ss_head << std::left

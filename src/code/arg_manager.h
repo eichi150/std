@@ -23,6 +23,7 @@
 #include "./commands/alias_command.h"
 #include "./commands/add_alias_command.h"
 #include "./commands/change_command.h"
+#include "./commands/entity_command.h"
 
 class Arg_Manager{
 public:
@@ -50,10 +51,7 @@ public:
 private:
 	//logger
 	void log(const std::string& msg);
-	void set_logger(std::shared_ptr<ErrorLogger> log);
-	
 	void add_output(const std::string& output);
-	void set_output_logger(std::shared_ptr<ErrorLogger> log);
 	//process args
 	bool check_two_args();
 	bool check_three_args();

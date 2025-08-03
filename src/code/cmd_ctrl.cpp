@@ -18,8 +18,10 @@ std::vector<std::string> Cmd_Ctrl::split_input(const std::string& input) {
 }
 
 //Check for valid Arguments
-bool Cmd_Ctrl::is_argument_valid(const std::vector<std::string>& str_argv){
-
+bool Cmd_Ctrl::is_argument_valid(int& argc, std::vector<std::string>& str_argv){
+	
+	check_debug_mode(argc, str_argv);
+	
 	//commands regex_pattern
 	for(const auto& pattern : regex_pattern){
 		for(size_t i{0}; i < str_argv.size(); ++i){
@@ -41,4 +43,24 @@ bool Cmd_Ctrl::is_argument_valid(const std::vector<std::string>& str_argv){
 	}
 	
 	return false;
+}
+
+void Cmd_Ctrl::check_debug_mode(int& argc, std::vector<std::string>& str_argv){
+	//enable show_logfile, erase '-prolog' cmd out of str_argv, argc -=1
+    std::vector<std::string> str_argv_without_LOG_cmd;
+    std::copy_if(
+        str_argv.begin(), str_argv.end(),
+        std::back_inserter(str_argv_without_LOG_cmd),
+        [this, &argc](const std::string& str) {
+	    if(!std::regex_match(str, this->regex_pattern.at(command::debug))){
+		return true;
+	    }
+	    
+	    //this->output_flags.set(static_cast<size_t>(OutputType::show_all_log));
+	    argc -= 1;
+		debug_enable = true;
+	    return false;
+        }
+    );
+    str_argv = str_argv_without_LOG_cmd;
 }

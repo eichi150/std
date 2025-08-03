@@ -50,10 +50,6 @@ public:
 		, regex_pattern(regex_pattern)
 		, output_flags(output_flags)
 	{};
-
-	std::string get_user_log() const override{	
-		return user_output_log.str();
-	}
 	
 	void execute() override {
 		log("execute Show_Command");

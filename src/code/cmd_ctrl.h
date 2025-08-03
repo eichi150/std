@@ -9,22 +9,22 @@
 
 class Cmd_Ctrl : public CTRL::Ctrl{
 public:
-	void show_log(bool set_to) override {
-		show_ctrl_log = set_to;
-	}
 	
-	std::string get_log() const override{
+	bool debug_enable = false;
+
+	
+	/*std::string get_log() const override{
 		if(show_ctrl_log){
 			return ctrl_log.str();
 		}
 		return {};
-	}
+	}*/
 	
 	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
 	std::vector<std::string> split_input(const std::string& input);
 	//Check for valid Arguments
-	bool is_argument_valid(const std::vector<std::string>& str_argv);
-	
+	bool is_argument_valid(int& argc, std::vector<std::string>& str_argv);
+	void check_debug_mode(int& argc, std::vector<std::string>& str_argv);
 	
 	template <typename T>
 	std::vector<std::string> parse_argv(int argc, T& argv){

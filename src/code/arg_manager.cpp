@@ -5,15 +5,11 @@ Arg_Manager::Arg_Manager(
     , std::shared_ptr<ErrorLogger> output_logger
     , std::shared_ptr<JSON_Handler> jH
     , std::shared_ptr<Cmd_Ctrl> ctrl_ptr
-) : logger(logger)
-    , output_logger(output_logger)
+) : logger(std::move(logger))
+    , output_logger(std::move(output_logger))
     , jsonH(jH)
     , ctrl(ctrl_ptr)
 {
-    set_logger(logger);
-    set_output_logger(output_logger);
-    
-    //log("\n\n===== LOG =====");
     jsonH->read_all_accounts(all_accounts);
     log( std::string{"===== JsonHandler_Log: =====\n"  + jsonH->get_log()} );
     
@@ -24,11 +20,17 @@ Arg_Manager::Arg_Manager(
 };
 
 void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string>& argv){
-
+    if(!logger){
+	throw std::runtime_error{"No Logger"};
+    }
+    if(!output_logger){
+	throw std::runtime_error{"No Output_Logger"};
+    }
+    
     this->str_argv = argv;
     this->argc = _argc;
     this->regex_pattern = ctrl->get_regex_pattern();
- 
+    
     //Zeige Hilfe an
     //help
     if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
@@ -59,10 +61,10 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 	);
 	
 	if(cmd){
+	    cmd->set_logger(logger);
 	    log("show flags got set");
 	}
     }
-    
     
     if(!cmd){
 	switch(argc){
@@ -85,6 +87,7 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
 		std::stringstream syntax;
 		syntax 
 		    << "> <alias> -delete\n> <alias> -measure\n"
+		    << "> -delete <entity>\n"
 		    << "> -language <language>\n> -touch BME280";
 		
 		throw SyntaxError{syntax.str()};
@@ -139,10 +142,10 @@ void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string
     
     if(cmd){
 	cmd->set_logger(logger);
+	cmd->set_output_logger(output_logger);
+	log("===== Command_Log: =====");
 	cmd->execute();
-	//log( std::string{"===== Command_Log: =====\n"  + cmd->get_logs()} );
 	
-	user_output_log << cmd->get_user_log();
 	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
 	
     }else{
@@ -183,28 +186,24 @@ bool Arg_Manager::check_three_args(){
 	    all_accounts
 	    , str_argv
 	    , jsonH
+	    , str_argv[1]
 	);
 	return true;
 	
-    }else if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
+    }
+    //Entität und zugehörige Alias löschen
+    // -del <entity>
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
 	
-	log("<entity> -delete");
-	std::vector<Time_Account> entity_accounts;
-	std::string entity = str_argv[2];
-		
-	std::copy_if(
-	    all_accounts.begin(), all_accounts.end(),
-	    std::back_inserter(entity_accounts),
-	    [&entity](const auto& account){
-		return account.get_entity() == entity;
-	    }
+	log("-delete <entity>");
+	cmd = std::make_shared<Delete_Entity_Command>(
+	    all_accounts
+	    , str_argv
+	    , jsonH
+	    , str_argv[2]
 	);
 	
-	log("Accounts found: " + std::to_string(entity_accounts.size()) );
-	
 	return true;
-    }else{
-	throw Logged_Error("No Accounts found", logger);
     }
     
     //Language changeTo
@@ -218,7 +217,7 @@ bool Arg_Manager::check_three_args(){
 	    , str_argv[2]
 	);
 		    
-	user_output_log << "Language changed to " << str_argv[2] << '\n';
+	add_output("Language changed to " + str_argv[2]);
 	log("Language changed to " + str_argv[2]);
 	return true;
     }
@@ -234,7 +233,7 @@ bool Arg_Manager::check_three_args(){
 	);
     #else
 	log("-touch <device> Only available for Linux");
-	user_output_log << "Only available for Linux\n";
+	add_output("Only available for Linux");
     #endif // __linux__
 		
 	return true;
@@ -250,10 +249,11 @@ bool Arg_Manager::check_three_args(){
 	    , str_argv
 	    , jsonH
 	    , translator
+	    , str_argv[1]
 	);
     #else
 	log("<alias> -measure Only available for Linux");
-	user_output_log << "Only available for Linux\n";
+	add_output("Only available for Linux");
     #endif // __linux__
 		
 	return true;
@@ -287,8 +287,8 @@ bool Arg_Manager::check_four_args(){
 	    , regex_pattern
 	);
                     
-	user_output_log << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << '\n';
-	log( std::string{"Account added" + str_argv[2] + " -> " + str_argv[3]} );
+	add_output("Account added" + str_argv[2] + " -> " + str_argv[3]);
+	log( std::string{ "NewAccount for: " + str_argv[2] + " " + str_argv[3]} );
 	return true;
     }
         
@@ -313,10 +313,11 @@ bool Arg_Manager::check_four_args(){
 		, jsonH
 		, ctrl->get_specific_regex_pattern(commands)
 		, translator
+		, str_argv[1]
 	    );
 	    return true;
 	}
-	user_output_log << "insert number for time value\n";
+	add_output("insert number for time value");
 	log("insert number for time value");
 	throw std::runtime_error{"insert number for time value"};
     }
@@ -331,6 +332,7 @@ bool Arg_Manager::check_four_args(){
 	    all_accounts
 	    , str_argv
 	    , jsonH
+	    , str_argv[1]
 	);
 	return true;
     }
@@ -379,10 +381,11 @@ bool Arg_Manager::check_five_args(){
 		, jsonH
 		, ctrl->get_specific_regex_pattern(commands)
 		, translator
+		, str_argv[1]
 	    );
 	    return true;
 	}
-	user_output_log << "insert number for time value\n";
+	add_output("insert number for time value");
 	log("insert number for time value");
 	throw Logged_Error("insert number for time value", logger);
     }
@@ -421,12 +424,13 @@ bool Arg_Manager::check_five_args(){
 	    , ctrl->get_specific_regex_pattern(commands)
 	    , jsonH
 	    , split_line
+	    , str_argv[1]
 	);
 	return true;
     }
     #else
 	log("Only for Linux");
-	user_output_log << "Only for Linux\n";
+	add_output("Only for Linux");
     #endif // __linux
     
     return false;
@@ -449,7 +453,7 @@ bool Arg_Manager::check_six_args(){
 	);
 	std::stringstream ss;
 	ss << "Account added\n" << str_argv[2] << " -> " << str_argv[3] << " | Tag: " << str_argv[5];
-	user_output_log << ss.str() << "\n";
+	add_output(ss.str());
 	log(ss.str());
 	return true;
     }
@@ -479,25 +483,16 @@ std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::str
     return acc;
 }
 
-void Arg_Manager::set_logger(std::shared_ptr<ErrorLogger> log){
-    logger = std::move(log);
-}
 void Arg_Manager::log(const std::string& msg){
     if(logger){
 	logger->log(msg);
     }
-    throw std::runtime_error{"No Logger given"};
 }
-
-
-void Arg_Manager::set_output_logger(std::shared_ptr<ErrorLogger> log){
-    output_logger = std::move(log);
-}	
+	
 void Arg_Manager::add_output(const std::string& output){
     if(output_logger){
 	output_logger->log(output);
     }
-    throw std::runtime_error{"No Output Logger given"};
 }
 
 	

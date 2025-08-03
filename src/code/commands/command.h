@@ -10,26 +10,42 @@
 
 #include "../exception/exception.h"
 
+
 class Command{
 public:
 	virtual ~Command() = default;
 	
 	virtual void execute() = 0;
-	virtual std::string get_user_log() const = 0;
 	
 	void set_logger(std::shared_ptr<ErrorLogger> log){
 		logger = std::move(log);
 	}
-	
 	void log(const std::string& msg){
 		if(logger){
 			logger->log(msg);
 		}
 	}
+	std::string get_logs() const {
+		return logger->get_logs();
+	}
+	
+	
+	void set_output_logger(std::shared_ptr<ErrorLogger> log){
+		output_logger = std::move(log);
+	}
+	void add_output(const std::string& msg){
+		if(output_logger){
+			output_logger->log(msg);
+		}
+	}
+	std::string get_output_logs() const {
+		return output_logger->get_logs();
+	}
 	
 protected:
-	std::stringstream user_output_log;
+	std::shared_ptr<ErrorLogger> output_logger;
 	std::shared_ptr<ErrorLogger> logger;
+	
 }; // Command
 
 struct Add_account{
@@ -54,12 +70,8 @@ public:
 		log("Add_Command");
 	};
 	
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
-	
 	void execute() override{
-		
+	
 		log("execute Add_Command");
 		
 		check_input();
@@ -122,7 +134,7 @@ private:
 		}
 		ss << " Saved";
 		log(ss.str());
-		user_output_log << ss.str();
+		add_output(ss.str());
 		
 		log("save to all_accounts and files");
 		all_accounts.push_back(new_account);
@@ -143,10 +155,6 @@ private:
 class TouchDevice_Command : public Command{
 public:
 	TouchDevice_Command(const std::string& device_name) : arg(device_name) {};
-	
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
 	
 	void execute() override {
 		
@@ -177,10 +185,13 @@ public:
 				<< "Pressure" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[1] << " hPa || "
 				<< "Humidity" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[2] << " %\n";
 					        
-			log("Device touched\n" + output_str.str());
-			user_output_log 
-			<< ( output_sensor.empty() ? "Device touched\n" : output_str.str() )
-			<< std::endl;	    
+			
+			std::stringstream ss;
+			ss << ( output_sensor.empty() ? "Device touched\n" : output_str.str() )
+				<< std::endl;
+			
+			add_output(ss.str());
+			log("Device touched\n" + output_str.str());	    
 		}
 	};
 	

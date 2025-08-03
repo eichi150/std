@@ -11,29 +11,28 @@
 #include <sstream>
 #include <functional>
 
+#include "command.h"
 #include "../time_account.h"
 #include "../json_handler.h"
 #include "../translator.h"
 #include "../clock.h"
-#include "../cmd_ctrl.h"
-
-#include "command.h"
+//#include "../cmd_ctrl.h"
 
 class Alias_Command : public Command{
 public:
 	Alias_Command(
 		const std::vector<std::string>& str_argv
 		, std::vector<Time_Account>& all_accounts
-	
+		, const std::string& arg_alias
 	) : str_argv(str_argv)
 		, all_accounts(all_accounts)
+		, alias(arg_alias)
 	
 	{
 		log("search account with alias");
 		get_account_from_alias();
 	};
 	
-	std::string get_user_log() const override = 0;
 	void execute() override = 0;
 	
 	std::shared_ptr<Time_Account> get_account(){
@@ -57,7 +56,7 @@ private:
 		bool found_alias = std::any_of( 
 			all_accounts.begin(), all_accounts.end(),
 			[this](const Time_Account& acc){
-				if(this->str_argv[1] == acc.get_alias()){
+				if(this->alias == acc.get_alias()){
 					account = std::make_shared<Time_Account>(acc);
 					return true;
 				}
@@ -78,14 +77,12 @@ public:
 		std::vector<Time_Account>& all_accounts
 		, const std::vector<std::string>& str_argv
 		, std::shared_ptr<JSON_Handler> jsonH
-	
-	) : Alias_Command(std::move(str_argv), all_accounts)
+		, const std::string& arg_alias
+		
+	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias)
 		, jsonH(jsonH)
 	{};
 	
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
 	
 	void execute() override{
 		log("execute Delete_Command");
@@ -145,7 +142,7 @@ private:
 			
 			all_accounts = adjusted_accounts;
 			log(" deleted");
-			user_output_log << alias << " Alias deleted\n";
+			add_output(alias + " Alias deleted");
 		}
 	}
 	
@@ -168,19 +165,16 @@ public:
 		, const std::map<command, std::regex>& regex_pattern
 		, std::shared_ptr<JSON_Handler> jsonH
 		, std::function<std::vector<std::string>(const std::string&, const std::regex&)> callback
-
-	) : Alias_Command(std::move(str_argv), all_accounts)
+		, const std::string& arg_alias
+		
+	) : Alias_Command(std::move(str_argv), all_accounts, arg_alias)
 		, regex_pattern(regex_pattern)
 		, jsonH(jsonH)
 		, _split_line(callback)
 	{
 		log("Interact_Alias_Command");
 	};
-	
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
-	
+
 	void execute() override{
 		
 		if( std::regex_match(str_argv[3], regex_pattern.at(command::measure_sensor)) ){
@@ -190,18 +184,18 @@ public:
 		    interact_with_Crontab();
 		#else
 		    log("Only available for Linux");
-		    user_output_log << "Only available for Linux" << std::endl;
+		    add_output("Only available for Linux");
 		    
 		#endif // __linux__
 		}
 		
 		if(interaction){
+			interaction->set_logger(logger);
+			interaction->set_output_logger(output_logger);
+			
+			log( "===== Interaction_Log: =====");
 			interaction->interact();
-			log( 
-				"\n===== Interaction_Log: =====\n" 
-				+ interaction->get_log() 
-			);
-			user_output_log << interaction->get_user_output_log();
+			
 		}else{
 			log("Syntax wrong");
 			throw Logged_Error("Syntax wrong", logger);
@@ -249,7 +243,6 @@ private:
 #endif // __linux__
 
 private:
-	std::stringstream user_output_log;
 	std::shared_ptr<Interaction> interaction;
 	
 	std::map<command, std::regex> regex_pattern;

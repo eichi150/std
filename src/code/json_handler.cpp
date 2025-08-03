@@ -348,7 +348,7 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
         }
     }
     if(!all_accounts.empty()){
-        jsonH_log << "entitys loaded\n";
+        jsonH_log << "entitys loaded";
     }
 }
 

@@ -21,8 +21,6 @@ public:
 	) : jsonH(jsonH)
 	{};
 
-	std::string get_user_log() const override = 0;
-	
 	void execute() override = 0;
 	
 	void finalize() {
@@ -54,10 +52,6 @@ public:
 		, str_argv(str_argv)
 	{};
 	
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
-	
 	void execute() override {
 		
 		if(str_argv.size() > 4){
@@ -77,7 +71,7 @@ public:
 				<< "\n";
 				
 			log(ss.str());
-			user_output_log	<< ss.str();
+			add_output(ss.str());
 		}else{
 			log("Change: entity, account filepath");
 			new_data = {
@@ -95,7 +89,7 @@ public:
 				<< "\n";
 				
 			log(ss.str());
-			user_output_log	<< ss.str();
+			add_output(ss.str());
 		}
 		
 		finalize();
@@ -119,9 +113,6 @@ public:
 		, change_to_language(change_to_language)
 	{};
 
-	std::string get_user_log() const override{
-		return user_output_log.str();
-	}
 	
 	void execute() override {
 		log("try to change language");
@@ -138,7 +129,7 @@ public:
 			for(const auto& str : translator->dict_language){
 				 ss << " > " << str.second << '\n';
 			}
-			user_output_log << ss.str();
+			add_output(ss.str());
 			log("Unknown Language: " + change_to_language);                   
 			throw Logged_Error(ss.str(), logger);
         }

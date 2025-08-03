@@ -2,18 +2,42 @@
 #define INTERACTION_H
 
 #include <sstream>
+#include <memory>
+#include "../exception/exception.h"
 
 class Interaction{
 public:
 	virtual ~Interaction() = default;
 	
-	virtual std::string get_log() const = 0;
-	virtual std::string get_user_output_log() const = 0;
 	virtual void interact() = 0;
 	
+	void set_logger(std::shared_ptr<ErrorLogger> log){
+		logger = std::move(log);
+	}
+	void log(const std::string& msg){
+		if(logger){
+			logger->log(msg);
+		}
+	}
+	std::string get_logs() const {
+		return logger->get_logs();
+	}
+	
+	
+	void set_output_logger(std::shared_ptr<ErrorLogger> log){
+		output_logger = std::move(log);
+	}
+	void add_output(const std::string& msg){
+		if(output_logger){
+			output_logger->log(msg);
+		}
+	}
+	std::string get_output_logs() const {
+		return output_logger->get_logs();
+	}
 protected:
-	std::stringstream interaction_log;
-	std::stringstream user_output_log;
+	std::shared_ptr<ErrorLogger> output_logger;
+	std::shared_ptr<ErrorLogger> logger;
 };
 
 #endif // INTERACTION_H
