@@ -21,8 +21,8 @@ mkdir "%FILES_DIR%" >nul 2>&1
 :: 3. Kopiere Executable
 if exist ".\%EXE_NAME%" (
     echo Kopiere %EXE_NAME% nach %STD_BIN_DIR% ...
-    copy /Y ".\%EXE_NAME%" "%STD_BIN_DIR%\%EXE_NAME%"
-    copy /Y ".\std.bat" "%STD_BIN_DIR%\std.bat"
+    move /Y ".\%EXE_NAME%" "%STD_BIN_DIR%\%EXE_NAME%"
+    move /Y ".\std.bat" "%STD_BIN_DIR%\std.bat"
 ) else (
     echo FEHLER: %EXE_NAME% nicht im aktuellen Verzeichnis gefunden!
     exit /b 1
