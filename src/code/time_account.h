@@ -57,7 +57,6 @@ private:
 	
 	float hours{0.f};
 	std::vector<Entry> entry;
-
 };
 
 #endif // TIME_ACCOUNT_H

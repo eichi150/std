@@ -12,7 +12,7 @@
 
 class Cmd_Ctrl : public CTRL::Ctrl{
 public:
-	
+
 	Cmd_Ctrl(std::shared_ptr<ErrorLogger> logger_);
 	
 	// Gibt eine Liste von Tokens zurück, getrennt durch Leerzeichen
@@ -21,7 +21,7 @@ public:
 	bool is_argument_valid(int& argc, std::vector<std::string>& str_argv);
 	void check_debug_mode(int& argc, std::vector<std::string>& str_argv);
 	
-	template <typename T>
+	template <typename T> //template for string & char* (variable input required)
 	std::vector<std::string> parse_argv(int argc, T& argv){
 		std::vector<std::string> str_argv;
 		for(int i{0}; i < argc; ++i){
@@ -51,9 +51,9 @@ public:
 			argv = {};
 			
 			//Log Output
-			ctrl_log << std::to_string(argc) << "\n";
+			log(std::to_string(argc));
 			for(const auto& str : str_argv){
-				ctrl_log << str << "\n";
+				log(str);
 			}
 		return str_argv;
 	}

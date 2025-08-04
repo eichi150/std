@@ -1,3 +1,4 @@
+#ifdef __linux__
 #include "handle_crontab.h"
 
 //==========================//
@@ -746,3 +747,4 @@ bool write_into_Crontab::write_Crontab(
 	return true;
 }
 
+#endif // __linux__

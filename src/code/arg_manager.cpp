@@ -1,19 +1,22 @@
 #include "arg_manager.h"
 
 Arg_Manager::Arg_Manager(
-    std::shared_ptr<ErrorLogger> logger
-    , std::shared_ptr<ErrorLogger> output_logger
-    , std::shared_ptr<JSON_Handler> jH
-    , std::shared_ptr<Cmd_Ctrl> ctrl_ptr
-    , const int& argc
-    , const std::vector<std::string>& str_argv
+    std::shared_ptr<ErrorLogger> _logger
+    , std::shared_ptr<ErrorLogger> _output_logger
+    , std::shared_ptr<JSON_Handler> _jsonH
+    , std::shared_ptr<Cmd_Ctrl> _ctrl
+    , const int& _argc
+    , const std::vector<std::string>& _str_argv
+    , std::map<command, std::regex> _regex_pattern
 
-) : logger(std::move(logger))
-    , output_logger(std::move(output_logger))
-    , jsonH(jH)
-    , ctrl(ctrl_ptr)
-    , argc(argc)
-    , str_argv(str_argv)
+) : regex_pattern(_regex_pattern)
+    , str_argv(_str_argv)
+    , jsonH(_jsonH)
+    , logger(std::move(_logger))
+    , output_logger(std::move(_output_logger))
+    , ctrl(_ctrl)
+    , argc(_argc)
+    
 {
     log("===== Arg_Manager_Log: =====");
     log(std::string{__FILE__} + " - Arg_Manager");
@@ -25,7 +28,6 @@ Arg_Manager::Arg_Manager(
     log("set language");
     translator->set_language(jsonH->get_config_language());
     
-    this->regex_pattern = ctrl->get_regex_pattern();
 };
 
 void Arg_Manager::process(){

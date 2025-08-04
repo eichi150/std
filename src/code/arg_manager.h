@@ -25,6 +25,7 @@
 #include "./commands/change_command.h"
 #include "./commands/entity_command.h"
 
+
 class Arg_Manager{
 public:
 	Arg_Manager(
@@ -34,6 +35,7 @@ public:
 		, std::shared_ptr<Cmd_Ctrl> ctrl_ptr
 		, const int& argc
 		, const std::vector<std::string>& str_argv
+		, std::map<command, std::regex> _regex_pattern
 	);
 	
 	//Methods

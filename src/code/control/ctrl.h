@@ -124,13 +124,11 @@ public:
 		return pattern;
 	};
 	
+	
 	std::map<std::string, std::shared_ptr<Sensor>> all_devices;
 	std::map<std::string, std::regex> device_regex_pattern;
 	
 protected:
-
-	std::stringstream ctrl_log;
-	
 	std::map<command, std::regex> regex_pattern;
 	
 	template <typename T>

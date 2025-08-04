@@ -27,6 +27,7 @@ if(UNIX AND NOT APPLE)
 		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280_sensor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280.c
 		${CMAKE_CURRENT_SOURCE_DIR}/control/device_ctrl.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/control/device_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/commands/handle_crontab.cpp
 	)
 endif()

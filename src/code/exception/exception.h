@@ -8,7 +8,6 @@
 #include <vector>
 #include <memory>
 
-
 #define LOG_INFO(msg) std::clog << "[INFO] " << msg << std::endl
 #define LOG_ERROR(msg) std::cerr << "[ERROR]\n" << msg << std::endl
 #define LOG_DEBUG(msg) std::clog << "[DEBUG]\n" << msg << std::endl
@@ -28,10 +27,10 @@ public:
 	}
 	
 	enum class Mode{
-	info = 0
-	, error
-	, debug
-};
+		info = 0
+		, error
+		, debug
+	};
 
 	static void dump_log_for_Mode(
 		const std::shared_ptr<ErrorLogger>& logger
@@ -86,6 +85,7 @@ private:
 class Default_Logger : public ErrorLogger{
 public:
 	void log(const std::string& new_log) override {
+		
 		_logs.push_back(new_log);
 	};
 	

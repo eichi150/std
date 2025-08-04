@@ -4,21 +4,24 @@ STD_Master::STD_Master(
 	const int _argc
 	, char* argv[]
 
-) : argc(_argc)
-{
-	logger = std::make_shared<Default_Logger>();
-	
-	ctrl = std::make_shared<Cmd_Ctrl>(logger);
-	jsonH = std::make_shared<JSON_Handler>(logger);
-	
-	if(argc > 1 && ctrl){
-		str_argv = ctrl->parse_argv(argc, argv);
-	}
-	if(logger){
-		log(std::string{__FILE__} + " - STD_Master");
-	}
-};
+	) : argc(_argc)
+	{
+		logger = std::make_shared<Default_Logger>();
+		
+		ctrl = std::make_shared<Cmd_Ctrl>(logger);
+		jsonH = std::make_shared<JSON_Handler>(logger);
+		
+		if(argc > 1 && ctrl){
+			str_argv = ctrl->parse_argv(argc, argv);
+		}
+		if(logger){
+			log(std::string{__FILE__} + " - STD_Master");
+		}
+	};
 
+void STD_Master::log(const std::string& new_log) {
+	logger->log(new_log);
+};
 
 void STD_Master::run_std(){
 	if(argc == 1){
@@ -41,9 +44,9 @@ void STD_Master::run_std(){
 				);
 				if(proc){
 					proc->process();
+					return;
 				}
 			#endif // __linux__
-			
 			
 			log("run CLI");
 			output_logger = std::make_shared<User_Logger>();	
@@ -55,6 +58,7 @@ void STD_Master::run_std(){
 				, ctrl
 				, argc
 				, str_argv
+				, ctrl->get_regex_pattern()
 			);
 			arg_man->process();
 				
@@ -101,7 +105,3 @@ void STD_Master::run_std(){
 			
 	}
 }
-
-void STD_Master::log(const std::string& new_log) {
-	logger->log(new_log);
-};

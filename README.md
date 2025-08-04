@@ -152,8 +152,8 @@ sudo i2cdetect -y 1   # Adresse prüfen (z. B. 0x76)
 
 ### Sensor abfragen
 ```bash
-std -touch i2c            # Aktuelle Daten anzeigen
-std CH -mes               # Messwerte für CH speichern
+std -touch BME280         # Aktuelle Daten anzeigen
+std CH -measure           # Messwerte für CH speichern
 ```
 
 ---
@@ -167,6 +167,8 @@ std <alias> -activate -measure "time_config"
 
 ### Deaktivierung der Automatisierung
 ```bash
+std <alias> -deactivate -measure -detail  (Auswahlmöglichkeiten)
+
 std <alias> -deactivate -measure -all
 ```
 
@@ -184,7 +186,7 @@ std <alias> -deactivate -measure -all
 
 ### Test-Trigger manuell
 ```bash
-std -auto <crontab_command> -mes
+std -auto <crontab_command> -measure
 ```
 
 ### Crontab anzeigen:
