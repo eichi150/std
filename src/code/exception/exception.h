@@ -1,6 +1,7 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
+#include <iostream>
 #include <stdexcept>
 #include <ostream>
 #include <string>

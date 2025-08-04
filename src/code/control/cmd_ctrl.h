@@ -7,8 +7,8 @@
 #include <string>
 #include <memory>
 
-#include "./abstract_class/ctrl.h"
-#include "./exception/exception.h"
+#include "ctrl.h"
+#include "../exception/exception.h"
 
 class Cmd_Ctrl : public CTRL::Ctrl{
 public:

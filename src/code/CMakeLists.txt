@@ -5,13 +5,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(SOURCES
+	main.cpp
+	master.cpp
+	./control/cmd_ctrl.cpp
 	time_account.cpp
 	json_handler.cpp
-	translator.cpp
-	cmd_ctrl.cpp
 	arg_manager.cpp
-	cli_ui.cpp
-	main.cpp
+	./commands/command.cpp
+	./commands/change_command.cpp
+	./commands/show_command.cpp
+	./commands/alias_command.cpp
+	./commands/add_alias_command.cpp
+	./commands/entity_command.cpp
+	./interface/translator.cpp
+	./interface/cli_ui.cpp
 )
 
 if(UNIX AND NOT APPLE)
@@ -19,7 +26,8 @@ if(UNIX AND NOT APPLE)
 	list(APPEND SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280_sensor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/bme280/bme280.c
-		${CMAKE_CURRENT_SOURCE_DIR}/device_ctrl.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/control/device_ctrl.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/commands/handle_crontab.cpp
 	)
 endif()
 

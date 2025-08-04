@@ -12,9 +12,9 @@
 #include <functional>
 
 #include "json_handler.h"
-#include "translator.h"
-#include "clock.h"
-#include "cmd_ctrl.h"
+#include "./interface/translator.h"
+#include "./control/clock.h"
+#include "./control/cmd_ctrl.h"
 
 #include "./exception/exception.h"
 
@@ -32,21 +32,21 @@ public:
 		, std::shared_ptr<ErrorLogger> output_logger
 		, std::shared_ptr<JSON_Handler> jH
 		, std::shared_ptr<Cmd_Ctrl> ctrl_ptr
+		, const int& argc
+		, const std::vector<std::string>& str_argv
 	);
 	
 	//Methods
-	void proceed_inputs(const int& _argc, const std::vector<std::string>& argv);
+	void process();
+	
 	void set_output_flag(OutputType flag, bool value = true); 
 	OutputBitset get_output_flags() const;
 	void clear_output_flags();
 	std::vector<Time_Account> get_all_accounts() const;
 	std::vector<std::string> get_str_argv() const;
-	std::string get_user_output_log() const;
+
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
 	std::shared_ptr<Translator> get_translator_ptr() const;
-	//TO_DO
-	//bool run_environment() const { return run_env; }
-	//bool run_env = false;
 	
 private:
 	//logger
@@ -60,13 +60,12 @@ private:
 	bool check_six_args();
 
 private:
-	//Variables
+	//Log Pointer
 	std::shared_ptr<ErrorLogger> logger;
 	std::shared_ptr<ErrorLogger> output_logger;
+	//Pointer
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::shared_ptr<Translator> translator;
-	//log
-	std::stringstream user_output_log;
 
 	//arguments
 	int argc;

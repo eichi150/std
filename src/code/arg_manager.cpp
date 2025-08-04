@@ -5,11 +5,15 @@ Arg_Manager::Arg_Manager(
     , std::shared_ptr<ErrorLogger> output_logger
     , std::shared_ptr<JSON_Handler> jH
     , std::shared_ptr<Cmd_Ctrl> ctrl_ptr
-    
+    , const int& argc
+    , const std::vector<std::string>& str_argv
+
 ) : logger(std::move(logger))
     , output_logger(std::move(output_logger))
     , jsonH(jH)
     , ctrl(ctrl_ptr)
+    , argc(argc)
+    , str_argv(str_argv)
 {
     log("===== Arg_Manager_Log: =====");
     log(std::string{__FILE__} + " - Arg_Manager");
@@ -21,20 +25,11 @@ Arg_Manager::Arg_Manager(
     log("set language");
     translator->set_language(jsonH->get_config_language());
     
+    this->regex_pattern = ctrl->get_regex_pattern();
 };
 
-void Arg_Manager::proceed_inputs(const int& _argc, const std::vector<std::string>& argv){
-    if(!logger){
-	throw std::runtime_error{"No Logger"};
-    }
-    if(!output_logger){
-	throw std::runtime_error{"No Output_Logger"};
-    }
-    
-    this->str_argv = argv;
-    this->argc = _argc;
-    this->regex_pattern = ctrl->get_regex_pattern();
-    
+void Arg_Manager::process(){
+   
     //Zeige Hilfe an
     //help
     if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
@@ -475,10 +470,6 @@ bool Arg_Manager::check_six_args(){
 	return true;
     }
     return false;
-}
-
-std::string Arg_Manager::get_user_output_log() const {
-    return user_output_log.str();
 }
 
 std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::string& alias){

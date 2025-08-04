@@ -17,7 +17,7 @@
 #include <fstream>
 
 #include "json.hpp"
-#include "translator.h"
+#include "./interface/translator.h"
 #include "time_account.h"
 #include "./exception/exception.h"
 

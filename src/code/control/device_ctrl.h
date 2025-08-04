@@ -10,8 +10,8 @@
 #include <stdexcept>
 #include <cstdio>
 
-#include "./abstract_class/ctrl.h"
-#include "./exception/exception.h"
+#include "ctrl.h"
+#include "../exception/exception.h"
 
 class Device_Ctrl : public CTRL::Ctrl{
 public:

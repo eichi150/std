@@ -18,7 +18,7 @@
 #include <sstream>
 #include <vector>
 
-#include "../abstract_class/sensor.h"
+#include "sensor.h"
 
 #ifdef __linux__
 class BME_Sensor : public Sensor{
