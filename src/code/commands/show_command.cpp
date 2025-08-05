@@ -5,21 +5,21 @@
 //==========================//
 
 Show_Command::Show_Command(
-	std::vector<Time_Account>& all_accounts
-	, std::vector<std::string>& str_argv
-	, std::shared_ptr<JSON_Handler> jsonH
-	, int argc
-	, const std::map<command, std::regex>& regex_pattern
-	, OutputBitset& output_flags
-	, std::shared_ptr<ErrorLogger> logger
+	std::vector<Time_Account>& _all_accounts
+	, std::vector<std::string>& _str_argv
+	, std::shared_ptr<JSON_Handler> _jsonH
+	, int _argc
+	, const std::map<command, std::regex>& _regex_pattern
+	, OutputBitset& _output_flags
+	, std::shared_ptr<ErrorLogger> _logger
 	
-) : Command(std::move(logger))
-	, str_argv(str_argv)
-	, all_accounts(all_accounts)
-	, jsonH(jsonH)
-	, argc(argc)
-	, regex_pattern(regex_pattern)
-	, output_flags(output_flags)
+) : Command(std::move(_logger))
+	, str_argv(_str_argv)
+	, all_accounts(_all_accounts)
+	, jsonH(_jsonH)
+	, argc(_argc)
+	, regex_pattern(_regex_pattern)
+	, output_flags(_output_flags)
 {
 	log(std::string{__FILE__} + " - Show_Command");
 };
@@ -58,7 +58,7 @@ void Show_Command::with_2_args(){
 		log("show all accounts");
         return;
     }
-    throw SyntaxError{""};
+    throw SyntaxError{"Show all Accounts"};
 }
 
 void Show_Command::with_3_args(){
