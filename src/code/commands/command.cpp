@@ -61,9 +61,7 @@ void Add_Alias::execute(){
 	log("execute Add_Command");
 	
 	check_input();
-	
 	create_new_account();
-	
 	log("save to files");
 	jsonH->save_json_accounts(all_accounts);
 	jsonH->save_json_entity(all_accounts, add.entity);
@@ -72,13 +70,23 @@ void Add_Alias::execute(){
 
 void Add_Alias::check_input(){
 	log("check input");
-	//Entity or Alias cant be named as a command
+
+	//Check that new Entity name is valid to be a filename
+	std::string ss("Invalid Name for Entity: ");
+	bool is_allowed_entity = std::regex_match(add.entity, invalid_entity);
+	if(!is_allowed_entity){
+		throw SyntaxError(ss + add.entity);
+	}
+
+	//Entity cant be named as a command
 	bool is_entity = std::any_of(
 		regex_pattern.begin(), regex_pattern.end(),
 		[this](const auto& pair){
 			return std::regex_match(this->add.entity, pair.second);
 		}
 	);
+
+	//Alias cant be named as a command
 	bool is_alias = std::any_of(
 		regex_pattern.begin(), regex_pattern.end(),
 		[this](const auto& pair){
@@ -109,18 +117,11 @@ void Add_Alias::check_input(){
 
 void Add_Alias::create_new_account(){
 	log("create_new_account");
+
 	std::stringstream ss;
 	
 	Time_Account new_account{add.entity, add.alias};
-	size_t size_before = all_accounts.size();
-	all_accounts.push_back(new_account);
-
-	if(size_before == all_accounts.size()){
-		std::stringstream ss_log;
-		ss_log << "size_before: " << size_before << " size_after: " << all_accounts.size();
-		log("push_back: new_account" + ss_log.str());
-		throw Logged_Error("Insert the Account failed", logger);
-	}
+	
 	log(add.entity + " -> " + add.alias);
 	ss << "Entity: " << add.entity 
 		<< "\nAlias: " << add.alias;
@@ -128,6 +129,8 @@ void Add_Alias::create_new_account(){
 		new_account.set_tag(add.tag);
 		ss <<  "\nTag: " << add.tag;
 	}
+	all_accounts.push_back(new_account);
+	
 	ss << "\nSaved - Call the Account by its Alias";
 		
 	add_output(ss.str());
@@ -177,12 +180,11 @@ void TouchDevice_Command::execute() {
 		output_str 
 			<< "Temperature"<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[0] << " °C || "
 			<< "Pressure" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[1] << " hPa || "
-			<< "Humidity" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[2] << " %\n";
+			<< "Humidity" 	<< ": "  << std::fixed 	<< std::setprecision(2) << output_sensor[2] << " %";
 				        
 		
 		std::stringstream ss;
-		ss << ( output_sensor.empty() ? "Device touched\n" : output_str.str() )
-			<< std::endl;
+		ss << ( output_sensor.empty() ? "Device touched\n" : output_str.str() );
 		
 		add_output(ss.str());
 		log("Device touched\n" + output_str.str());	    

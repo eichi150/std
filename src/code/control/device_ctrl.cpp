@@ -1,7 +1,7 @@
 #ifdef __linux__
 #include "device_ctrl.h"
 
-std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command){
+std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& _command){
 
 	//auto Accounts lesen
 	all_automations = jsonH->read_automation_config_file();
@@ -9,7 +9,7 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	//auto Accounts erstellen
 	std::string device_name;
 	for(const auto& auto_config : all_automations){
-		if(auto_config.crontab_command == command){
+		if(auto_config.crontab_command == _command){
 			Time_Account loaded_account{auto_config.entity, auto_config.alias};
 					
 			all_accounts.push_back(loaded_account);

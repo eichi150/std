@@ -1,20 +1,71 @@
 #include "cli_ui.h"
 
 CLI_UI::CLI_UI(
-		std::shared_ptr<ErrorLogger> output_logger
-		, std::shared_ptr<Arg_Manager> manager
-		, std::shared_ptr<JSON_Handler> jsonH
-		, std::shared_ptr<Translator> translator
-	
-	) : output_logger(std::move(output_logger))
-		, arg_man(std::move(manager))
-		, jsonH(std::move(jsonH))
-		, translator(std::move(translator))
-	{};
+		std::shared_ptr<ErrorLogger> _output_logger
+		, std::shared_ptr<Manager> _manager
+		, std::shared_ptr<JSON_Handler> _jsonH
+		, bool _run_env
+		, std::shared_ptr<Cmd_Ctrl> _ctrl
+	) : output_logger(std::move(_output_logger))
+		, jsonH(std::move(_jsonH))
+		, run_env(_run_env)
+		, ctrl(std::move(_ctrl))
+		
+	{
+		translator = _manager->get_translator_ptr();
+		if(run_env){
+			env_man = std::dynamic_pointer_cast<Env_Manager>(_manager);
+			//translator = env_man->get_translator_ptr();
+		}else{
+			arg_man = std::dynamic_pointer_cast<Arg_Manager>(_manager);
+			//translator = arg_man->get_translator_ptr();
+		}
+	};
+
+bool CLI_UI::is_env_running() const {
+	return run_env;
+}
 
 void CLI_UI::update(){
 	
-	const auto flags = arg_man->get_output_flags();
+	standard();
+
+	if(run_env && env_man){
+		run_environment();
+	}
+	if(arg_man){
+		arg_man->clear_output_flags();
+	}
+	if(env_man){
+		env_man->clear_output_flags();
+	}
+
+}
+std::pair<int, std::vector<std::string>> CLI_UI::get_new_input(){
+	return {env_man->get_argc(), env_man->get_str_argv()};
+};
+void CLI_UI::run_environment(){
+
+	env_man->reset_args();
+	
+	std::vector<std::string> vec;
+    run_env =_rx.user_input(vec);
+
+	env_man->set_str_argv(vec);
+}
+
+void CLI_UI::standard(){
+	
+	if(!translator){
+		throw std::runtime_error{"translator missing\n"};
+	}
+	OutputBitset flags;
+	if(arg_man){
+		flags = arg_man->get_output_flags();
+	}
+	if(env_man){
+		flags = env_man->get_output_flags();
+	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_help)) ){
 		
@@ -62,15 +113,6 @@ void CLI_UI::update(){
 		std::cout << output_logger->get_logs() << std::endl;
 	}
 	
-	/*if(flags.test(static_cast<size_t>(OutputType::show_all_log))){
-		
-		std::cout 
-			<< "\n===== UI_Interface_Log: =====\n"
-			<< ui_interface_log.str()
-			<< std::endl;
-	}*/
-	
-	arg_man->clear_output_flags();
 }
 
 void CLI_UI::show_help(){
@@ -221,9 +263,11 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 	int body_data_width = 0;
 	
 	std::stringstream ss_body;
-		
-	if(!account){
+	if(arg_man && !account){
 		account = arg_man->get_account_with_alias(alias);
+	}	
+	if(env_man && !account){
+		account = env_man->get_account_with_alias(alias);
 	}	
 	int index = 0;	
 	for(const auto& entry : account->get_entry()){
@@ -387,10 +431,20 @@ std::string CLI_UI::create_entity_table(){
 
 std::string CLI_UI::create_alias_table(){
 	//DATA
-	std::string alias = arg_man->get_str_argv()[2];
-	if(!account){
-		account = arg_man->get_account_with_alias(alias);
+	std::string alias;
+	if(arg_man){
+		alias = arg_man->get_str_argv()[2];
+		if(!account){
+			account = arg_man->get_account_with_alias(alias);
+		}
 	}
+	if(env_man){
+		alias = env_man->get_str_argv()[2];
+		if(!account){
+			account = env_man->get_account_with_alias(alias);
+		}
+	}
+	
 	std::string t_alias = "@ " + alias;
 	
 	std::string entity = account->get_entity();
@@ -450,7 +504,13 @@ std::string CLI_UI::create_alias_table(){
 
 std::string CLI_UI::create_all_accounts_table(){
 	
-	auto all_accounts = arg_man->get_all_accounts();
+	std::vector<Time_Account> all_accounts;
+	if(arg_man){
+		all_accounts = arg_man->get_all_accounts();
+	}
+	if(env_man){
+		all_accounts = env_man->get_all_accounts();
+	}
 	
 	const std::string INDEX_str{"Index"};
 	const std::string ALIAS_str{"Alias"};

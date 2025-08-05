@@ -20,7 +20,7 @@ void Device_Processor::process() {
 	){
 		Device_Ctrl device{};
 		std::string output = device.process_automation(jsonH, str_argv[2]);
-		throw std::runtime_error{"regular Programm interrupt\n" + std::string{__FILE__} + " - Device_Processor\n" + output};
+		//throw std::runtime_error{"regular Programm interrupt\n" + std::string{__FILE__} + " - Device_Processor\n" + output};
 	}
 };
 #endif // __linux__

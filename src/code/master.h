@@ -24,19 +24,22 @@
 #include <map>
 #include <cstdlib>
 
+#include "./exception/exception.h"
+
 #include "time_account.h"
 #include "json.hpp"
 #include "json_handler.h"
+
 #include "./control/cmd_ctrl.h"
 #include "./control/processor.h"
+#include "./control/device_processor.h"
 #include "./control/clock.h"
 #include "./interface/translator.h"
 #include "./interface/cli_ui.h"
-#include "./exception/exception.h"
 
-#include "arg_manager.h"
-#include "./control/device_processor.h"
 
+#include "./manager/arg_manager.h"
+#include "./manager/env_manager.h"
 
 class STD_Master{
 public:
@@ -50,8 +53,12 @@ public:
 private:
 
 	void log(const std::string& new_log);
-
+	#ifdef __linux__
+	void linux_only();
+	#endif // __linux__
 private:
+	bool run_env = false;
+
 	//logs
 	std::shared_ptr<ErrorLogger> logger;
 	std::shared_ptr<ErrorLogger> output_logger;
@@ -59,7 +66,7 @@ private:
 	//pointer
 	std::shared_ptr<Cmd_Ctrl> ctrl;
 	std::shared_ptr<JSON_Handler> jsonH;
-	std::shared_ptr<Arg_Manager> arg_man;
+	std::shared_ptr<Manager> manager;
 	std::unique_ptr<CLI_UI> cli;
 	std::shared_ptr<Processor> proc;
 	

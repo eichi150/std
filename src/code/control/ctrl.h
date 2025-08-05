@@ -85,9 +85,7 @@ public:
 	
 	virtual ~Ctrl(){};
 	
-	virtual std::vector<float> check_device(const std::string& name){
-		throw std::runtime_error{"Not implemented"};
-	};
+	//virtual std::vector<float> check_device(const std::string& name) = 0;
 	
 	std::regex create_regex_outOf_string(const std::string& str){
 

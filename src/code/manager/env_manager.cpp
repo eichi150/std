@@ -1,83 +1,75 @@
-#include "arg_manager.h"
+#include "env_manager.h"
 
-Arg_Manager::Arg_Manager(
-    std::shared_ptr<ErrorLogger> _logger
-    , std::shared_ptr<ErrorLogger> _output_logger
-    , std::shared_ptr<JSON_Handler> _jsonH
-    , std::shared_ptr<Cmd_Ctrl> _ctrl
-    , const int& _argc
-    , const std::vector<std::string>& _str_argv
-    , std::map<command, std::regex> _regex_pattern
+Env_Manager::Env_Manager(
+		std::shared_ptr<ErrorLogger> _logger
+		, std::shared_ptr<ErrorLogger> _output_logger
+		, std::shared_ptr<JSON_Handler> _jsonH
+		, std::shared_ptr<Cmd_Ctrl> _ctrl
+		, int _argc
+		, const std::vector<std::string>& _str_argv
+	): Manager(
+		std::move(_logger)
+		, _output_logger
+		, _jsonH
+		, std::move(_ctrl)
 
-) : regex_pattern(_regex_pattern)
-    , str_argv(_str_argv)
-    , jsonH(_jsonH)
-    , logger(std::move(_logger))
-    , output_logger(std::move(_output_logger))
-    , ctrl(_ctrl)
-    , argc(_argc)
-    
-{
-    log("===== Arg_Manager_Log: =====");
-    log(std::string{__FILE__} + " - Arg_Manager");
-    
-    log("===== JsonHandler_Log: =====");
-    jsonH->read_all_accounts(all_accounts);
-    
-    translator = std::make_shared<Translator>();
-    log("set language");
-    translator->set_language(jsonH->get_config_language());
-    
-};
+	), argc(_argc)
+		, str_argv(_str_argv)
+	{
+		log("===== Env_Manager_Log: =====");
+		log(std::string{__FILE__} + " - Env_Manager");
+	}
 
-void Arg_Manager::process(){
-   
+
+void Env_Manager::manage(){
+	all_accounts = {};
+	jsonH->read_all_accounts(all_accounts);		
     //Zeige Hilfe an
     //help
     if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
-	output_flags.set(static_cast<size_t>(OutputType::show_help));
-	log("show help");
-	return;
+		output_flags.set(static_cast<size_t>(OutputType::show_help));
+		log("show help");
+		return;
     }
     
     //show Möglichkeiten
     if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
-	std::vector<command> commands = {
-	    command::config_filepath
-	    , command::language
-	    , command::help
-	    , command::show
-	    , command::activate
-	};
-	    
-	log("show command");
-	    
-	cmd = std::make_shared<Show_Command>(
-	    all_accounts
-	    , str_argv
-	    , jsonH
-	    , argc
-	    , ctrl->get_specific_regex_pattern(commands)
-	    , output_flags
-	    , logger
-	);
-	
-	if(cmd){
-	    log("show flags got set");
+		std::vector<command> commands = {
+			command::config_filepath
+			, command::language
+			, command::help
+			, command::show
+			, command::activate
+		};
+			
+		log("show command");
+			
+		cmd = std::make_shared<Show_Command>(
+			all_accounts
+			, str_argv
+			, jsonH
+			, argc
+			, ctrl->get_specific_regex_pattern(commands)
+			, output_flags
+			, logger
+		);
+		
+		if(cmd){
+			log("show flags got set");
+		}
 	}
-    }
     
     if(!cmd){
 	switch(argc){
-    
+	//1.argc == std
         case 2:
-            {
-                if(check_two_args()){
-		    break;
+		{
+			if(check_two_args()){
+				break;
+			}
+			log("error: Syntax wrong");
+			throw SyntaxError{"currently unavailable"};
 		}
-		log("error: Syntax wrong");
-		throw SyntaxError{"currently unavailable"};
-            }
             
         case 3:
             {	
@@ -109,62 +101,64 @@ void Arg_Manager::process(){
             
         case 5:
             {
-                if(check_five_args()){
-		    break;
-		}
-		log("error: Syntax wrong");
-		std::stringstream syntax;
-		syntax 
-		    << "> <alias> [time value] -h -m [ ]\n"
-		    << "> <alias> -activate -measure [time_value]\n"
-		    << "> <alias> -deactivate -measure -all/ -detail\n"
-		    << "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
-                throw SyntaxError{syntax.str()};
+				if(check_five_args()){
+					break;
+				}
+				log("error: Syntax wrong");
+				std::stringstream syntax;
+				syntax 
+					<< "> <alias> [time value] -h -m [ ]\n"
+					<< "> <alias> -activate -measure [time_value]\n"
+					<< "> <alias> -deactivate -measure -all/ -detail\n"
+					<< "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
+				throw SyntaxError{syntax.str()};
             }
 
         case 6:
 	    {	
-		if(check_six_args()){
-		    break;
-		}
-		log("syntax wrong");
-		throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
+			if(check_six_args()){
+				break;
+			}
+			log("syntax wrong");
+			throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
 	    }
 
         
         default:
             {	
-		log("switch case ArgManager Error");
-                throw Logged_Error("Untitled Error", logger);
+			log("switch case Env_Manager Error");
+            throw Logged_Error("Untitled Error", logger);
 	    }
 	};
     }
     
     if(cmd){
 	
-	cmd->set_output_logger(output_logger);
-	
-	cmd->execute();
-	
-	output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
-	
+		cmd->set_output_logger(output_logger);
+		
+		cmd->execute();
+
+		cmd.reset();
+		output_flags.set(static_cast<size_t>(OutputType::show_user_output_log));
+
     }else{
-	bool throw_error = true;
-	for(int i{0}; i < static_cast<int>(OutputType::COUNT); ++i){
-	    if(output_flags.test(i)){
-		throw_error = false;
-		break;
-	    }
-	}
-	
-	if(throw_error){
-	    log("error: unknown_flag, no command to execute");
-	    throw Logged_Error("Untitled Error", logger);
-	}
+		bool throw_error = true;
+		for(int i{0}; i < static_cast<int>(OutputType::COUNT); ++i){
+			if(output_flags.test(i)){
+			throw_error = false;
+			break;
+			}
+		}
+		
+		if(throw_error){
+			log("error: unknown_flag, no command to execute");
+			std::cout << "No Flag set. No Command\n";
+			//throw Logged_Error("No Flag set. No Command", logger);
+		}
     }
 }
 
-bool Arg_Manager::check_two_args(){
+bool Env_Manager::check_two_args(){
     
     /*if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
 	run_env = true;
@@ -172,10 +166,10 @@ bool Arg_Manager::check_two_args(){
 	return true;
     }*/
     
-    return false;
+    return true;
 }
 
-bool Arg_Manager::check_three_args(){
+bool Env_Manager::check_three_args(){
     
     //Account löschen
     //<alias> -del
@@ -267,7 +261,7 @@ add_output("Only available for Linux");
     return false;
 }
 
-bool Arg_Manager::check_four_args(){
+bool Env_Manager::check_four_args(){
     //-f <entityFilepath> <accountsFilepath>
     if(std::regex_match(str_argv[1], regex_pattern.at(command::user_filepath))){
 
@@ -348,7 +342,7 @@ bool Arg_Manager::check_four_args(){
     return false;
 }
 
-bool Arg_Manager::check_five_args(){
+bool Env_Manager::check_five_args(){
     
     //-cf <configFilepath> <entityFilepath> <accountsFilepath>
     if(std::regex_match(str_argv[1], regex_pattern.at(command::config_filepath))){
@@ -395,7 +389,7 @@ bool Arg_Manager::check_five_args(){
 	    );
 	    return true;
 	}
-	add_output("insert number for time value");
+	
 	log("insert number for time value");
 	throw Logged_Error("insert number for time value", logger);
     }
@@ -403,7 +397,6 @@ bool Arg_Manager::check_five_args(){
     //Automation konfigurieren
     //<alias> -activate -measure [time_value]
     //<alias> -deactivate -measure -all/ -detail 
-    
     if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) 
 	|| std::regex_match(str_argv[2], regex_pattern.at(command::deactivate)) )
     {
@@ -449,14 +442,14 @@ add_output("Only for Linux");
     return false;
 }
 
-bool Arg_Manager::check_six_args(){
+bool Env_Manager::check_six_args(){
     
     //Neuen Account mit tag hinzufügen
     //std add <entity> <alias> -tag plant
     if(std::regex_match(str_argv[1], regex_pattern.at(command::add))
 	&& std::regex_match(str_argv[4], regex_pattern.at(command::tag)) )
     {
-	log("add_account_withTag " + all_accounts.size());
+	log("add_account_withTag " + std::to_string(all_accounts.size()) );
 		    	    
 	cmd = std::make_shared<Add_Alias>(
 	    all_accounts
@@ -474,8 +467,52 @@ bool Arg_Manager::check_six_args(){
     return false;
 }
 
-std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::string& alias){
-    log("get account Pointer with name");
+void Env_Manager::set_output_flag(OutputType flag, bool value){
+	output_flags.set(static_cast<size_t>(flag), value);
+}
+
+OutputBitset Env_Manager::get_output_flags() const {
+	return output_flags;
+}
+
+void Env_Manager::clear_output_flags(){
+	output_flags.reset();
+}
+
+void Env_Manager::reset_args(){
+	str_argv.clear();
+	argc = 0;
+};
+void Env_Manager::set_str_argv(std::vector<std::string>& _str_argv){
+	int _size = static_cast<int>(_str_argv.size());
+
+	_str_argv = ctrl->parse_argv(_size, _str_argv);
+
+	if(ctrl->is_argument_valid(_size, _str_argv)){
+		str_argv = _str_argv;
+		argc = static_cast<int>(_str_argv.size());;
+	}else{
+		throw SyntaxError("Env_Manager: Arguments unvalid");
+	}
+}
+
+std::vector<std::string>& Env_Manager::get_str_argv(){
+	return str_argv;
+};
+
+int Env_Manager::get_argc() const {
+	return argc;
+}
+void Env_Manager::set_argc(){
+	argc = static_cast<int>(str_argv.size());
+};
+
+
+std::vector<Time_Account> Env_Manager::get_all_accounts() const {
+    return all_accounts;
+}
+std::shared_ptr<Time_Account> Env_Manager::get_account_with_alias(const std::string& alias){
+    log("get account Pointer with Alias");
     std::shared_ptr<Time_Account> acc;
     std::any_of(
 	all_accounts.begin(), all_accounts.end(),
@@ -491,41 +528,4 @@ std::shared_ptr<Time_Account> Arg_Manager::get_account_with_alias(const std::str
 	throw Logged_Error("Unknown Alias", logger);
     }
     return acc;
-}
-
-void Arg_Manager::log(const std::string& msg){
-    if(logger){
-	logger->log(msg);
-    }
-}
-	
-void Arg_Manager::add_output(const std::string& output){
-    if(output_logger){
-	output_logger->log(output);
-    }
-}
-
-	
-void Arg_Manager::set_output_flag(OutputType flag, bool value){
-    output_flags.set(static_cast<size_t>(flag), value);
-}
-
-OutputBitset Arg_Manager::get_output_flags() const {
-    return output_flags;
-}
-
-void Arg_Manager::clear_output_flags(){
-    output_flags.reset();
-}
-	
-std::vector<Time_Account> Arg_Manager::get_all_accounts() const {
-    return all_accounts;
-}
-
-std::shared_ptr<Translator> Arg_Manager::get_translator_ptr() const {
-    return translator;
-}
-
-std::vector<std::string> Arg_Manager::get_str_argv() const {
-    return str_argv;
 }

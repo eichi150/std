@@ -20,52 +20,47 @@ public:
 	//Check for valid Arguments
 	bool is_argument_valid(int& argc, std::vector<std::string>& str_argv);
 	void check_debug_mode(int& argc, std::vector<std::string>& str_argv);
-	
+
+public:
+	//has to be in header file
 	template <typename T> //template for string & char* (variable input required)
 	std::vector<std::string> parse_argv(int argc, T& argv){
 		std::vector<std::string> str_argv;
 		for(int i{0}; i < argc; ++i){
 		
-				std::string arg = argv[i];
+			std::string arg = argv[i];
 
-				//Crontab Command nicht parsen bei automatischer abfrage
-				if( i + 1 <= argc
-					&& std::regex_match(arg, regex_pattern.at(command::automatic)))
-				{
-					str_argv.push_back(arg);
-					
-					std::string crontab_command = argv[i + 1];
-					str_argv.push_back(crontab_command);
-					++i;
-					continue;
-				}
+			//Crontab Command nicht parsen bei automatischer abfrage
+			if( i + 1 <= argc
+				&& std::regex_match(arg, regex_pattern.at(command::automatic)))
+			{
+				str_argv.push_back(arg);
 				
-				auto it = split_input(arg);
-				if(!it.empty()){
-					for(const auto& split : it){
-						str_argv.push_back(split);
-					}
+				std::string crontab_command = argv[i + 1];
+				str_argv.push_back(crontab_command);
+				++i;
+				continue;
+			}
+			
+			auto it = split_input(arg);
+			if(!it.empty()){
+				for(const auto& split : it){
+					str_argv.push_back(split);
 				}
 			}
-			
-			argv = {};
-			
-			//Log Output
-			log(std::to_string(argc));
-			for(const auto& str : str_argv){
-				log(str);
-			}
+		}
+		argv = {};
+		//Log Output
+		log_input_process(argc, str_argv);
 		return str_argv;
 	}
 
 private:
+	void log(const std::string& msg);
+	void log_input_process(int argc, const std::vector<std::string>& str_argv);
+private:
 	std::shared_ptr<ErrorLogger> logger;
 	
-	void log(const std::string& msg){
-		if(logger){
-			logger->log(msg);
-		}
-	}
 };
 
 #endif // CMD_CTRL_H

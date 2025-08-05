@@ -9,23 +9,37 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <cstdio>
 
+#include "replex.h"
 #include "ui_interface.h"
-#include "../arg_manager.h"
+#include "../manager/arg_manager.h"
+#include "../manager/env_manager.h"
 
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI::UI_Interface{
 public:
 	explicit CLI_UI(
-		std::shared_ptr<ErrorLogger> output_logger
-		, std::shared_ptr<Arg_Manager> manager
-		, std::shared_ptr<JSON_Handler> jsonH
-		, std::shared_ptr<Translator> translator
+		std::shared_ptr<ErrorLogger> _output_logger
+		, std::shared_ptr<Manager> _manager
+		, std::shared_ptr<JSON_Handler> _jsonH
+		, bool _run_env
+		, std::shared_ptr<Cmd_Ctrl> _ctrl
 	);
 
 	void update() override;
 	
+	bool is_env_running() const;
+	std::pair<int, std::vector<std::string>> get_new_input();
 private:
+	myReplxx _rx{};
+	
+	int s_vec;
+	std::vector<std::string> vec;
+
+	void standard();
+	void run_environment();
+
 	void show_help();
 	void show_all_accounts();
 	void show_entity_table();
@@ -35,6 +49,7 @@ private:
 	void show_language();
 	
 private:
+	
 	//Build Tabellenausgabe
 	std::string create_entity_table();
 	std::string create_alias_table();
@@ -48,23 +63,30 @@ private:
 	int get_sum_str_size(const std::vector<std::string>& multiple_str);
 
 private:
+	bool run_env = false;
+
 	std::shared_ptr<ErrorLogger> output_logger;
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::shared_ptr<Translator> translator;
-	
+	std::shared_ptr<Cmd_Ctrl> ctrl;
+
 	std::shared_ptr<Time_Account> account;
 	
 	std::shared_ptr<Arg_Manager> arg_man;
+	std::shared_ptr<Env_Manager> env_man;
+
 	std::vector<Automation_Config> all_automations;
 	
 	int table_width = 0;
 	
 	const std::string help = {
-    "add 			Add new Entity give it a Alias\n"
-    "-h -m  		Time to save in Hours or Minutes\n"
-    "show 			Show all Entitys and Alias's\n"
-    "sh 			Short Form of show\n"
-    "show 'ALIAS' 	show specific Entity's Time Account\n\n"
+	"Usage: std [command] [args...]\n"
+    "-add <entity> <alias>			Add new Entity give it a Alias\n"
+    "<alias> [time] -h / -m  		Time to save in Hours or Minutes\n"
+    "sh / show 						Show all Entitys and Alias's\n"
+    "sh <alias> / <entity>			Show specific Entity or Alias\n"
+    "show <alias> -activate		 	show Alias Automations\n\n"
+	"<alias> -activate -measure [time setting]\n"
     "For more Information have a look at README.md on github.com/eichi150/std\n"
     };
 };

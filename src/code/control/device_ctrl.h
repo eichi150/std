@@ -11,15 +11,16 @@
 #include <cstdio>
 
 #include "ctrl.h"
+#include "clock.h"
 #include "../exception/exception.h"
 
 class Device_Ctrl : public CTRL::Ctrl{
 public:
 
 	
-	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& command);
+	std::string process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& _command);
 	
-	std::vector<float> check_device(const std::string& name) override;
+	std::vector<float> check_device(const std::string& name);
 
 	std::string get_name() const { return name; }
 	
