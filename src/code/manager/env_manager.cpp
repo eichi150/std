@@ -18,12 +18,11 @@ Env_Manager::Env_Manager(
 	{
 		log("===== Env_Manager_Log: =====");
 		log(std::string{__FILE__} + " - Env_Manager");
+		jsonH->read_all_accounts(all_accounts);	
 	}
 
-
 void Env_Manager::manage(){
-	all_accounts = {};
-	jsonH->read_all_accounts(all_accounts);		
+	
     //Zeige Hilfe an
     //help
     if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
@@ -60,47 +59,47 @@ void Env_Manager::manage(){
 	}
     
     if(!cmd){
-	switch(argc){
-	//1.argc == std
-        case 2:
-		{
-			if(check_two_args()){
-				break;
+		switch(argc){
+		//1.argc == std
+			case 2:
+			{
+				if(check_two_args()){
+					break;
+				}
+				log("error: Syntax wrong");
+				throw SyntaxError{"currently unavailable"};
 			}
-			log("error: Syntax wrong");
-			throw SyntaxError{"currently unavailable"};
-		}
-            
-        case 3:
-            {	
-                if(check_three_args()){
-		    break;
-		}
-		std::stringstream syntax;
-		syntax 
-		    << "> <alias> -delete\n> <alias> -measure\n"
-		    << "> -delete <entity>\n"
-		    << "> -language <language>\n> -touch BME280";
-		
-		throw SyntaxError{syntax.str()};
-            }
+				
+			case 3:
+			{	
+				if(check_three_args()){
+					break;
+				}
+				std::stringstream syntax;
+				syntax 
+					<< "> <alias> -delete\n> <alias> -measure\n"
+					<< "> -delete <entity>\n"
+					<< "> -language <language>\n> -touch BME280";
+				
+				throw SyntaxError{syntax.str()};
+			}
 
-        case 4:
-            {
-                if(check_four_args()){
-		    break;
-		}
-		log("error: Syntax wrong");
-		std::stringstream syntax;
-		syntax 
-		    << "> -add <entity> <alias>\n> <alias> [ ] -h/ -m\n"
-		    << "> <alias> -tag [ ]\n"
-		    << "> -f <entityFilepath> <accountsFilepath>";
-                throw SyntaxError{syntax.str()};
-            }
-            
-        case 5:
-            {
+			case 4:
+			{
+				if(check_four_args()){
+					break;
+				}
+				log("error: Syntax wrong");
+				std::stringstream syntax;
+				syntax 
+					<< "> -add <entity> <alias>\n> <alias> [ ] -h/ -m\n"
+					<< "> <alias> -tag [ ]\n"
+					<< "> -f <entityFilepath> <accountsFilepath>";
+				throw SyntaxError{syntax.str()};
+			}
+				
+			case 5:
+			{
 				if(check_five_args()){
 					break;
 				}
@@ -112,24 +111,23 @@ void Env_Manager::manage(){
 					<< "> <alias> -deactivate -measure -all/ -detail\n"
 					<< "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
 				throw SyntaxError{syntax.str()};
-            }
-
-        case 6:
-	    {	
-			if(check_six_args()){
-				break;
 			}
-			log("syntax wrong");
-			throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
-	    }
 
-        
-        default:
-            {	
-			log("switch case Env_Manager Error");
-            throw Logged_Error("Untitled Error", logger);
-	    }
-	};
+			case 6:
+			{	
+				if(check_six_args()){
+					break;
+				}
+				log("syntax wrong");
+				throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
+			}
+
+			default:
+			{	
+				log("switch case Env_Manager Error");
+				throw Logged_Error("Untitled Error", logger);
+			}
+		};
     }
     
     if(cmd){
@@ -160,13 +158,13 @@ void Env_Manager::manage(){
 
 bool Env_Manager::check_two_args(){
     
-    /*if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
-	run_env = true;
-	arg_manager_log << "start environment\n";
-	return true;
-    }*/
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
+		
+		output_flags.set(static_cast<size_t>(OutputType::environment));
+		return true;
+    }
     
-    return true;
+    return false;
 }
 
 bool Env_Manager::check_three_args(){
@@ -238,7 +236,7 @@ add_output("Only available for Linux");
     }
                                 
     //Sensor Messwerte für <alias> speichern
-    // <alias> -mes
+    // <alias> -measure
     if(std::regex_match(str_argv[2], regex_pattern.at(command::measure_sensor))){
                 
 #ifdef __linux__

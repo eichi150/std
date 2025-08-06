@@ -32,7 +32,6 @@ void STD_Master::run_std(){
 	if (!ctrl) throw std::runtime_error{"Cmd_Ctrl initialization failed"};
 	if (!jsonH) throw std::runtime_error{"JSON_Handler initialization failed"};
 
-	
 	try{
 		if(ctrl->is_argument_valid(argc, str_argv)){
 #ifdef __linux__
@@ -40,11 +39,9 @@ void STD_Master::run_std(){
 			linux_only();
 #endif // __linux__
 		
-			log("run CLI");
 			output_logger = std::make_shared<User_Logger>();
 
 			auto environment_pattern = ctrl->get_specific_regex_pattern({command::environment});
-		
 			if( std::regex_match(str_argv[1], environment_pattern.at(command::environment)) ){
 
 				run_env = true;
@@ -76,7 +73,7 @@ void STD_Master::run_std(){
 				, run_env
 				, ctrl
 			);
-
+			log("run CLI");
 			do{	
 				if(manager){
 					manager->manage();
@@ -86,7 +83,7 @@ void STD_Master::run_std(){
 				}
 				//Debug Output
 				logger->dump_log_for_Mode(logger, ErrorLogger::Mode::debug);
-
+				
 			}while(cli->is_env_running());
 
 		}else{

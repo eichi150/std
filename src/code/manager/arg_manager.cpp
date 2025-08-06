@@ -74,76 +74,76 @@ void Arg_Manager::manage(){
 	}
     
     if(!cmd){
-	switch(argc){
-	//1.argc == std
-        case 2:
-		{
-			if(check_two_args()){
-				break;
+		switch(argc){
+		//1.argc == std
+			case 2:
+			{
+				if(check_two_args()){
+					break;
+				}
+				log("error: Syntax wrong");
+				throw SyntaxError{"currently unavailable"};
 			}
-			log("error: Syntax wrong");
-			throw SyntaxError{"currently unavailable"};
-		}
-            
-        case 3:
-            {	
-                if(check_three_args()){
-		    break;
-		}
-		std::stringstream syntax;
-		syntax 
-		    << "> <alias> -delete\n> <alias> -measure\n"
-		    << "> -delete <entity>\n"
-		    << "> -language <language>\n> -touch BME280";
-		
-		throw SyntaxError{syntax.str()};
-            }
+				
+			case 3:
+			{	
+				if(check_three_args()){
+					break;
+				}
+				std::stringstream syntax;
+				syntax 
+					<< "> <alias> -delete\n> <alias> -measure\n"
+					<< "> -delete <entity>\n"
+					<< "> -language <language>\n> -touch BME280";
+				
+				throw SyntaxError{syntax.str()};
+			}
 
-        case 4:
-            {
-                if(check_four_args()){
-		    break;
-		}
-		log("error: Syntax wrong");
-		std::stringstream syntax;
-		syntax 
-		    << "> -add <entity> <alias>\n> <alias> [ ] -h/ -m\n"
-		    << "> <alias> -tag [ ]\n"
-		    << "> -f <entityFilepath> <accountsFilepath>";
-                throw SyntaxError{syntax.str()};
-            }
-            
-        case 5:
-            {
-                if(check_five_args()){
-		    break;
-		}
-		log("error: Syntax wrong");
-		std::stringstream syntax;
-		syntax 
-		    << "> <alias> [time value] -h -m [ ]\n"
-		    << "> <alias> -activate -measure [time_value]\n"
-		    << "> <alias> -deactivate -measure -all/ -detail\n"
-		    << "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
-                throw SyntaxError{syntax.str()};
-            }
+			case 4:
+			{
+				if(check_four_args()){
+					break;
+				}
+				log("error: Syntax wrong");
+				std::stringstream syntax;
+				syntax 
+					<< "> -add <entity> <alias>\n> <alias> [ ] -h/ -m\n"
+					<< "> <alias> -tag [ ]\n"
+					<< "> -f <entityFilepath> <accountsFilepath>";
+				throw SyntaxError{syntax.str()};
+			}
+				
+			case 5:
+			{
+				if(check_five_args()){
+					break;
+				}
+				log("error: Syntax wrong");
+				std::stringstream syntax;
+				syntax 
+					<< "> <alias> [time value] -h -m [ ]\n"
+					<< "> <alias> -activate -measure [time_value]\n"
+					<< "> <alias> -deactivate -measure -all/ -detail\n"
+					<< "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
+				throw SyntaxError{syntax.str()};
+			}
 
-        case 6:
-	    {	
-		if(check_six_args()){
-		    break;
-		}
-		log("syntax wrong");
-		throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
-	    }
+			case 6:
+			{	
+				if(check_six_args()){
+					break;
+				}
+				log("syntax wrong");
+				throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
+			}
 
-        
-        default:
-            {	
-		log("switch case ArgManager Error");
-                throw Logged_Error("Untitled Error", logger);
-	    }
-	};
+			
+			default:
+			{	
+				log("switch case ArgManager Error");
+				throw Logged_Error("Untitled Error", logger);
+			}
+		};
     }
     
     if(cmd){

@@ -29,6 +29,7 @@ enum class OutputType{
 	, show_alias_automation
 	, show_user_output_log
 	, show_entity
+	, environment
 	, COUNT //maxSize Bitset
 };
 
