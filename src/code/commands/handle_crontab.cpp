@@ -68,12 +68,15 @@ void Crontab::finalize(){
 	out.close();
 	
 	log("change crontab config");
-	//Neue Crontab setzen
-	system("crontab /tmp/mycron");
 	
-	//aufräumen
-	log("clean tmp Crontabfile");
-	system("rm /tmp/mycron");
+	//set new crontab using popen
+	std::string cmd = "crontab /tmp/mycron";
+	FILE* pipe = popen(cmd.c_str(), "r");
+	if(pipe){
+		pclose(pipe);
+	}
+	//Clean up temp file
+	std::remove("/tmp/mycron");
 }
 
 bool Crontab::crontab_contains(const std::vector<std::string>& crontabLines, const std::vector<std::string>& searched_targets){
@@ -99,7 +102,7 @@ bool Crontab::crontab_contains(const std::vector<std::string>& crontabLines, con
 	return false;
 }
 
-std::string Crontab::convert_crontabLine_to_speeking_str(const std::string& crontab_line){
+std::string Crontab::convert_crontabLine_to_speaking_str(const std::string& crontab_line){
 	std::string result;
 	// 0 */1 * * *
 	// Every 1 hour @0 minutes 
@@ -172,6 +175,9 @@ std::string Crontab::convert_crontabLine_to_speeking_str(const std::string& cron
 				result.pop_back();
 				result.append(str_weekday.at(day));
 				
+			}catch(const std::invalid_argument& e){
+				add_output("Invalid number format");
+				log(e.what());
 			}catch(const std::out_of_range& re){
 				add_output("Insert valid number ");
 				log(re.what());
@@ -319,13 +325,13 @@ void delete_task_from_Crontab::erase_detail_out_automation_config(){
 	std::vector<std::string> chosen_as_cmd;
 	for (const auto& cfg : vec) {
 		if (cfg.alias == alias) {
-			choose_one.push_back(convert_crontabLine_to_speeking_str(cfg.crontab_command));
+			choose_one.push_back(convert_crontabLine_to_speaking_str(cfg.crontab_command));
 			chosen_as_cmd.push_back(cfg.crontab_command);
 		}
 	}
 
 	if (choose_one.empty()) {
-		throw std::invalid_argument{"Kein Eintrag mit diesem Alias vorhanden"};
+		throw std::invalid_argument{"No entry with this alias exists"};
 	}
 	//create Listbox for User
 	Listbox listbox{choose_one};
@@ -333,7 +339,7 @@ void delete_task_from_Crontab::erase_detail_out_automation_config(){
 	std::string chosen = choose_one[index];
 	std::string chosen_cmd = chosen_as_cmd[index];
 
-	add_output(std::string{"Du hast gewählt: (" + chosen + ')' });
+	add_output(std::string{"You selected: (" + chosen + ')' });
 	log(std::string{chosen_cmd + " [Index " + std::to_string(index) + "]"});
 	
 	// Command merken, um aus Crontab zu löschen
@@ -511,7 +517,7 @@ void write_into_Crontab::set_user_automation_crontab(){
 		, entity, alias 
 		, executioner
 		, crontab_line.first
-		, convert_crontabLine_to_speeking_str(crontab_line.first)
+		, convert_crontabLine_to_speaking_str(crontab_line.first)
 		,(crontab_line.second ? "true" : "false")
 		, device_name
 	};
@@ -532,7 +538,7 @@ void write_into_Crontab::set_user_automation_crontab(){
 		<< device_name << " measures for " << alias << " from "<< entity << " over " << connection_type
 		<< "\n"
 		<< "Time for " << executioner << " to execute: "
-		<< convert_crontabLine_to_speeking_str(crontab_line.first)
+		<< convert_crontabLine_to_speaking_str(crontab_line.first)
 		<< (crontab_line.second ? " with Logfile" : "");
 			
 	//Print
@@ -709,8 +715,10 @@ std::string write_into_Crontab::check_that_between_A_B(
 	try{
 		num = stoi(str);
 		
-	}catch(const std::runtime_error& re){
+	}catch(const std::invalid_argument& e){
 		throw std::invalid_argument{error_prompt + " isnt a number"};
+	}catch(const std::out_of_range& e){
+		throw std::invalid_argument{error_prompt + " is out of range"};
 	}
 	
 	if(num < A || num > B){
@@ -734,7 +742,17 @@ bool write_into_Crontab::write_Crontab(
 	log(__cronLine + "\n" + logLine);
 			
 	//alte Crontab sichern
-	system("crontab -l > /tmp/mycron");
+	//system("crontab -l > /tmp/mycron");
+	//Backup old crontab
+	FILE* pipe = popen("crontab -l", "r");
+	if(pipe){
+		std::ofstream backup("/tmp/mycron");
+		char buffer[128];
+		while(fgets(buffer, sizeof(buffer), pipe) != nullptr){
+			backup << buffer;
+		}
+		pclose(pipe);
+	}
 	
 	if(crontab_contains(current_Crontab, {__cronLine, str_command}) ){
 		return false;

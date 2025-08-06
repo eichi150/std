@@ -8,16 +8,23 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	
 	//auto Accounts erstellen
 	std::string device_name;
+	bool device_found = false;
 	for(const auto& auto_config : all_automations){
 		if(auto_config.crontab_command == _command){
+			if(device_found && device_name != auto_config.device_name){
+				throw std::runtime_error{"Multiple devices found for command: " + _command};
+			}
 			Time_Account loaded_account{auto_config.entity, auto_config.alias};
 					
 			all_accounts.push_back(loaded_account);
 
 			device_name = auto_config.device_name;
+			device_found = true;
 		}
 	}
-	
+	if(!device_found){
+		throw std::runtime_error("No device found for command: " + _command);
+	}
 	//auto Accounts <entity>.json lesen
 	jsonH->read_json_entity(all_accounts);
 

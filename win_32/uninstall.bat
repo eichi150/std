@@ -2,7 +2,7 @@
 setlocal
 
 :: Zielpfade
-set "BIN_DIR=C:"
+set "BIN_DIR=C:\"
 set "STD_DIR=%BIN_DIR%\std"
 set "STD_BIN_DIR=%STD_DIR%\bin"
 set "FILES_DIR=%STD_DIR%\files"

@@ -8,7 +8,7 @@
 #ifdef __linux__
 	#include <limits.h>
 	#include <unistd.h>
-#endif // __linux
+#endif // __linux__
 
 #include <iostream>
 #include <string>
@@ -75,7 +75,8 @@ private:
 	int argc;
 };
 
-/*class STD_Auto{
+/* IDEA FOR FUTURE - extract the time automated measuring in a single executable, in need of less ressources.
+class STD_Auto{
 public:
 	STD_Auto(
 		const int _argc

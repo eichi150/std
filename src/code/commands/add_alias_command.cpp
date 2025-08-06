@@ -69,7 +69,10 @@ void Hours_Add_Alias_Command::execute() {
 	if(!account){
 		throw Logged_Error("Unknown Alias", logger);
 	}
-	
+	if(str_argv.size() < 3){
+		throw Logged_Error("Insufficient arguments", logger);
+	}
+
 	if(!std::regex_match(str_argv[2], regex_pattern.at(command::integer)) ){
 		add_output("insert number for time value");
 		log("insert number for time value");
@@ -100,7 +103,9 @@ void Hours_Add_Alias_Command::add_hours(){
 	float time_float;
 	try{
 		time_float = stof(str_argv[2]);
-		if (std::regex_match(str_argv[3], regex_pattern.at(command::minutes))){
+		if (str_argv.size() > 3
+			&& std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
+		{
 			time_float /= 60.f;
 		}
 	}catch(const std::out_of_range& re){
@@ -140,7 +145,9 @@ void Tag_Add_Alias_Command::execute() {
 	if(!account){
 		throw Logged_Error("Unknown Alias", logger);
 	}
-	
+	if(str_argv.size() < 4){
+		throw Logged_Error("Tag value not provided", logger);
+	}
 	account->set_tag(str_argv[3]);
 	
 	//Save to file

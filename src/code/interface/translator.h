@@ -11,12 +11,15 @@ enum class Language{
 
 class Translator{
 public:
+    /*const std::map<std::string, std::string>& get_language_pack() const {
+        return language_pack;
+    }*/
     std::map<std::string, std::string> language_pack{};
-	
-    static std::map<Language, std::string> dict_language;
-    static std::map<std::string, std::string> english_pack;
-    static std::map<std::string, std::string> german_pack;
-    static std::map<Language, std::map<std::string, std::string>> all_packs;
+
+    static const std::map<Language, std::string> dict_language;
+    static const std::map<std::string, std::string> english_pack;
+    static const std::map<std::string, std::string> german_pack;
+    static const std::map<Language, std::map<std::string, std::string>> all_packs;
 
     void set_language(const Language& language);
 	

@@ -75,13 +75,14 @@
 
 /**@}*/
 /**\name C standard macros */
-#ifndef NULL
+/*#ifndef NULL
 #ifdef __cplusplus
 #define NULL         0
 #else
 #define NULL         ((void *) 0)
 #endif
-#endif
+#endif*/
+/* Use standard NULL definition from stddef.h */
 
 /******************************************************************************/
 /*! @name        Compiler switch macros Definitions                */

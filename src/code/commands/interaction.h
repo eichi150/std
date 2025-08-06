@@ -20,7 +20,7 @@ public:
 		}
 	}
 	std::string get_logs() const {
-		return logger->get_logs();
+		return (logger ? logger->get_logs() : std::string{});
 	}
 	
 	
@@ -33,7 +33,7 @@ public:
 		}
 	}
 	std::string get_output_logs() const {
-		return output_logger->get_logs();
+		return (output_logger ? output_logger->get_logs() : std::string{});
 	}
 protected:
 	std::shared_ptr<ErrorLogger> output_logger;

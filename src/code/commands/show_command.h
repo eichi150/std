@@ -50,9 +50,20 @@ public:
 		
 	);
 	void execute() override;
-	OutputBitset& output_flags;
+	
+	const OutputBitset& get_output_flags() const {
+		return output_flags;
+	}
+	OutputBitset& get_output_flags() {
+		return output_flags;
+	}
 
 private:
+	template<typename Predicate>
+	bool find_account(Predicate pred){
+		auto it = std::find_if(all_accounts.begin(), all_accounts.end(), pred);
+		return it != all_accounts.end();
+	}
 
 	void with_2_args();
 
@@ -70,7 +81,7 @@ private:
 	std::shared_ptr<JSON_Handler> jsonH;
 	int argc;
 	std::map<command, std::regex> regex_pattern;
-	
+	OutputBitset& output_flags;
 		
 }; // Show_Command
 

@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <sstream>
 
 #define LOG_INFO(msg) std::clog << "[INFO] " << msg << std::endl
 #define LOG_ERROR(msg) std::cerr << "[ERROR]\n" << msg << std::endl
@@ -38,7 +39,8 @@ public:
 	)
 	{
 		if(logger){
-			if(logger->is_debug_enabled()){
+			bool should_log = (mode == Mode::error) || logger->is_debug_enabled();
+			if(should_log){
 				std::string msg = logger->get_logs();
 				
 				switch(mode){
@@ -63,29 +65,10 @@ private:
 	
 }; //ErrorLogger
 
-
-class User_Logger : public ErrorLogger{
-public:
-	void log(const std::string& _log) override {
-		_output.push_back(_log);
-	}
-	
-	std::string get_logs() const override {
-		std::stringstream ss;
-		for(const auto& out : _output){
-			ss << out << "\n";
-		}
-		return ss.str();
-	}
-    
-private:
-	std::vector<std::string> _output;
-};
-
 class Default_Logger : public ErrorLogger{
 public:
 	void log(const std::string& new_log) override {
-		
+
 		_logs.push_back(new_log);
 	};
 	

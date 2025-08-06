@@ -60,22 +60,18 @@ void Cmd_Ctrl::check_debug_mode(int& argc, std::vector<std::string>& str_argv){
 
 	//enable show_logs, erase '-debug' cmd out of str_argv, argc -=1
     std::vector<std::string> str_argv_without_LOG_cmd;
-    std::copy_if(
-        str_argv.begin(), str_argv.end(),
-        std::back_inserter(str_argv_without_LOG_cmd),
-        [this, &argc](const std::string& str) {
-	    if(!std::regex_match(str, this->regex_pattern.at(command::debug))){
-			return true;
-	    }
-	    
-	    argc -= 1;
-		if(!logger){
-			throw std::runtime_error{"Logger missing in Cmd_Ctrl"};
+   
+	for(const auto& str : str_argv){
+		if(!std::regex_match(str, this->regex_pattern.at(command::debug))){
+			str_argv_without_LOG_cmd.push_back(str);
+		}else{
+			argc -= 1;
+			if(!logger){
+				throw std::runtime_error{"Logger missin in Cmd_Ctrl"};
+			}
+			logger->set_debug_to(true);
 		}
-		logger->set_debug_to(true);
-	    return false;
-		}
-    );
+	}
     str_argv = str_argv_without_LOG_cmd;
 }
 

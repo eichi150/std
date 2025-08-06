@@ -16,9 +16,14 @@ Change_Command::Change_Command(
 void Change_Command::finalize() {
 	log("change finalize");
 	if(!jsonH){
-		throw Logged_Error("Unknown Alias", logger);
+		throw Logged_Error("JSON Handler not initialized", logger);
 	}
-	jsonH->save_config_file(new_data);
+	try{
+		jsonH->save_config_file(new_data);
+	}catch(const std::exception& e){
+		throw Logged_Error(std::string{"Failed to save config: "} + e.what(), logger);
+	}
+	
 	
 }
 
@@ -49,13 +54,13 @@ void UserFilepath_Change_Command::execute() {
 			, {"entity_filepath", str_argv[3]} // <- Change Entity_Filepath
 			, {"accounts_filepath", str_argv[4]} // <- Change Account_Filepath
 			, {"language", translator->get_str_language()}
-			, {"automation_filepath", std::string{str_argv[3] + "automation_config.json"} } // <- Change Automation_Config_Filepath
+			, {"automation_filepath", std::string{str_argv[3] + "/automation_config.json"} } // <- Change Automation_Config_Filepath
 		};
 		std::stringstream ss;
 		ss  << str_argv[2] << "\n"
 			<< str_argv[3] << "\n" 
 			<< str_argv[4] << "\n"
-			<< std::string{str_argv[3] + "automation_config.json"}
+			<< std::string{str_argv[3] + "/automation_config.json"}
 			<< "\n";
 			
 		log(ss.str());
@@ -73,7 +78,7 @@ void UserFilepath_Change_Command::execute() {
 		ss  << str_argv[2] << "\n"
 			<< str_argv[3] << "\n" 
 			<< translator->get_str_language() << "\n"
-			<< std::string{str_argv[3] + "automation_config.json"}
+			<< std::string{str_argv[3] + "/automation_config.json"}
 			<< "\n";
 			
 		log(ss.str());
@@ -118,7 +123,7 @@ void Language_Change_Command::execute() {
 		}
 		add_output(ss.str());
 		log("Unknown Language: " + change_to_language);                   
-		throw Logged_Error(ss.str(), logger);
+		throw Logged_Error("Unknown language: " + change_to_language, logger);
        }
 	
        new_data = {

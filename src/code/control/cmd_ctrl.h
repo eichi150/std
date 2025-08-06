@@ -31,7 +31,7 @@ public:
 			std::string arg = argv[i];
 
 			//Crontab Command nicht parsen bei automatischer abfrage
-			if( i + 1 <= argc
+			if( i + 1 < argc
 				&& std::regex_match(arg, regex_pattern.at(command::automatic)))
 			{
 				str_argv.push_back(arg);
@@ -49,7 +49,7 @@ public:
 				}
 			}
 		}
-		argv = {};
+	//argv = {};
 		//Log Output
 		log_input_process(argc, str_argv);
 		return str_argv;

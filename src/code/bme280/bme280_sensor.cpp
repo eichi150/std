@@ -66,8 +66,12 @@ int BME_Sensor::scan_sensor(std::vector<float>& float_data) {
     float_data.push_back(comp_data.humidity);
     
     
-    close(i2c_fd);
-    
+    if(ioctl(i2c_fd, I2C_SLAVE, dev_addr) < 0){
+        perror("I2C ioctl");
+        close(i2c_fd);
+        return 1;
+    }
+
     return 0;
 }
 
@@ -85,12 +89,14 @@ BME280_INTF_RET_TYPE BME_Sensor::user_i2c_read(uint8_t reg_addr, uint8_t *data, 
 
 BME280_INTF_RET_TYPE BME_Sensor::user_i2c_write(uint8_t reg_addr, const uint8_t *data, uint32_t len, void *intf_ptr) {
     int fd = *(int *)intf_ptr;
-    uint8_t buf[1 + len];
+    
+    std::vector<uint8_t> buf(1 +len);
     buf[0] = reg_addr;
     for (uint32_t i = 0; i < len; i++) {
         buf[i + 1] = data[i];
     }
-    if (write(fd, buf, len + 1) != (int)(len + 1)){
+    
+    if(write(fd, buf.data(), len +1) != (int)(len +1)){
         return -1;
     }
     return 0;

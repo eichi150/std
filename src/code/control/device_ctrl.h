@@ -13,6 +13,8 @@
 #include "ctrl.h"
 #include "clock.h"
 #include "../exception/exception.h"
+#include "../time_account.h"
+#include "../json_handler.h"
 
 class Device_Ctrl : public CTRL::Ctrl{
 public:

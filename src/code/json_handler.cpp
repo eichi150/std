@@ -122,9 +122,10 @@ std::vector<Automation_Config> JSON_Handler::read_automation_config_file(){
 
 
 void JSON_Handler::save_automation_config_file(const std::vector<Automation_Config>& automation_config){
-	/*if(automation_config.empty()){
-		throw std::runtime_error{"##Automation_Config Error"};
-	}*/
+	if(automation_config.empty()){
+        log("Warning: Saving empty automation_config");
+		//throw std::runtime_error{"##Automation_Config Error"};
+	}
 
 	json eintrag = json::array();
 	std::map<std::string, json> grouped_configs;

@@ -12,12 +12,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include "bme280.h"
 #include <iomanip>
 #include <sstream>
 #include <vector>
-
+#include <stdexcept>
 #include "sensor.h"
 
 #ifdef __linux__
@@ -41,10 +40,8 @@ private:
 class BME_Sensor : public Sensor{
 public:
     int scan_sensor(std::vector<float>& float_data) override {
-    	throw std::runtime_error{"Not implemented"};
+    	throw std::runtime_error{"BME280 sensor not supported on this platform"};
     };
-
-
 };
 #endif // __linux__
 

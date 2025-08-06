@@ -17,6 +17,7 @@ public:
 		, std::shared_ptr<ErrorLogger> logger
 		
 	);
+	virtual ~Entity_Command() = default;
 	
 	void execute() override;
 	

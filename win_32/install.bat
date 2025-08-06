@@ -2,7 +2,7 @@
 setlocal
 
 :: 1. Zielpfade
-set "BIN_DIR=C:"
+set "BIN_DIR=C:\"
 set "STD_DIR=%BIN_DIR%\std"
 set "STD_BIN_DIR=%STD_DIR%\bin"
 set "FILES_DIR=%STD_DIR%\files"
@@ -23,6 +23,10 @@ if exist ".\%EXE_NAME%" (
     echo Kopiere %EXE_NAME% nach %STD_BIN_DIR% ...
     move /Y ".\%EXE_NAME%" "%STD_BIN_DIR%\%EXE_NAME%"
     move /Y ".\std.bat" "%STD_BIN_DIR%\std.bat"
+    if not exist "%STD_BIN_DIR%\%EXE_NAME%" (
+        echo FEHLER: Installation von %EXE_NAME% fehlgeschlagen!
+        exit /b 1
+    )
 ) else (
     echo FEHLER: %EXE_NAME% nicht im aktuellen Verzeichnis gefunden!
     exit /b 1
@@ -38,7 +42,8 @@ echo     Oder erstelle einen Alias in deinem PowerShell-Profil.
 echo.
 
 :: 5. Starte Executable mit Parametern (nur als Test)
-"%STD_BIN_DIR%\%EXE_NAME%" -cf "%STD_DIR%\config.json" "%FILES_DIR%\\" "%FILES_DIR%\accounts.json"
++echo Teste Installation ...
++"%STD_BIN_DIR%\%EXE_NAME%" -cf "%STD_DIR%\config.json" "%FILES_DIR%\\" "%FILES_DIR%\accounts.json" || echo Warnung: Testlauf fehlgeschlagen, Installation aber abgeschlossen.
 
 echo.
 echo Installation abgeschlossen.

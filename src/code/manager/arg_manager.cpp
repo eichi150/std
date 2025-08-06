@@ -24,7 +24,7 @@ Arg_Manager::Arg_Manager(
 ) : Manager(
 		std::move(_logger)
 		, _output_logger
-		, _jsonH
+		, std::move(_jsonH)
 		, std::move(_ctrl)
 		
 	) , argc(_argc)
@@ -34,6 +34,9 @@ Arg_Manager::Arg_Manager(
     log(std::string{__FILE__} + " - Arg_Manager");
     
 	log("===== JsonHandler_Log: =====");
+	if(!jsonH){
+		throw std::invalid_argument{"JSON Handler cannot be null"};
+	}
 	jsonH->read_all_accounts(all_accounts);		
 };
 
@@ -172,11 +175,10 @@ void Arg_Manager::manage(){
 
 bool Arg_Manager::check_two_args(){
     
-    /*if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
-	run_env = true;
-	arg_manager_log << "start environment\n";
-	return true;
-    }*/
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::environment))){
+		log("Warning: start environment out of arg_manager");
+		return true;
+    }
     
     return false;
 }

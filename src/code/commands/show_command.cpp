@@ -120,30 +120,13 @@ void Show_Command::with_4_args(){
 }
 
 bool Show_Command::find_entity(const std::string& __entity){
-	std::string entity = __entity;
-	auto it = std::find_if(
-		all_accounts.begin(), all_accounts.end(),
-		[&entity](const Time_Account& acc){
-			return acc.get_entity() == entity;
-		}
-	);
-	if(it != all_accounts.end()){
-		
-		return true;
-	}
-	return false;
+	return find_account([&__entity](const Time_Account& acc){
+		return acc.get_entity() == __entity;
+	});
 }
 
 bool Show_Command::find_alias(const std::string& __alias){
-	std::string alias = __alias;
-	auto it = std::find_if(
-		all_accounts.begin(), all_accounts.end(),
-		[&alias](const Time_Account& acc){
-			return acc.get_alias() == alias;
-		}
-	);
-	if(it != all_accounts.end()){
-		return true;
-	}
-	return false;
+	return find_account([&__alias](const Time_Account& acc){
+		return acc.get_alias() == __alias;
+	});
 }

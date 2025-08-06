@@ -19,7 +19,9 @@ STD_Master::STD_Master(
 	};
 
 void STD_Master::log(const std::string& new_log) {
-	logger->log(new_log);
+	if(logger){
+		logger->log(new_log);
+	}
 };
 
 void STD_Master::run_std(){
@@ -39,7 +41,7 @@ void STD_Master::run_std(){
 			linux_only();
 #endif // __linux__
 		
-			output_logger = std::make_shared<User_Logger>();
+			output_logger = std::make_shared<Default_Logger>();
 
 			auto environment_pattern = ctrl->get_specific_regex_pattern({command::environment});
 			if( std::regex_match(str_argv[1], environment_pattern.at(command::environment)) ){

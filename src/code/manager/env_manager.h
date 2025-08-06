@@ -44,7 +44,7 @@ public:
 
 	void reset_args();
 	void set_str_argv(std::vector<std::string>& _str_argv);
-	std::vector<std::string>& get_str_argv();
+	const std::vector<std::string>& get_str_argv() const;
 	int get_argc()const;
 	void set_argc();
 	

@@ -11,6 +11,8 @@
 #include <memory>
 #include <sstream>
 #include <cstdlib>
+#include <regex>
+#include <bitset>
 
 #include "../control/device_ctrl.h"
 #include "listbox.h"
@@ -85,7 +87,7 @@ protected:
 	
 	bool crontab_contains(const std::vector<std::string>& crontabLines, const std::vector<std::string>& searched_targets);
 	
-	std::string convert_crontabLine_to_speeking_str(const std::string& crontab_line);
+	std::string convert_crontabLine_to_speaking_str(const std::string& crontab_line);
 	
 private:
 

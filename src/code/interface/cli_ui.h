@@ -33,9 +33,6 @@ public:
 	std::pair<int, std::vector<std::string>> get_new_input();
 private:
 	myReplxx _rx{};
-	
-	int s_vec;
-	std::vector<std::string> vec;
 
 	void standard();
 	void run_environment();

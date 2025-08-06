@@ -12,13 +12,14 @@ CLI_UI::CLI_UI(
 		, ctrl(std::move(_ctrl))
 		
 	{
-		translator = _manager->get_translator_ptr();
-		if(run_env){
-			env_man = std::dynamic_pointer_cast<Env_Manager>(_manager);
-			//translator = env_man->get_translator_ptr();
-		}else{
-			arg_man = std::dynamic_pointer_cast<Arg_Manager>(_manager);
-			//translator = arg_man->get_translator_ptr();
+		
+		if(_manager){
+			translator = _manager->get_translator_ptr();
+			if(run_env){
+				env_man = std::dynamic_pointer_cast<Env_Manager>(_manager);
+			}else{
+				arg_man = std::dynamic_pointer_cast<Arg_Manager>(_manager);
+			}
 		}
 	};
 
@@ -28,18 +29,19 @@ bool CLI_UI::is_env_running() const {
 
 void CLI_UI::update(){
 	
-	standard();
+	if(ctrl && jsonH && output_logger){
+		standard();
 
-	if(run_env && env_man){
-		run_environment();
+		if(run_env && env_man){
+			run_environment();
+		}
+		if(arg_man){
+			arg_man->clear_output_flags();
+		}
+		if(env_man){
+			env_man->clear_output_flags();
+		}
 	}
-	if(arg_man){
-		arg_man->clear_output_flags();
-	}
-	if(env_man){
-		env_man->clear_output_flags();
-	}
-
 }
 std::pair<int, std::vector<std::string>> CLI_UI::get_new_input(){
 	return {env_man->get_argc(), env_man->get_str_argv()};
@@ -48,10 +50,10 @@ void CLI_UI::run_environment(){
 
 	env_man->reset_args();
 	
-	std::vector<std::string> vec;
-    run_env =_rx.user_input(vec);
+	std::vector<std::string> input_buffer;
+    run_env =_rx.run_replxx(input_buffer);
 
-	env_man->set_str_argv(vec);
+	env_man->set_str_argv(input_buffer);
 }
 
 void CLI_UI::standard(){
@@ -59,7 +61,9 @@ void CLI_UI::standard(){
 	if(!translator){
 		throw std::runtime_error{"translator missing\n"};
 	}
+
 	OutputBitset flags;
+
 	if(arg_man){
 		flags = arg_man->get_output_flags();
 	}
@@ -69,47 +73,47 @@ void CLI_UI::standard(){
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_help)) ){
 		
-		ui_interface_log <<  "show help\n";
+		//ui_interface_log <<  "show help\n";
 		show_help();
 	}
 	if(flags.test(static_cast<size_t>(OutputType::show_filepaths)) ){
 		
-		ui_interface_log <<  "show filepaths\n";
+		//ui_interface_log <<  "show filepaths\n";
 		show_filepaths();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_language)) ){
 		
-		ui_interface_log <<  "show language\n";
+		//ui_interface_log <<  "show language\n";
 		show_language();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_alias_table)) ){
 		
-		ui_interface_log <<  "show alias Table\n";
+		//ui_interface_log <<  "show alias Table\n";
 		show_alias_table();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_alias_automation)) ){
 		
-		ui_interface_log <<  "show alias automation table\n";
+		//ui_interface_log <<  "show alias automation table\n";
 		show_alias_automation_table();
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_all_accounts))){
 		
-		ui_interface_log <<  "show all_accounts\n";
+		//ui_interface_log <<  "show all_accounts\n";
 		show_all_accounts();
 		
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_entity))){
-		ui_interface_log << "show_entitiy";
+		//ui_interface_log << "show_entitiy";
 		show_entity_table();
 	}
 	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
 		
-		ui_interface_log << "show cmd user output\n";
+		//ui_interface_log << "show cmd user output\n";
 		std::cout << output_logger->get_logs() << std::endl;
 	}
 	
@@ -272,7 +276,7 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 	int index = 0;	
 	for(const auto& entry : account->get_entry()){
 		
-		//Ermittel die maximale Breite der Datentabelle. Ggf. Tabelle neu bauen wenn zu klein
+		// Determine the maximum width of the data table. Rebuild table if too small
 		int max_data_width = 0;
 		int max_length_comment = scale_str_size(COMMENT_str);
 		
@@ -353,15 +357,15 @@ std::string CLI_UI::create_data_table(const std::string& alias){
 std::string CLI_UI::create_entity_table(){
 	
 	// ------------------------------------------------------------
-	// Tabellenaufbau: Index | Alias
-	// Dynamische Breitenanpassung je nach Inhalt
+	// Table structure: Index | Alias
+	// Dynamic width adjustment based on content
 	// ------------------------------------------------------------
 
 	const std::string INDEX_str = "Index";
 	const std::string ALIAS_str = "Alias";
 	const std::string SEP = "|";
 
-	// Hilfsfunktion: Summe der Lngen von Strings (inkl. optionaler Separatoren)
+	// Helper function: Sum of string lengths (including optional separators)
 	auto get_sum_str_size = [](const std::vector<std::string>& parts, const std::string& sep = "") -> int {
 		int total = 0;
 		for (const auto& part : parts) {
@@ -374,7 +378,7 @@ std::string CLI_UI::create_entity_table(){
 	};
 
 	
-	// Bestimme maximale Breite der Tabelle (Initial mit Header)
+	// Determine maximum table width (initially with header)
 	int max_data_width = get_sum_str_size({INDEX_str, ALIAS_str}, SEP) + 6; // +6 fr Puffer/Padding
 
 	// BODY-Daten vorbereiten
@@ -385,14 +389,14 @@ std::string CLI_UI::create_entity_table(){
 	for (const auto& account : all_accounts) {
 		std::string alias = account.get_alias();
 
-		// Berechne benätigte Breite fr diese Zeile
+		// Calculate required width for this row
 		int body_data_width = get_sum_str_size({std::to_string(index), alias}, SEP);
 
-		// Skaliere Alias-L#nge leicht, um optische Anpassung zu simulieren
+		// Scale alias length slightly for visual adjustment
 		int scaled_alias_width = static_cast<int>(static_cast<float>(alias.size()) * 1.5f);
 		body_data_width += scaled_alias_width;
 
-		// Falls grer als bisher bekannte Breite ? bernehmen
+		// If larger than previously known width → adopt
 		max_data_width = std::max(max_data_width, body_data_width);
 
 		++index;

@@ -23,7 +23,7 @@ Env_Manager::Env_Manager(
 
 void Env_Manager::manage(){
 	
-    //Zeige Hilfe an
+    //Show help
     //help
     if(std::regex_match(str_argv[1], regex_pattern.at(command::help))){
 		output_flags.set(static_cast<size_t>(OutputType::show_help));
@@ -31,7 +31,7 @@ void Env_Manager::manage(){
 		return;
     }
     
-    //show Möglichkeiten
+    //show options
     if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 		std::vector<command> commands = {
 			command::config_filepath
@@ -150,8 +150,6 @@ void Env_Manager::manage(){
 		
 		if(throw_error){
 			log("error: unknown_flag, no command to execute");
-			std::cout << "No Flag set. No Command\n";
-			//throw Logged_Error("No Flag set. No Command", logger);
 		}
     }
 }
@@ -169,7 +167,7 @@ bool Env_Manager::check_two_args(){
 
 bool Env_Manager::check_three_args(){
     
-    //Account löschen
+    // Delete account
     //<alias> -del
     if(std::regex_match(str_argv[2], regex_pattern.at(command::delete_)) ){
 
@@ -184,7 +182,7 @@ bool Env_Manager::check_three_args(){
 	return true;
 	
     }
-    //Entität und zugehörige Alias löschen
+    // Delete entity and associated aliases
     // -del <entity>
     if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
 	
@@ -217,7 +215,7 @@ bool Env_Manager::check_three_args(){
 	return true;
     }
 
-    //Connection abfrage
+    //Connection check
     //-touch BME280
     if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
 				
@@ -290,7 +288,7 @@ bool Env_Manager::check_four_args(){
 	return true;
     }
         
-    //Für Alias Stunden h oder Minuten m hinzufügen	OHNE Kommentar	
+    //Add hours h or minutes m for alias WITHOUT comment
     //-h -m
     if( std::regex_match(str_argv[3], regex_pattern.at(command::hours))
 	|| std::regex_match(str_argv[3], regex_pattern.at(command::minutes)) )
@@ -321,7 +319,7 @@ bool Env_Manager::check_four_args(){
 	throw std::runtime_error{"insert number for time value"};
     }
 
-    //tag nachträglich hinzufügen
+    //Add tag afterwards
     //<alias> -tag plant
     if(std::regex_match(str_argv[2], regex_pattern.at(command::tag))) 
     {
@@ -362,7 +360,7 @@ bool Env_Manager::check_five_args(){
 	return true;
     }
     
-    //Für Alias Stunden h oder Minuten m hinzufügen	MIT Kommentar
+    //Add hours h or minutes m for alias WITH comment
     //<alias> 'time' -h -m [ ]
     if(std::regex_match(str_argv[3], regex_pattern.at(command::hours))
 	|| std::regex_match(str_argv[3], regex_pattern.at(command::minutes)))
@@ -392,7 +390,7 @@ bool Env_Manager::check_five_args(){
 	throw Logged_Error("insert number for time value", logger);
     }
     
-    //Automation konfigurieren
+    //Configure automation
     //<alias> -activate -measure [time_value]
     //<alias> -deactivate -measure -all/ -detail 
     if( std::regex_match(str_argv[2], regex_pattern.at(command::activate)) 
@@ -442,7 +440,7 @@ add_output("Only for Linux");
 
 bool Env_Manager::check_six_args(){
     
-    //Neuen Account mit tag hinzufügen
+    // Add new account with tag
     //std add <entity> <alias> -tag plant
     if(std::regex_match(str_argv[1], regex_pattern.at(command::add))
 	&& std::regex_match(str_argv[4], regex_pattern.at(command::tag)) )
@@ -488,13 +486,13 @@ void Env_Manager::set_str_argv(std::vector<std::string>& _str_argv){
 
 	if(ctrl->is_argument_valid(_size, _str_argv)){
 		str_argv = _str_argv;
-		argc = static_cast<int>(_str_argv.size());;
+		argc = static_cast<int>(_str_argv.size());
 	}else{
 		throw SyntaxError("Env_Manager: Arguments unvalid");
 	}
 }
 
-std::vector<std::string>& Env_Manager::get_str_argv(){
+const std::vector<std::string>& Env_Manager::get_str_argv() const{
 	return str_argv;
 };
 

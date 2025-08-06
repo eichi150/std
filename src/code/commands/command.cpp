@@ -20,7 +20,7 @@ void Command::log(const std::string& msg){
 }
 
 std::string Command::get_logs() const {
-	return logger->get_logs();
+	return (logger ? logger->get_logs() : "");
 }
 
 void Command::set_output_logger(std::shared_ptr<ErrorLogger> log){
@@ -32,7 +32,7 @@ void Command::add_output(const std::string& msg){
 	}
 }
 std::string Command::get_output_logs() const {
-	return output_logger->get_logs();
+	return (output_logger ? output_logger->get_logs() : "");
 }
 
 //==========================//
@@ -48,7 +48,7 @@ Add_Alias::Add_Alias(
 
 ) : Command(std::move(logger))
 	, all_accounts(all_accounts)
-	, jsonH(std::move(jsonH))
+	, jsonH(jsonH)
 	, add(add_info)
 	, regex_pattern(pattern) 
 {
@@ -184,7 +184,7 @@ void TouchDevice_Command::execute() {
 				        
 		
 		std::stringstream ss;
-		ss << ( output_sensor.empty() ? "Device touched\n" : output_str.str() );
+		ss << output_str.str();
 		
 		add_output(ss.str());
 		log("Device touched\n" + output_str.str());	    

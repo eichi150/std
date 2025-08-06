@@ -48,7 +48,7 @@ Delete_Entity_Command::Delete_Entity_Command(
 	, const std::string& arg_entity
 	, std::shared_ptr<ErrorLogger> logger
 	
-) : Entity_Command(std::move(str_argv), all_accounts, arg_entity, std::move(logger))
+) : Entity_Command(str_argv, all_accounts, arg_entity, std::move(logger))
 	, jsonH(jsonH)
 {
 	log(std::string{__FILE__} + " - Delete_Entity_Command");

@@ -1,6 +1,6 @@
 #include "translator.h"
 
-std::map<std::string, std::string> Translator::english_pack = {
+const std::map<std::string, std::string> Translator::english_pack = {
     {"language", "english"}
     ,{"str_language", "Language"}
     ,{"timepoint", "%Y-%m-%d %H:%M"}
@@ -18,7 +18,7 @@ std::map<std::string, std::string> Translator::english_pack = {
     ,{"Humidity", "Humidity"}
 };
 
-std::map<std::string, std::string> Translator::german_pack = {
+const std::map<std::string, std::string> Translator::german_pack = {
     {"language", "deutsch"}
     ,{"str_language", "Sprache"}
     ,{"timepoint", "%d-%m-%Y %H:%M"}
@@ -36,12 +36,12 @@ std::map<std::string, std::string> Translator::german_pack = {
     ,{"Humidity", "Feuchte"}
 };
 
-std::map<Language, std::map<std::string, std::string>> Translator::all_packs = {
+const std::map<Language, std::map<std::string, std::string>> Translator::all_packs = {
     {Language::english, english_pack}
     , {Language::german, german_pack}
 };
 
-std::map<Language, std::string> Translator::dict_language = {
+const std::map<Language, std::string> Translator::dict_language = {
     {Language::english, "english"}
     , {Language::german, "german"}
 };
@@ -52,32 +52,21 @@ void Translator::set_language(const Language& language){
 }
 
 std::map<std::string, std::string> Translator::which_language_pack(){
-
-    auto pack = all_packs.at(Language::english);
-    if(english_pack.size() != german_pack.size()){
-        pack = all_packs.at(Language::english);
-        all_packs.clear();
-        return pack;
+    //Validate language Packs consistency
+    if( english_pack.size() != german_pack.size()
+        || !std::equal(english_pack.begin(), english_pack.end(), german_pack.begin(),
+            [](const auto& a, const auto& b){
+                return a.first == b.first;
+            }))
+    {
+        return all_packs.at(Language::english);
     }
-    
-    bool same_keys = std::equal(
-        english_pack.begin(), english_pack.end(),
-        german_pack.begin(),
-        [](const auto& a, const auto& b){
-            return a.first == b.first;
-        }
-    );
-        
-    if(!same_keys){
-        pack = all_packs.at(Language::english);
-        all_packs.clear();
-        return pack;
-    }
-    pack = all_packs.at(language);
-    all_packs.clear();
-    return pack;
+    //Return requested language pack or default English
+    auto it = all_packs.find(language);
+    return (it != all_packs.end()) ? it->second : all_packs.at(Language::english);
 }
 
 std::string Translator::get_str_language(){
-    return dict_language.at(language);
+    auto it = dict_language.find(language);
+    return (it != dict_language.end()) ? it->second : "english";
 }

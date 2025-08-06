@@ -85,12 +85,10 @@ public:
 	
 	virtual ~Ctrl(){};
 	
-	//virtual std::vector<float> check_device(const std::string& name) = 0;
-	
 	std::regex create_regex_outOf_string(const std::string& str){
-
-		std::string pat = "\\b(" + str + "$)\\b";
-	
+		// Escape special regex characters
+		std::string escaped = std::regex_replace(str, std::regex("[.^$|()\\[\\]{}*+?\\\\]"), "\\$&");
+		std::string pat = "\\b(" + escaped + "$)\\b";
 		return std::regex{pat, std::regex_constants::icase};
 	}
 	
