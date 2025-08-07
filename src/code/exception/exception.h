@@ -19,14 +19,14 @@ public:
 	virtual void log(const std::string& _log) = 0;
 	virtual std::string get_logs() const = 0;
 	
-	
 	void set_debug_to(bool to_){
 		debug_enable = to_;
 	}
 	bool is_debug_enabled() const  {
 		return debug_enable;
 	}
-	
+	virtual void clear() = 0;
+
 	enum class Mode{
 		info = 0
 		, error
@@ -62,7 +62,7 @@ public:
 
 private:
 	bool debug_enable = false;
-	
+	std::vector<std::string> _logs;
 }; //ErrorLogger
 
 class Default_Logger : public ErrorLogger{
@@ -80,6 +80,9 @@ public:
 		return ss_log.str();
 	};
 
+	void clear() override {
+		_logs.clear();
+	}
 private:
 	std::vector<std::string> _logs;
 	

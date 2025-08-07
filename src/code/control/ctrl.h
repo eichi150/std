@@ -36,6 +36,7 @@ enum class command{
 	, integer
 	, all
 	, detail
+	, exit
 };
 
 namespace CTRL{
@@ -69,6 +70,7 @@ public:
 			, { command::integer, 			std::regex{R"(^\d+$)"} }
 			, { command::all, 				std::regex{R"(^-?all$)", std::regex_constants::icase } }
 			, { command::detail, 			std::regex{R"(^-?detail$)", std::regex_constants::icase } }
+			, { command::exit, 				std::regex{R"(^-?exit?|quit$)", std::regex_constants::icase } }
 		};
 		
 		//Alle externen Geräte

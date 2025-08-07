@@ -63,7 +63,7 @@ chmod +x install.sh
 
 ### Config-Pfade anzeigen:
 ```bash
-std show -cf
+std -show -cf
 ```
 
 ### Config manuell setzen:
@@ -108,9 +108,9 @@ std <alias> <zeit> -h/-m ["Kommentar"]
 
 ### 📄 Accounts anzeigen
 ```bash
-std show
-std show <alias>
-std show <entity>
+std -show
+std -show <alias>
+std -show <entity>
 ```
 
 ---

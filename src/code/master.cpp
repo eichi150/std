@@ -85,7 +85,8 @@ void STD_Master::run_std(){
 				}
 				//Debug Output
 				logger->dump_log_for_Mode(logger, ErrorLogger::Mode::debug);
-				
+				output_logger->clear();
+				logger->clear();
 			}while(cli->is_env_running());
 
 		}else{

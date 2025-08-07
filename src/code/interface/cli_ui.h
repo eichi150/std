@@ -10,11 +10,14 @@
 #include <string>
 #include <algorithm>
 #include <cstdio>
+#include <set>
+#include <regex>
 
 #include "replex.h"
 #include "ui_interface.h"
 #include "../manager/arg_manager.h"
 #include "../manager/env_manager.h"
+#include "../time_account.h"
 
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI::UI_Interface{
@@ -32,8 +35,7 @@ public:
 	bool is_env_running() const;
 	std::pair<int, std::vector<std::string>> get_new_input();
 private:
-	myReplxx _rx{};
-
+	
 	void standard();
 	void run_environment();
 
@@ -58,15 +60,16 @@ private:
 	
 	int scale_str_size(const std::string& str);
 	int get_sum_str_size(const std::vector<std::string>& multiple_str);
-
+	
 private:
 	bool run_env = false;
+	std::shared_ptr<Cmd_Ctrl> ctrl;
+	myReplxx _rx{ctrl};
 
 	std::shared_ptr<ErrorLogger> output_logger;
 	std::shared_ptr<JSON_Handler> jsonH;
 	std::shared_ptr<Translator> translator;
-	std::shared_ptr<Cmd_Ctrl> ctrl;
-
+	
 	std::shared_ptr<Time_Account> account;
 	
 	std::shared_ptr<Arg_Manager> arg_man;

@@ -22,6 +22,41 @@ Env_Manager::Env_Manager(
 	}
 
 void Env_Manager::manage(){
+	if(output_flags.test(static_cast<size_t>(OutputType::environment))){
+		try{
+
+			manage_all();
+		//Error Output
+		}catch(const Logged_Error& le){
+				
+			LOG_INFO(le.what());
+
+			ErrorLogger::dump_log_for_Mode(logger, ErrorLogger::Mode::error);
+				
+		}catch(const SyntaxError& se){
+				
+			LOG_INFO(se.what());
+			
+		}catch(const DeviceConnectionError& de){
+				
+			std::cerr << "**" << de.what() << std::endl;
+				
+		}catch(const std::runtime_error& re){
+				
+			std::cerr << "**" << re.what() << std::endl;
+				
+		}catch(const std::invalid_argument& ia){
+				
+			std::cerr << "**" << ia.what() << std::endl;
+				
+		}
+		
+	}else{
+
+		manage_all();
+	}
+}
+void Env_Manager::manage_all(){
 	
     //Show help
     //help
@@ -167,35 +202,42 @@ bool Env_Manager::check_two_args(){
 
 bool Env_Manager::check_three_args(){
     
-    // Delete account
-    //<alias> -del
-    if(std::regex_match(str_argv[2], regex_pattern.at(command::delete_)) ){
-
-	log("<alias> -delete");
-	cmd = std::make_shared<Delete_Alias_Command>(
-	    all_accounts
-	    , str_argv
-	    , jsonH
-	    , str_argv[1]
-	    , logger
-	);
-	return true;
-	
-    }
-    // Delete entity and associated aliases
-    // -del <entity>
+    //-delete
     if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
-	
-	log("-delete <entity>");
-	cmd = std::make_shared<Delete_Entity_Command>(
-	    all_accounts
-	    , str_argv
-	    , jsonH
-	    , str_argv[2]
-	    , logger
-	);
-	
-	return true;
+
+		// Delete account
+    	//-del <alias> 
+		if(std::find_if(all_accounts.begin(), all_accounts.end(),
+			[this](const auto& acc){
+				return acc.get_alias() == this->str_argv[2];
+			}) != all_accounts.end()  )
+		{
+			log("-delete <alias>");
+			cmd = std::make_shared<Delete_Alias_Command>(
+				all_accounts
+				, str_argv
+				, jsonH
+				, str_argv[2]
+				, logger
+			);
+
+		// Delete entity and associated aliases
+    	// -del <entity>
+		}else if( std::find_if(all_accounts.begin(), all_accounts.end(),
+			[this](const auto& acc){
+				return acc.get_entity() == this->str_argv[2];
+			}) != all_accounts.end() )
+		{
+			log("-delete <entity>");
+			cmd = std::make_shared<Delete_Entity_Command>(
+				all_accounts
+				, str_argv
+				, jsonH
+				, str_argv[2]
+				, logger
+			);
+		}
+		return true;
     }
     
     //Language changeTo
@@ -482,11 +524,11 @@ void Env_Manager::reset_args(){
 void Env_Manager::set_str_argv(std::vector<std::string>& _str_argv){
 	int _size = static_cast<int>(_str_argv.size());
 
-	_str_argv = ctrl->parse_argv(_size, _str_argv);
+	auto parsed_str_argv = ctrl->parse_argv(_size, _str_argv);
 
-	if(ctrl->is_argument_valid(_size, _str_argv)){
-		str_argv = _str_argv;
-		argc = static_cast<int>(_str_argv.size());
+	if(ctrl->is_argument_valid(_size, parsed_str_argv)){
+		str_argv = parsed_str_argv;
+		argc = static_cast<int>(parsed_str_argv.size());
 	}else{
 		throw SyntaxError("Env_Manager: Arguments unvalid");
 	}
@@ -504,9 +546,10 @@ void Env_Manager::set_argc(){
 };
 
 
-std::vector<Time_Account> Env_Manager::get_all_accounts() const {
+const std::vector<Time_Account>& Env_Manager::get_all_accounts() const {
     return all_accounts;
 }
+
 std::shared_ptr<Time_Account> Env_Manager::get_account_with_alias(const std::string& alias){
     log("get account Pointer with Alias");
     std::shared_ptr<Time_Account> acc;

@@ -41,7 +41,10 @@ public:
 	);
 
 	void manage() override ;
-
+	void manage_all();
+	void hold_env_running(){
+		output_flags.set(static_cast<size_t>(OutputType::environment));
+	}
 	void reset_args();
 	void set_str_argv(std::vector<std::string>& _str_argv);
 	const std::vector<std::string>& get_str_argv() const;
@@ -52,7 +55,7 @@ public:
 	OutputBitset get_output_flags() const;
 	void clear_output_flags();
 
-	std::vector<Time_Account> get_all_accounts() const;
+	const std::vector<Time_Account>& get_all_accounts() const;
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
 	
 private:

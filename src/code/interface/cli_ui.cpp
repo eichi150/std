@@ -9,8 +9,8 @@ CLI_UI::CLI_UI(
 	) : output_logger(std::move(_output_logger))
 		, jsonH(std::move(_jsonH))
 		, run_env(_run_env)
-		, ctrl(std::move(_ctrl))
-		
+		, ctrl(_ctrl)
+		, _rx(ctrl) // Replxx
 	{
 		
 		if(_manager){
@@ -34,26 +34,44 @@ void CLI_UI::update(){
 
 		if(run_env && env_man){
 			run_environment();
+			env_man->clear_output_flags();
+			env_man->hold_env_running();
 		}
 		if(arg_man){
 			arg_man->clear_output_flags();
-		}
-		if(env_man){
-			env_man->clear_output_flags();
 		}
 	}
 }
 std::pair<int, std::vector<std::string>> CLI_UI::get_new_input(){
 	return {env_man->get_argc(), env_man->get_str_argv()};
 };
+
 void CLI_UI::run_environment(){
 
 	env_man->reset_args();
 	
-	std::vector<std::string> input_buffer;
-    run_env =_rx.run_replxx(input_buffer);
+	//collect alias names as strings for tab insertion
+	std::vector<std::string> alias_strings;
+	for(const auto& acc : env_man->get_all_accounts()){
+		alias_strings.push_back(acc.get_alias());
+	}
+	//collect entity names as strings for tab insertion
+	std::vector<std::string> entity_strings;
+	std::set<std::string> unique_entities;
+	for (const auto& acc : env_man->get_all_accounts()) {
+		unique_entities.insert(acc.get_entity());
+	}
+	entity_strings.assign(unique_entities.begin(), unique_entities.end());
 
-	env_man->set_str_argv(input_buffer);
+	_rx.set_tab_completion(alias_strings, entity_strings);
+
+	//create input_buffer
+	std::vector<std::string> input_buffer;
+	//while input != exit || quit => run_environment = true
+    run_env =_rx.run_replxx(input_buffer);
+	if(run_env){
+		env_man->set_str_argv(input_buffer);
+	}
 }
 
 void CLI_UI::standard(){
@@ -145,9 +163,12 @@ void CLI_UI::show_all_accounts(){
 }
 
 void CLI_UI::show_alias_automation_table(){
-	
-	std::cout << create_automation_table(arg_man->get_str_argv()[2]) << std::endl;
-	
+	if(arg_man){
+		std::cout << create_automation_table(arg_man->get_str_argv()[2]) << std::endl;
+	}
+	if(env_man){
+		std::cout << create_automation_table(env_man->get_str_argv()[2]) << std::endl;
+	}
 }
 
 void CLI_UI::show_alias_table(){
@@ -384,7 +405,13 @@ std::string CLI_UI::create_entity_table(){
 	// BODY-Daten vorbereiten
 	std::stringstream ss_body;
 	int index = 0;
-	auto all_accounts = arg_man->get_all_accounts();
+	std::vector<Time_Account> all_accounts;
+	if(arg_man){
+		all_accounts = arg_man->get_all_accounts();
+	}
+	if(env_man){
+		all_accounts = env_man->get_all_accounts();
+	}
 
 	for (const auto& account : all_accounts) {
 		std::string alias = account.get_alias();
