@@ -29,6 +29,9 @@
 
 // ====================== Env_Manager ===========================
 
+//manage has tryCatch Block and goes into manage_all
+//implemented environment lifeSigns
+//switched deleted -> -delete <alias>/<entity>
 class Env_Manager : public Manager{
 public:
 	Env_Manager(
@@ -41,14 +44,14 @@ public:
 	);
 
 	void manage() override ;
+
 	void manage_all();
-	void hold_env_running(){
-		output_flags.set(static_cast<size_t>(OutputType::environment));
-	}
+	void hold_env_running();
+
 	void reset_args();
-	void set_str_argv(std::vector<std::string>& _str_argv);
-	const std::vector<std::string>& get_str_argv() const;
-	int get_argc()const;
+	void setup_next_iteration(std::pair<int, std::vector<std::string>>& argc_input_buffer);
+	const std::vector<std::string>& get_str_argv() const override;
+	int get_argc()const override;
 	void set_argc();
 	
 	void set_output_flag(OutputType flag, bool value);
@@ -65,7 +68,6 @@ private:
 	//process args
 	bool check_two_args() override;
 	bool check_three_args() override;
-
 	bool check_four_args() override;
 	bool check_five_args() override;
 	bool check_six_args() override;

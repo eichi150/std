@@ -37,13 +37,16 @@ public:
 		, int _argc
 		, const std::vector<std::string>& _str_argv
 	);
-	
+
 	//Methods
 	void manage() override;
 	
 	std::vector<Time_Account> get_all_accounts() const;
-	std::vector<std::string> get_str_argv() const;
-
+	//std::vector<std::string> get_str_argv() const;
+	const std::vector<std::string>& get_str_argv() const override;
+	int get_argc()const override {
+		return argc;
+	};
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
 	
 	void set_output_flag(OutputType flag, bool value);

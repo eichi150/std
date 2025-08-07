@@ -31,6 +31,8 @@ struct Automation_Config{
 	}
 };
 
+//Different Account Packages
+
 class Time_Account{
 public:
 	Time_Account(const std::string& ent, const std::string& al) : entity(ent), alias(al){};

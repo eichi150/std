@@ -46,6 +46,8 @@ public:
 	std::shared_ptr<Translator> get_translator_ptr() const{
 		return translator;
 	};
+	virtual int get_argc() const = 0;
+	virtual const std::vector<std::string>& get_str_argv() const = 0;
 protected:
 	//process args
 	virtual bool check_two_args() = 0;

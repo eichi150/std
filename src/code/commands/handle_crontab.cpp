@@ -20,7 +20,6 @@ Crontab::Crontab(
 	
 {
 	try{
-		//automation_config = jsonH->read_automation_config_file();
 		current_Crontab = get_current_Crontab();
 	}catch(const std::runtime_error& re){
 		log(re.what());
@@ -199,9 +198,7 @@ std::vector<std::string> Crontab::get_current_Crontab(){
 
 	char buffer[128];
 	while(fgets(buffer, sizeof(buffer), pipe.get()) != nullptr){
-		/*if(std::string(buffer).empty() || std::string(buffer) == "\n"){
-			continue;
-		}*/
+		
 		lines.push_back(std::string(buffer));
 	}
 	
@@ -269,7 +266,7 @@ void delete_task_from_Crontab::interact() {
 			ss << "NOT in use\n"
 				<< "Deleted " << alias << " from "
 				<< (is_cut_out_automations ? "automation_config.json " : "")
-				<< "and Crontab automated measuring";
+				<< "and Crontab automated measuring\n";
 			add_output(ss.str());	
 			return;
 		}
@@ -503,13 +500,11 @@ void write_into_Crontab::set_user_automation_crontab(){
 	
 	//write Command into Crontab
 	if( write_Crontab(jsonH, crontab_line.first, alias, crontab_line.second) ){
-		
-		log("Crontab written");
+		//log("Crontab written");
 		add_output("Crontab written");
 	}else{
-		
-		log("Crontab existiert bereits");
-		add_output("Crontab existiert bereits. Kein neuer Eintrag in Crontab erforderlich");
+		//log("Crontab existiert bereits");
+		add_output("Crontab already exists. " + alias + " got added to it.");
 	}
 	
 	Automation_Config new_cfg{
@@ -528,7 +523,9 @@ void write_into_Crontab::set_user_automation_crontab(){
 		}
 	);
 	if(already_in){
-		throw std::runtime_error{"Automation Config already set"};
+		//throw std::runtime_error{"Automation Config already set"};
+		add_output("Automation Config already set");
+		return;
 	}
 	//automation hinzufügen
 	automation_config.push_back(new_cfg);
@@ -539,7 +536,8 @@ void write_into_Crontab::set_user_automation_crontab(){
 		<< "\n"
 		<< "Time for " << executioner << " to execute: "
 		<< convert_crontabLine_to_speaking_str(crontab_line.first)
-		<< (crontab_line.second ? " with Logfile" : "");
+		<< (crontab_line.second ? " with Logfile" : "")
+		<< '\n';
 			
 	//Print
 	add_output(output.str());

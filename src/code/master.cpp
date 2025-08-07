@@ -76,7 +76,7 @@ void STD_Master::run_std(){
 				, ctrl
 			);
 			log("run CLI");
-			do{	
+			do{
 				if(manager){
 					manager->manage();
 				}
@@ -85,8 +85,13 @@ void STD_Master::run_std(){
 				}
 				//Debug Output
 				logger->dump_log_for_Mode(logger, ErrorLogger::Mode::debug);
-				output_logger->clear();
-				logger->clear();
+				if(cli->is_env_running()){
+					output_logger->clear();
+					logger->clear();
+					argc = manager->get_argc();
+					str_argv = manager->get_str_argv();
+				}
+				
 			}while(cli->is_env_running());
 
 		}else{

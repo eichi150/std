@@ -102,8 +102,8 @@ void Show_Command::with_3_args(){
 		return;
 	
     }else{
-		throw Logged_Error("Unknown Entity | Unknown Alias", logger);
-    }	
+		add_output("Unknown Entity | Unknown Alias");
+    }
 }
 
 void Show_Command::with_4_args(){

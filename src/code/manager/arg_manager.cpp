@@ -532,6 +532,6 @@ std::vector<Time_Account> Arg_Manager::get_all_accounts() const {
     return all_accounts;
 }
 
-std::vector<std::string> Arg_Manager::get_str_argv() const {
+const std::vector<std::string>& Arg_Manager::get_str_argv() const {
     return str_argv;
 }

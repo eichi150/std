@@ -77,7 +77,8 @@ public:
 		for(const auto& log : _logs){
 			ss_log << log << "\n";
 		}
-		return ss_log.str();
+		std::string s_log = ss_log.str();
+		return s_log;
 	};
 
 	void clear() override {

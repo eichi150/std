@@ -30,6 +30,7 @@ set(SOURCES
     ./commands/entity_command.cpp
     ./interface/translator.cpp
     ./interface/cli_ui.cpp
+    ./interface/replex.cpp
 )
 
 if(UNIX AND NOT APPLE)
@@ -84,6 +85,7 @@ set(WINDOWS_SOURCES
     ./commands/entity_command.cpp
     ./interface/translator.cpp
     ./interface/cli_ui.cpp
+    ./interface/replex.cpp
 )
 
 # Cross-Compile Targets (kann man je nach Bedarf anpassen)

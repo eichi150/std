@@ -33,12 +33,13 @@ public:
 	void update() override;
 	
 	bool is_env_running() const;
-	std::pair<int, std::vector<std::string>> get_new_input();
-private:
 	
+
+private:	
 	void standard();
 	void run_environment();
-
+	void pass_tabcompletions_to_rx();
+private:
 	void show_help();
 	void show_all_accounts();
 	void show_entity_table();
@@ -48,7 +49,7 @@ private:
 	void show_language();
 	
 private:
-	
+	std::string print_centered_message(const std::string& msg, int total_width = 60, char fill_char = '-');
 	//Build Tabellenausgabe
 	std::string create_entity_table();
 	std::string create_alias_table();
@@ -58,10 +59,10 @@ private:
 	
 	std::string create_line(int width, const char& symbol);
 	
-	int scale_str_size(const std::string& str);
-	int get_sum_str_size(const std::vector<std::string>& multiple_str);
-	
+	int get_max_width(const std::string& header, const std::vector<std::string>& values);
+	int scale_int_to_float(int num, float scaling);
 private:
+	bool first_run = false;
 	bool run_env = false;
 	std::shared_ptr<Cmd_Ctrl> ctrl;
 	myReplxx _rx{ctrl};

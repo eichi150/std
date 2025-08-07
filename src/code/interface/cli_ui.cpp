@@ -23,10 +23,6 @@ CLI_UI::CLI_UI(
 		}
 	};
 
-bool CLI_UI::is_env_running() const {
-	return run_env;
-}
-
 void CLI_UI::update(){
 	
 	if(ctrl && jsonH && output_logger){
@@ -42,14 +38,11 @@ void CLI_UI::update(){
 		}
 	}
 }
-std::pair<int, std::vector<std::string>> CLI_UI::get_new_input(){
-	return {env_man->get_argc(), env_man->get_str_argv()};
-};
 
-void CLI_UI::run_environment(){
-
-	env_man->reset_args();
-	
+bool CLI_UI::is_env_running() const {
+	return run_env;
+}
+void CLI_UI::pass_tabcompletions_to_rx(){
 	//collect alias names as strings for tab insertion
 	std::vector<std::string> alias_strings;
 	for(const auto& acc : env_man->get_all_accounts()){
@@ -64,13 +57,30 @@ void CLI_UI::run_environment(){
 	entity_strings.assign(unique_entities.begin(), unique_entities.end());
 
 	_rx.set_tab_completion(alias_strings, entity_strings);
+};
 
-	//create input_buffer
-	std::vector<std::string> input_buffer;
+void CLI_UI::run_environment(){
+	
+	if(!first_run){
+		std::cout << print_centered_message("Type exit to Quit", 30, '-');
+		first_run = true;
+	}else{
+		std::cout << print_centered_message("", 30, '~');
+	}
+	//Reset Env_Manager Argc/Str_Argv
+	env_man->reset_args();
+	//collect alias & entity strings for tab completion in replexx
+	pass_tabcompletions_to_rx();
+
 	//while input != exit || quit => run_environment = true
-    run_env =_rx.run_replxx(input_buffer);
+	std::pair<int, std::vector<std::string>> argc_input_buffer;
+    run_env =_rx.run_replxx(argc_input_buffer);
+
+	//Pass input to Env_Manager if Environment should further run
 	if(run_env){
-		env_man->set_str_argv(input_buffer);
+		env_man->setup_next_iteration(argc_input_buffer);
+	}else{
+		std::cout << print_centered_message("Goodbye", 30, '-');
 	}
 }
 
@@ -122,7 +132,6 @@ void CLI_UI::standard(){
 		
 		//ui_interface_log <<  "show all_accounts\n";
 		show_all_accounts();
-		
 	}
 	
 	if(flags.test(static_cast<size_t>(OutputType::show_entity))){
@@ -132,248 +141,76 @@ void CLI_UI::standard(){
 	if(flags.test(static_cast<size_t>(OutputType::show_user_output_log))){
 		
 		//ui_interface_log << "show cmd user output\n";
-		std::cout << output_logger->get_logs() << std::endl;
+		std::cout << output_logger->get_logs() << std::flush;
 	}
-	
 }
 
 void CLI_UI::show_help(){
-	std::cout << help << std::endl;
+	std::cout << help << std::flush;
 }
 
 void CLI_UI::show_filepaths() {
 	std::cout 
         << "Config: " << jsonH->get_config_filepath() << '\n'
         << translator->language_pack.at("entity") << ": " << jsonH->get_entity_filepath() << '\n' 
-        << "Accounts: " << jsonH->get_accounts_filepath() << std::endl;
+        << "Accounts: " << jsonH->get_accounts_filepath() << std::flush;
 }
-
 
 void CLI_UI::show_language() {
     std::cout 
 		<< translator->language_pack.at("str_language")
 		<< ": " 
-		<< translator->language_pack.at("language") << std::endl;
+		<< translator->language_pack.at("language") << std::flush;
 }
 
 void CLI_UI::show_all_accounts(){
 
-	std::cout << create_all_accounts_table() << std::endl;
-
+	std::cout << create_all_accounts_table() << std::flush;
 }
 
 void CLI_UI::show_alias_automation_table(){
 	if(arg_man){
-		std::cout << create_automation_table(arg_man->get_str_argv()[2]) << std::endl;
+		std::cout << create_automation_table(arg_man->get_str_argv()[2]) << std::flush;
 	}
 	if(env_man){
-		std::cout << create_automation_table(env_man->get_str_argv()[2]) << std::endl;
+		std::cout << create_automation_table(env_man->get_str_argv()[2]) << std::flush;
 	}
 }
 
 void CLI_UI::show_alias_table(){
-	std::cout << create_alias_table() << std::endl;
+	std::cout << create_alias_table() << std::flush;
 }
 void CLI_UI::show_entity_table(){
-	std::cout << create_entity_table() << std::endl;
+	std::cout << create_entity_table() << std::flush;
 }
 
+std::string CLI_UI::print_centered_message(const std::string& msg, int total_width, char fill_char){
+	int msg_len = static_cast<int>(msg.size());
+	int padding = (total_width - msg_len) / 2;
+
+	if(padding < 0){
+		padding = 0;
+	}
+
+	std::ostringstream output_stream;
+	//Trennlinie 
+	output_stream 
+		<< std::setfill(fill_char) << std::setw(padding) << ""
+		<< msg
+		<< std::setw(total_width - padding - msg_len) << "" << std::setfill(' ') 
+		<< '\n';
+	return output_stream.str();
+}
 std::string CLI_UI::create_line(int width, const char& symbol){
 	std::ostringstream output_stream;
 	//Trennlinie 
     output_stream 
-		<< '\n' << std::setfill(symbol) << std::setw(width) 
+		<< std::setfill(symbol) << std::setw(width) 
         << std::string{symbol} << std::setfill(' ') << '\n';
        
      return output_stream.str();
 }
-int CLI_UI::scale_str_size(const std::string& str){
-	
-	float scaled_comment = static_cast<float>(str.size()) * 1.5f;
-	
-	return static_cast<int>(scaled_comment);
-}
 
-int CLI_UI::get_sum_str_size(const std::vector<std::string>& multiple_str){
-	int sum = 0;
-	for(const auto& str : multiple_str){
-		sum += static_cast<int>(scale_str_size(str));
-	}
-	return sum;
-}
-
-std::string CLI_UI::create_automation_table(const std::string& account_alias){
-	
-	try{
-	//Read Automation_Config.json
-	if(all_automations.empty()){
-		all_automations = jsonH->read_automation_config_file();
-	}
-	
-	}catch(const std::runtime_error& re){
-		ui_interface_log << "CLI_UI AutomationTable " << re.what() << std::endl;
-	}
-	
-	//HEAD Parameter
-	const std::string INDEX_str{"Index"};
-	const std::string DEVICE_str{"Device"};
-	const std::string EXE_TASK_str{"Executioner"};
-	const std::string CRON_CMD_str{"Crontab Command"};
-	
-	table_width = get_sum_str_size({INDEX_str, DEVICE_str, EXE_TASK_str, CRON_CMD_str});
-	
-	//BODY
-	std::stringstream ss_body;
-	
-	int index = 0;
-	
-	for(const auto& automation : all_automations){
-		if(automation.alias != account_alias){
-			continue;
-		}
-							  
-		ss_body << std::left
-			<< std::setw(scale_str_size(INDEX_str)) << index << '|' 
-			<< std::setw(scale_str_size(DEVICE_str)) << automation.device_name << '|' 
-			<< std::setw(scale_str_size(EXE_TASK_str)) << automation.executioner << '|'
-			<< std::setw(scale_str_size(CRON_CMD_str)) << automation.crontab_command_speeking
-			
-			<< create_line(table_width, '-') << '\n';
-				                  
-		++index;
-	}
-	
-	
-	//HEAD
-	std::stringstream ss_head;
-	ss_head << std::left
-		<< create_line(table_width, '=') 
-		<< '\n'
-		
-		<< "Automations @ " + account_alias
-		<< create_line(table_width, '-')
-		
-		//empty Strings
-		<< std::setw(scale_str_size(INDEX_str)) << std::string{" "} << std::setfill(' ') << '|' 
-		<< std::setw(scale_str_size(DEVICE_str)) << std::string{" "} << std::setfill(' ') << '|'
-		<< std::setw(scale_str_size(EXE_TASK_str)) << std::string{" "} << std::setfill(' ') << '|'
-		<< '\n'
-		
-		<< std::setw(scale_str_size(INDEX_str)) << INDEX_str << '|' 
-		<< std::setw(scale_str_size(DEVICE_str)) << DEVICE_str << '|'
-		<< std::setw(scale_str_size(EXE_TASK_str)) << EXE_TASK_str << '|'
-		<< std::setw(scale_str_size(CRON_CMD_str)) << CRON_CMD_str
-		
-		<< create_line(table_width, '=') << '\n';
-		
-	//TABLE	
-	std::ostringstream table;
-	
-	table 
-		<< ss_head.str()
-		<< ss_body.str();
-		
-	return table.str();
-}
-
-std::string CLI_UI::create_data_table(const std::string& alias){
-
-	const std::string INDEX_str{"Index"};
-	const std::string TIMESTAMP_str{"Timestamp"};
-	const std::string HOURS_str{"Hours"};
-	const std::string COMMENT_str{"Comment"};
-	table_width = get_sum_str_size({INDEX_str, TIMESTAMP_str, HOURS_str, COMMENT_str});
-		
-	//BODY
-	int body_data_width = 0;
-	
-	std::stringstream ss_body;
-	if(arg_man && !account){
-		account = arg_man->get_account_with_alias(alias);
-	}	
-	if(env_man && !account){
-		account = env_man->get_account_with_alias(alias);
-	}	
-	int index = 0;	
-	for(const auto& entry : account->get_entry()){
-		
-		// Determine the maximum width of the data table. Rebuild table if too small
-		int max_data_width = 0;
-		int max_length_comment = scale_str_size(COMMENT_str);
-		
-		for(const auto& entry : account->get_entry()){
-			int d_str_size = scale_str_size(entry.description);
-			if(d_str_size <= max_length_comment){
-				continue;
-			}
-			max_length_comment = d_str_size;
-			std::stringstream ss_timepoint;
-			
-			std::string time_format = translator->language_pack.at("timepoint");
-			ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
-			std::stringstream ss_hours;
-			ss_hours << std::setprecision(3) << entry.hours;
-			
-			//Calculate body_data_width
-			body_data_width = get_sum_str_size({std::to_string(index), ss_timepoint.str(), ss_hours.str()});
-			//scale Comment
-			float scaled_comment = static_cast<float>(entry.description.size()) * 1.1f;
-			body_data_width += static_cast<int>(scaled_comment);
-			
-			if(body_data_width > max_data_width){
-				max_data_width = body_data_width;
-			}
-		}
-				
-		//Wenn body_data_width größer als die head_width wird die tabelle neu gebaut -> passende Größe
-		table_width = max_data_width;
-		
-		std::stringstream ss_timepoint;
-		
-		std::string time_format = translator->language_pack.at("timepoint");
-		ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
-						  
-		ss_body << std::left
-			<< std::setw(scale_str_size(INDEX_str)) << index << '|' 
-			<< std::setw(scale_str_size(TIMESTAMP_str)) << ss_timepoint.str() << '|' 
-			<< std::setw(scale_str_size(HOURS_str)) << std::setprecision(3) << entry.hours << '|'
-			<< std::setw(max_length_comment) << entry.description
-		
-			<< create_line(table_width, '-') << '\n';                  
-		++index;
-	}
- 	
- 	//HEAD
- 	std::stringstream ss_head_data;	
-	ss_head_data << std::left
-		<< create_line(table_width, '=')
-		<< '\n'
-		
-		<< "Data: @ " + alias
-		<< create_line(table_width, '-')
-		
-		//empty Strings
-		<< std::setw(scale_str_size(INDEX_str)) << std::string{" "} << std::setfill(' ') << '|' 
-		<< std::setw(scale_str_size(TIMESTAMP_str)) << std::string{" "} << std::setfill(' ') << '|'
-		<< std::setw(scale_str_size(HOURS_str)) << std::string{" "} << std::setfill(' ') << '|'
-		<< '\n'
-		
-		<< std::setw(scale_str_size(INDEX_str)) << INDEX_str << '|' 
-		<< std::setw(scale_str_size(TIMESTAMP_str)) << TIMESTAMP_str << '|'
-		<< std::setw(scale_str_size(HOURS_str)) << HOURS_str << '|'
-		<< std::setw(scale_str_size(COMMENT_str)) << COMMENT_str
-		
-		<< create_line(table_width, '=') 
-		<< '\n';
-	//TABLE
-	std::ostringstream table;
-	
-	table
-		<< ss_head_data.str()
-		<< ss_body.str();
-	
-	return table.str();
-}
 
 std::string CLI_UI::create_entity_table(){
 	
@@ -448,7 +285,7 @@ std::string CLI_UI::create_entity_table(){
 	std::string entity = all_accounts.front().get_entity();
 	std::stringstream ss_head;
 	ss_head << std::string(table_width, '=') << '\n'
-			<< std::setw(table_width) << std::left << entity << '\n'
+			<< std::setw(table_width) << std::left << "📂 " + entity << '\n'
 			<< std::string(table_width, '=') << '\n';
 
 	//TABLE
@@ -465,21 +302,17 @@ std::string CLI_UI::create_alias_table(){
 	std::string alias;
 	if(arg_man){
 		alias = arg_man->get_str_argv()[2];
-		if(!account){
-			account = arg_man->get_account_with_alias(alias);
-		}
+		account = arg_man->get_account_with_alias(alias);
 	}
 	if(env_man){
 		alias = env_man->get_str_argv()[2];
-		if(!account){
-			account = env_man->get_account_with_alias(alias);
-		}
+		account = env_man->get_account_with_alias(alias);
 	}
 	
 	std::string t_alias = "@ " + alias;
-	
-	std::string entity = account->get_entity();
-	std::string tag = " -|- Tag: " + account->get_tag();
+	std::string entity = "<[- " + account->get_entity() + " -]>";
+	std::string acc_tag = account->get_tag();
+	std::string tag = (acc_tag.empty() ? "" : std::string{"[ Tag: " + acc_tag + " ]"});
 	
 	//Daten Tabelle bauen. Breite entscheidet table_width
  	std::string data_table = create_data_table(alias);
@@ -499,26 +332,34 @@ std::string CLI_UI::create_alias_table(){
 	);
 	
 	std::string t_automation = "Automation: " + (is_automation ? device_name : "None");
-	
-	std::vector<std::string> table_strings = {
-		t_alias, tag, entity, t_automation
-	};
 
- 	
- 	/*int _width = get_sum_str_size(table_strings);
- 	if(table_width < _width){
-		table_width = _width;
-	}*/
+	const int emoji_offset = 2;
+	int col_t_alias_width  = get_max_width(t_alias, {t_alias}) + emoji_offset;
+	int col_entity_width  = get_max_width(entity, {entity});
+	int col_tag_width = get_max_width(tag, {tag});
+	int col_t_automation_width  = get_max_width(t_automation, {t_automation});
+
+	// Gesamtbreite + Trennzeichen
+	table_width = col_t_alias_width + col_entity_width + col_tag_width + col_t_automation_width + 7;
+
+	col_t_alias_width  = scale_int_to_float(col_t_alias_width, 1.5f);
+	col_entity_width  = scale_int_to_float(col_entity_width, 1.5f);
+	col_tag_width = scale_int_to_float(col_tag_width, 1.5f);
+	col_t_automation_width  = scale_int_to_float(col_t_automation_width, 1.5f);
+	table_width = scale_int_to_float(table_width, 1.5f);
+
  	//HEAD
 	std::stringstream ss_head;
 	ss_head << std::left
+		<< std::setw(col_entity_width) << "📂 " + entity
+		<< '\n'
 		<< create_line(table_width, '=') 
 		<< '\n'
 		
-		<< std::setw(scale_str_size(t_alias)) << t_alias
-		<< std::setw(scale_str_size(tag)) << tag
-		<< std::setw(scale_str_size(entity)) << entity
-		<< std::setw(scale_str_size(t_automation)) << t_automation
+		<< std::setw(col_t_alias_width) << t_alias
+		<< std::setw(col_tag_width) << tag
+		
+		<< std::setw(col_t_automation_width) << t_automation
 		<< '\n';
  	
  	//TABLE
@@ -526,12 +367,123 @@ std::string CLI_UI::create_alias_table(){
 	table 
 		<< ss_head.str()
 		<< automation_table_str	
-		<< data_table
-		
-		<< std::endl;
+		<< data_table;
 	
 	return table.str();
 }
+
+int CLI_UI::get_max_width(const std::string& header, const std::vector<std::string>& values){
+	int max_width = static_cast<int>(header.size());
+	for(const auto& val : values){
+		if(static_cast<int>(val.size()) > max_width){
+			max_width = static_cast<int>(val.size());
+		}
+	}
+	return max_width;
+}
+
+int CLI_UI::scale_int_to_float(int num, float scaling){
+	float scale = static_cast<float>(num) * scaling;
+	return static_cast<int>(scale);
+};
+
+
+std::string CLI_UI::create_data_table(const std::string& alias){
+
+	if(arg_man && !account){
+		account = arg_man->get_account_with_alias(alias);
+	}	
+	if(env_man && !account){
+		account = env_man->get_account_with_alias(alias);
+	}
+
+	std::vector<std::string> indices;
+	std::vector<std::string> timestamps;
+	std::vector<std::string> hours;
+	std::vector<std::string> comments;
+
+	int index = 0;
+	for(const auto& entry : account->get_entry()){
+		
+		indices.push_back(std::to_string(index++));
+
+		std::stringstream ss_timepoint;
+		std::string time_format = translator->language_pack.at("timepoint");
+		ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
+		timestamps.push_back(ss_timepoint.str());
+
+		hours.push_back(std::to_string(static_cast<int>(entry.hours)));
+		comments.push_back(entry.description);
+		
+	}
+
+	const std::string INDEX_str{"#"};
+	const std::string TIMESTAMP_str{"Timestamp"};
+	const std::string HOURS_str{"Hours"};
+	const std::string COMMENT_str{"Comment"};
+
+	const int emoji_offset = 2;
+	int col_index_width  = get_max_width(INDEX_str, indices) + emoji_offset;
+	int col_timestamp_width  = get_max_width(TIMESTAMP_str, timestamps);
+	int col_hours_width = get_max_width(HOURS_str, hours);
+	int col_comment_width  = get_max_width(COMMENT_str, comments);
+
+	// Gesamtbreite + Trennzeichen
+	table_width = col_index_width + col_timestamp_width + col_hours_width + col_comment_width + 3;
+
+	col_index_width  = scale_int_to_float(col_index_width, 1.5f);
+	col_timestamp_width  = scale_int_to_float(col_timestamp_width, 1.5f);
+	col_hours_width = scale_int_to_float(col_hours_width, 1.5f);
+	col_comment_width  = scale_int_to_float(col_comment_width, 1.5f);
+	table_width = scale_int_to_float(table_width, 1.5f);
+
+	std::stringstream ss_body;
+	index = 0;
+	for(const auto& entry : account->get_entry()){
+		std::stringstream ss_timepoint;
+	
+		std::string time_format = translator->language_pack.at("timepoint");
+		ss_timepoint << std::put_time(&entry.time_point, time_format.c_str());
+						
+		ss_body << std::left
+			<< std::setw(col_index_width) << index << '|' 
+			<< std::setw(col_timestamp_width) << ss_timepoint.str() << '|' 
+			<< std::setw(col_hours_width) << std::setprecision(3) << entry.hours << '|'
+			<< std::setw(col_comment_width) << entry.description
+
+			<< '\n'
+			<< create_line(table_width, '-');                  
+		++index;
+	}
+	
+	//HEAD
+	std::stringstream ss_head;
+	ss_head 
+		<< '\n'
+		<< create_line(table_width, '=')
+		<< '\n'
+		
+		<< "📄 Data: @ " + alias
+		<< '\n'
+		<< create_line(table_width, '~')
+		<< '\n'
+
+		<< std::left
+		<< std::setw(col_index_width)  << INDEX_str  << " "   
+		<< std::setw(col_timestamp_width)  << TIMESTAMP_str  << " "
+		<< std::setw(col_hours_width) << HOURS_str << " "
+		<< std::setw(col_comment_width)  << COMMENT_str << '\n';
+
+	//TABLE
+	std::ostringstream table;
+	
+	table
+		<< ss_head.str()
+		<< ss_body.str();
+	
+	return table.str();
+}
+
 
 std::string CLI_UI::create_all_accounts_table(){
 	
@@ -542,79 +494,74 @@ std::string CLI_UI::create_all_accounts_table(){
 	if(env_man){
 		all_accounts = env_man->get_all_accounts();
 	}
-	
-	const std::string INDEX_str{"Index"};
+	std::vector<std::string> indices;
+	std::vector<std::string> aliases;
+	std::vector<std::string> entities;
+	std::vector<std::string> hours;
+
+	int index = 0;
+	for(const auto& acc : all_accounts){
+		aliases.push_back(acc.get_alias());
+		entities.push_back(acc.get_entity());
+		hours.push_back(std::to_string(static_cast<int>(acc.get_hours())));
+		indices.push_back(std::to_string(index++));
+	}
+	const std::string INDEX_str{"#"};
 	const std::string ALIAS_str{"Alias"};
 	std::string entity_str = translator->language_pack.at("entity");
 	std::string total_hours_str = translator->language_pack.at("total_hours");
-	
-	int index{0};
-	if(table_width == 0){
-		
-		int hold_width;
-		for(const auto& account : all_accounts){
-			hold_width = get_sum_str_size(
-				{std::to_string(index)
-					, account.get_alias()
-					, account.get_entity()
-					, std::to_string( static_cast<int>(account.get_hours()) )
-					}
-				);
-			
-			if(hold_width > table_width){
-				table_width = hold_width;
-			}
-		}
-		
-		hold_width = get_sum_str_size({INDEX_str, ALIAS_str, entity_str, total_hours_str});
-			
-		if(hold_width > table_width){
-			table_width = hold_width;
-		}
-	}
-	//BODY
-	std::stringstream ss_body;
-	
-    for(const auto& account : all_accounts){
-			
-        //Datenzeilen
-		ss_body << std::left
-			<< create_line(table_width, '-')
-            << std::setw( scale_str_size(INDEX_str)) << index << '|' 
-            << std::setw( scale_str_size(ALIAS_str)) << account.get_alias() << '|' 
-            << std::setw( scale_str_size(entity_str)) << account.get_entity() << '|' 
-            << std::setw( scale_str_size(total_hours_str)) << std::setprecision(3) << account.get_hours()
-            << std::endl;
-        
-        ++index;
-    }
-	
+
+	const int emoji_offset = 2;
+	int col_index_width  = get_max_width(INDEX_str, indices) + emoji_offset;
+	int col_alias_width  = get_max_width(ALIAS_str, aliases);
+	int col_entity_width = get_max_width(entity_str, entities);
+	int col_hours_width  = get_max_width(total_hours_str, hours);
+
+	// Gesamtbreite + Trennzeichen
+	table_width = col_index_width + col_alias_width + col_entity_width + col_hours_width + 3;
+
+	col_index_width  = scale_int_to_float(col_index_width, 1.5f);
+	col_alias_width  = scale_int_to_float(col_alias_width, 1.5f);
+	col_entity_width = scale_int_to_float(col_entity_width, 1.5f);
+	col_hours_width  = scale_int_to_float(col_hours_width, 1.5f);
+	table_width = scale_int_to_float(table_width, 1.5f);
 	//HEAD
 	std::stringstream ss_head;
-	ss_head << std::left
-		<< create_line(table_width, '=') 
+	ss_head 
 		<< '\n'
-		
-		//empty Strings
-		<< std::setw(scale_str_size(INDEX_str)) << std::string{" "} << std::setfill(' ') << '|' 
-		<< std::setw(scale_str_size(ALIAS_str)) << std::string{" "} << std::setfill(' ') << '|'
-		<< std::setw(scale_str_size(entity_str))<< std::string{" "} << std::setfill(' ') << '|'
+		<< create_line(table_width, '=')
 		<< '\n'
-		
-		<< std::setw(scale_str_size(INDEX_str)) << INDEX_str << '|' 
-		<< std::setw(scale_str_size(ALIAS_str)) << ALIAS_str << '|' 
-		<< std::setw(scale_str_size(entity_str)) << entity_str << '|' 
-		<< std::setw(scale_str_size(total_hours_str)) << total_hours_str;
+		<< std::left
+		<< std::setw(col_index_width)  << INDEX_str  << " "   
+		<< std::setw(col_alias_width)  << ALIAS_str  << " "
+		<< std::setw(col_entity_width) << entity_str << " "
+		<< std::setw(col_hours_width)  << total_hours_str;
+
+	//BODY
+	index = 0;
+	std::stringstream ss_body;
+	for(size_t i = 0; i < all_accounts.size(); ++i){
+		const auto& acc = all_accounts[i];
+		ss_body << '\n'
+			<< create_line(table_width, '-')
+			<< std::left
+			<< std::setw(col_index_width)  << "🔍 " + std::to_string(i) << '|'
+			<< std::setw(col_alias_width)  << acc.get_alias() << '|'
+			<< std::setw(col_entity_width) << acc.get_entity() << '|'
+			<< std::setw(col_hours_width)  << std::setprecision(3) << acc.get_hours();
+	}
 		
 	//TABLE
 	std::ostringstream table;
 	table
+		<< '\n'
 		<< create_line(table_width, '-') 
 		<< '\n'
-		<< "All Accounts:"
+		<< "📋 All Accounts:"
 		<< ss_head.str()
 		<< '\n'
 		<< ss_body.str()
+		<< '\n'
 		<< create_line(table_width, '=')
 		<< std::endl;
 	
@@ -622,3 +569,106 @@ std::string CLI_UI::create_all_accounts_table(){
 }
 
 
+std::string CLI_UI::create_automation_table(const std::string& account_alias){
+	
+	try{
+	//Read Automation_Config.json
+	if(all_automations.empty()){
+		all_automations = jsonH->read_automation_config_file();
+	}
+	
+	}catch(const std::runtime_error& re){
+		ui_interface_log << "CLI_UI AutomationTable " << re.what() << std::endl;
+	}
+	
+	std::vector<std::string> indices;
+	std::vector<std::string> devices;
+	std::vector<std::string> exe_tasks;
+	std::vector<std::string> cron_cmds;
+
+	int index = 0;
+	for(const auto& automation : all_automations){
+		if(automation.alias != account_alias){
+			continue;
+		}
+		devices.push_back(automation.device_name);
+		exe_tasks.push_back(automation.executioner);
+		cron_cmds.push_back(automation.crontab_command_speeking);
+		
+		indices.push_back(std::to_string(index++));		
+	}
+	//HEAD Parameter
+	const std::string INDEX_str{"#"};
+	const std::string DEVICE_str{"Device"};
+	const std::string EXE_TASK_str{"Executioner"};
+	const std::string CRON_CMD_str{"Crontab Command"};
+	
+	const int emoji_offset = 2;
+	int col_index_width  = get_max_width(INDEX_str, indices) + emoji_offset;
+	int col_device_width  = get_max_width(DEVICE_str, devices);
+	int col_exe_task_width = get_max_width(EXE_TASK_str, exe_tasks);
+	int col_cron_cmd_width  = get_max_width(CRON_CMD_str, cron_cmds);
+
+	// Gesamtbreite + Trennzeichen
+	table_width = col_index_width + col_device_width + col_exe_task_width + col_cron_cmd_width + 3;
+
+	col_index_width  = scale_int_to_float(col_index_width, 1.5f);
+	col_device_width  = scale_int_to_float(col_device_width, 1.5f);
+	col_exe_task_width = scale_int_to_float(col_exe_task_width, 1.5f);
+	col_cron_cmd_width  = scale_int_to_float(col_cron_cmd_width, 1.5f);
+	table_width = scale_int_to_float(table_width, 1.5f);
+	
+	//BODY
+	std::stringstream ss_body;
+	index = 0;
+	for(const auto& automation : all_automations){
+		if(automation.alias != account_alias){
+			continue;
+		}
+							  
+		ss_body << std::left
+			<< std::setw(col_index_width) << index << '|' 
+			<< std::setw(col_device_width) << automation.device_name << '|' 
+			<< std::setw(col_exe_task_width) << automation.executioner << '|'
+			<< std::setw(col_cron_cmd_width) << automation.crontab_command_speeking
+			
+			<< '\n'
+			<< create_line(table_width, '-') << '\n';
+				                  
+		++index;
+	}
+	
+	//HEAD
+	std::stringstream ss_head;
+	ss_head << std::left
+		<< '\n'
+		<< create_line(table_width, '=') 
+		<< '\n'
+		
+		<< "🛠️  Automations @ " << account_alias
+		<< '\n'
+		<< create_line(table_width, '-')
+		
+		//empty Strings
+		<< std::setw(col_index_width) << std::string{" "} << std::setfill(' ') << '|' 
+		<< std::setw(col_device_width) << std::string{" "} << std::setfill(' ') << '|'
+		<< std::setw(col_exe_task_width) << std::string{" "} << std::setfill(' ') << '|'
+		<< '\n'
+		
+		<< std::setw(col_index_width) << INDEX_str << " " 
+		<< std::setw(col_device_width) << DEVICE_str << " "
+		<< std::setw(col_exe_task_width) << EXE_TASK_str << " "
+		<< std::setw(col_cron_cmd_width) << CRON_CMD_str
+		
+		<< '\n'
+		<< create_line(table_width, '=') << '\n';
+		
+	//TABLE	
+	std::ostringstream table;
+	
+	table
+		<< ss_head.str()
+		<< ss_body.str();
+		
+	return table.str();
+}

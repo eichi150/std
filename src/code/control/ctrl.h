@@ -48,29 +48,29 @@ public:
 		regex_pattern = {
 			  { command::help,      		std::regex{R"(^-?help$)", std::regex_constants::icase } }
 			, { command::add,       		std::regex{R"(^-?add$)", std::regex_constants::icase } }
-			, { command::show,      		std::regex{R"(^(-?show|--?sh|show|sh)$)" , std::regex_constants::icase }}
-			, { command::delete_,   		std::regex{R"(^(-?del(ete)?)$)", std::regex_constants::icase } }
-			, { command::hours, 			std::regex{R"(^(-?h(ours)?)$)", std::regex_constants::icase } }
-			, { command::minutes, 			std::regex{R"(^(-?m(inutes)?)$)", std::regex_constants::icase } }
-			, { command::day, 				std::regex{R"(^-?day$)", std::regex_constants::icase} }
-			, { command::logfile, 			std::regex{R"(^-?log$)", std::regex_constants::icase} }
-			, { command::clock, 			std::regex{R"(^-?clock$)", std::regex_constants::icase} }
+			, { command::show,      		std::regex{R"(^(-?show|--?sh)$)", std::regex_constants::icase }}
+			, { command::delete_,   		std::regex{R"(^(-?del(ete)?|delete)$)", std::regex_constants::icase } }
+			, { command::hours, 			std::regex{R"(^(-?h(ours)?|hours)$)", std::regex_constants::icase } }
+			, { command::minutes, 			std::regex{R"(^(-?m(inutes)?|minutes)$)", std::regex_constants::icase } }
+			, { command::day, 				std::regex{R"(^-?day?|day$)", std::regex_constants::icase} }
+			, { command::logfile, 			std::regex{R"(^-?log?|log$)", std::regex_constants::icase} }
+			, { command::clock, 			std::regex{R"(^-?clock?|clock$)", std::regex_constants::icase} }
 			, { command::config_filepath, 	std::regex{R"(^-?cf$)", std::regex_constants::icase } }
 			, { command::user_filepath,  	std::regex{R"(^(-?f(ilepath)?|filepath)$)", std::regex_constants::icase } }
 			, { command::language,  		std::regex{R"(^(-?l(anguage)?|language)$)", std::regex_constants::icase } }
-			, { command::tag,				std::regex{R"(^-?tag$)", std::regex_constants::icase } }
-			, { command::touch_sensor, 		std::regex{R"(^-?touch$)", std::regex_constants::icase } }
-			, { command::measure_sensor,	std::regex{R"(^(-?me(asure)?)$)", std::regex_constants::icase } }
-			, { command::activate,			std::regex{R"(^(-?a(ctivate)?)$)", std::regex_constants::icase } }
-			, { command::deactivate,		std::regex{R"(^(-?dea(ctivate)?)$)", std::regex_constants::icase } }
+			, { command::tag,				std::regex{R"(^-?tag?|tag$)", std::regex_constants::icase } }
+			, { command::touch_sensor, 		std::regex{R"(^-?touch?|touch$)", std::regex_constants::icase } }
+			, { command::measure_sensor,	std::regex{R"(^(-?me(asure)?|measure)$)", std::regex_constants::icase } }
+			, { command::activate,			std::regex{R"(^(-?a(ctivate)?|activate)$)", std::regex_constants::icase } }
+			, { command::deactivate,		std::regex{R"(^(-?dea(ctivate)?|deactivate)$)", std::regex_constants::icase } }
 			, { command::i2c, 				std::regex{R"(^-?i2c$)", std::regex_constants::icase } }
 			, { command::automatic, 		std::regex{R"(^-?auto$)", std::regex_constants::icase } }
 			, { command::environment, 		std::regex{R"(^-?env$)", std::regex_constants::icase } }
 			, { command::debug, 			std::regex{R"(^-?debug$)", std::regex_constants::icase} }
 			, { command::integer, 			std::regex{R"(^\d+$)"} }
-			, { command::all, 				std::regex{R"(^-?all$)", std::regex_constants::icase } }
-			, { command::detail, 			std::regex{R"(^-?detail$)", std::regex_constants::icase } }
-			, { command::exit, 				std::regex{R"(^-?exit?|quit$)", std::regex_constants::icase } }
+			, { command::all, 				std::regex{R"(^-?all?|all$)", std::regex_constants::icase } }
+			, { command::detail, 			std::regex{R"(^-?detail?|detail$)", std::regex_constants::icase } }
+			, { command::exit, 				std::regex{R"(^-?exit?|exit$)", std::regex_constants::icase } }
 		};
 		
 		//Alle externen Geräte

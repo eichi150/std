@@ -521,16 +521,22 @@ void Env_Manager::reset_args(){
 	str_argv.clear();
 	argc = 0;
 };
-void Env_Manager::set_str_argv(std::vector<std::string>& _str_argv){
-	int _size = static_cast<int>(_str_argv.size());
 
-	auto parsed_str_argv = ctrl->parse_argv(_size, _str_argv);
+void Env_Manager::hold_env_running(){
+	output_flags.set(static_cast<size_t>(OutputType::environment));
+}
 
-	if(ctrl->is_argument_valid(_size, parsed_str_argv)){
+//give str_argv to Env_manager and check if its valid
+void Env_Manager::setup_next_iteration(std::pair<int, std::vector<std::string>>& argc_input_buffer){
+	int _size = static_cast<int>(argc_input_buffer.second.size());
+	
+	auto parsed_str_argv = ctrl->parse_argv(_size, argc_input_buffer.second);
+
+	if(ctrl->is_argument_valid(argc_input_buffer.first, parsed_str_argv)){
 		str_argv = parsed_str_argv;
-		argc = static_cast<int>(parsed_str_argv.size());
+		argc = argc_input_buffer.first;
 	}else{
-		throw SyntaxError("Env_Manager: Arguments unvalid");
+		throw Logged_Error("Env_Manager: Arguments unvalid", logger);
 	}
 }
 
@@ -544,7 +550,6 @@ int Env_Manager::get_argc() const {
 void Env_Manager::set_argc(){
 	argc = static_cast<int>(str_argv.size());
 };
-
 
 const std::vector<Time_Account>& Env_Manager::get_all_accounts() const {
     return all_accounts;
