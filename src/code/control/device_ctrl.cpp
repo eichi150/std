@@ -29,17 +29,6 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 	}
 	jsonH->read_json_entity(all_accounts);
 
-	/*for(const auto& acc : all_accounts){
-		for(auto& _proc : for_process){
-			if(_proc.get_alias() == acc.get_alias()){
-				for(const auto& _entry : acc.get_entry()){
-					_proc.add_entry(_entry);
-				}
-				
-				break;
-			}
-		}
-	}*/
 	//get Sensordata
 	std::vector<float> output_sensor = check_device(device_name);
 	if(output_sensor.empty()){
@@ -59,19 +48,9 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 				acc.add_entry(entry);
 				break;
 			}
-			
 		}
 	}
 	
-	//Pass Account into the rest of the entitys data
-	/*for(const auto& _proc : for_process){
-		for(auto& acc : all_accounts){
-			if(acc.get_alias() == _proc.get_alias()){
-				acc = _proc;
-				break;
-			}
-		}
-	}*/
 	//save each entity
 	for(const auto& entity : entity_strings){
 		jsonH->save_json_entity(all_accounts, entity);
