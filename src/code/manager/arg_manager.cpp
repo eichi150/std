@@ -19,7 +19,7 @@ Arg_Manager::Arg_Manager(
     , std::shared_ptr<JSON_Handler> _jsonH
     , std::shared_ptr<Cmd_Ctrl> _ctrl
     , int _argc
-    , const std::vector<std::string>& _str_argv
+    , std::vector<std::string> _str_argv
 
 ) : Manager(
 		std::move(_logger)
@@ -528,7 +528,7 @@ void Arg_Manager::clear_output_flags(){
     output_flags.reset();
 }
 	
-std::vector<Time_Account> Arg_Manager::get_all_accounts() const {
+const std::vector<Time_Account>& Arg_Manager::get_all_accounts() const {
     return all_accounts;
 }
 

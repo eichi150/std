@@ -46,8 +46,16 @@ public:
 	std::shared_ptr<Translator> get_translator_ptr() const{
 		return translator;
 	};
-	virtual int get_argc() const = 0;
 	virtual const std::vector<std::string>& get_str_argv() const = 0;
+
+	virtual void set_output_flag(OutputType flag, bool value) = 0;
+	virtual OutputBitset get_output_flags() const = 0;
+	virtual void clear_output_flags() = 0;
+
+	virtual const std::vector<Time_Account>& get_all_accounts() const {
+		return all_accounts;
+	};
+	virtual std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias) = 0;
 protected:
 	//process args
 	virtual bool check_two_args() = 0;

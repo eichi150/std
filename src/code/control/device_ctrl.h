@@ -9,6 +9,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <cstdio>
+#include <set>
 
 #include "ctrl.h"
 #include "clock.h"
@@ -32,8 +33,6 @@ private:
 	std::string name;
 	std::string error_prompt{"Sensor Error. Make sure you installed i2c.\nExecute on Command Line: 'sudo apt-get install i2c-tools'\nand try 'sudo i2cdetect -y 1'\nPort: 76 should be active. Succesfully installed."};
 
-	std::vector<Automation_Config> all_automations;
-	std::vector<Time_Account> all_accounts;
 };
 
 #endif // DEVICE_CTRL_H

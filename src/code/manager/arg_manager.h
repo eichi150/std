@@ -35,23 +35,21 @@ public:
 		, std::shared_ptr<JSON_Handler> _jsonH
 		, std::shared_ptr<Cmd_Ctrl> _ctrl
 		, int _argc
-		, const std::vector<std::string>& _str_argv
+		, std::vector<std::string> _str_argv
 	);
 
 	//Methods
 	void manage() override;
 	
-	std::vector<Time_Account> get_all_accounts() const;
-	//std::vector<std::string> get_str_argv() const;
 	const std::vector<std::string>& get_str_argv() const override;
-	int get_argc()const override {
-		return argc;
-	};
+	
 	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
 	
-	void set_output_flag(OutputType flag, bool value);
-	OutputBitset get_output_flags() const;
-	void clear_output_flags();
+	void set_output_flag(OutputType flag, bool value) override;
+	OutputBitset get_output_flags() const override;
+	void clear_output_flags() override;
+
+	const std::vector<Time_Account>& get_all_accounts() const override;
 private:
 	//arguments
 	int argc;

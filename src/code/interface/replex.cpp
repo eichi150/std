@@ -1,14 +1,17 @@
 #include "replex.h"
 
-myReplxx::myReplxx(std::shared_ptr<Cmd_Ctrl> _ctrl) : ctrl(_ctrl){
+myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
+    , std::map<emojID, std::pair<std::string, std::string>> _emojis
 
-        if(ctrl){//zulässige Eingabe RegexPattern
-            regex_pattern = ctrl->get_regex_pattern();
-        }
+) : regex_pattern(_regex_pattern)
+    , emojis(_emojis)
+
+{
+
         tab_completions[Tab_Cmd::activate_measure] = {
             "measure []"
         };
-        
+
         tab_completions[Tab_Cmd::command] = {
             "exit"
             , "help"
@@ -24,7 +27,6 @@ myReplxx::myReplxx(std::shared_ptr<Cmd_Ctrl> _ctrl) : ctrl(_ctrl){
             , "hours"
             , "minutes"
         };
-        
         //show tab_completions by pressing tab once
         this->set_double_tab_completion(false);
         setup_highlighter(*this);
@@ -63,6 +65,7 @@ bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
     
     while (true) {
         
+        //replxx::Replxx handles input
         char const* _input = this->input(cmd_line);
         if (!_input) {
             break;  // z. B. Ctrl-D
@@ -71,9 +74,12 @@ bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
         std::string input_str(_input);
 
         if (std::regex_match(input_str, regex_pattern.at(command::exit))) {
+            input_str.clear();
+            _input = {};
             return false;
         }
         if(input_str.empty()){
+            _input = {};
             continue;
         }
         if (!input_str.empty()) {
@@ -171,6 +177,7 @@ void myReplxx::setup_hint_callback() {
                     color = replxx::Replxx::Color::YELLOW;
                 }
             }
+            
             if(std::regex_match(last, regex_pattern.at(command::activate))){
                 for (const auto& cmd : this->tab_completions.at(Tab_Cmd::activate_measure)) {
                     if (cmd.rfind(last, 0) == 0) {  
@@ -205,7 +212,8 @@ void myReplxx::select_completion(
 }
 
 void myReplxx::setup_autocompletion(){
-    this->set_max_hint_rows(0);
+    set_max_hint_rows(0);
+
     set_completion_callback(
         [this](const std::string& input, int& contextLen) -> replxx::Replxx::completions_t {
             replxx::Replxx::completions_t result;
@@ -248,9 +256,11 @@ void myReplxx::setup_autocompletion(){
                     }
                 }
             }
+
             //with more than one word
-            else if(tokens.size() > 1){
+            if(tokens.size() > 1){
                 for(size_t i{0}; i < tokens.size(); ++i){
+                    
                     const std::string& cmd = tokens[i];
                     //alias or entitys after command
                     if(std::regex_match(cmd, regex_pattern.at(command::show))){
@@ -326,9 +336,9 @@ void myReplxx::setup_highlighter(replxx::Replxx& repl){
             }
 
             static std::regex numberRegex{R"(\b\d+\b)"};
-            static std::vector<std::string> badWords = {
+            static std::vector<std::string> badWords;/* = {
                 "oops", "fail", "error", "foo"
-            };
+            };*/
             //Highlight Commands Green
             setup_color(goodWords, input, colors, replxx::Replxx::Color::GREEN);
             //Highlight BadWords Red

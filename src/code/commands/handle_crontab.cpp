@@ -237,7 +237,9 @@ void delete_task_from_Crontab::interact() {
 		}
 	);
 	if(!found_alias){
-		throw Logged_Error("Alias has no Crontab automations", logger);
+		add_output("Alias has no Crontab automations");
+		return;
+		//throw Logged_Error("Alias has no Crontab automations", logger);
 	}
 	
 	// <alias> -deactivate -measure -all

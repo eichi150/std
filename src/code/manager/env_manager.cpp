@@ -6,7 +6,7 @@ Env_Manager::Env_Manager(
 		, std::shared_ptr<JSON_Handler> _jsonH
 		, std::shared_ptr<Cmd_Ctrl> _ctrl
 		, int _argc
-		, const std::vector<std::string>& _str_argv
+		, std::vector<std::string> _str_argv
 	): Manager(
 		std::move(_logger)
 		, _output_logger
@@ -22,38 +22,31 @@ Env_Manager::Env_Manager(
 	}
 
 void Env_Manager::manage(){
-	if(output_flags.test(static_cast<size_t>(OutputType::environment))){
-		try{
-
-			manage_all();
-		//Error Output
-		}catch(const Logged_Error& le){
-				
-			LOG_INFO(le.what());
-
-			ErrorLogger::dump_log_for_Mode(logger, ErrorLogger::Mode::error);
-				
-		}catch(const SyntaxError& se){
-				
-			LOG_INFO(se.what());
-			
-		}catch(const DeviceConnectionError& de){
-				
-			std::cerr << "**" << de.what() << std::endl;
-				
-		}catch(const std::runtime_error& re){
-				
-			std::cerr << "**" << re.what() << std::endl;
-				
-		}catch(const std::invalid_argument& ia){
-				
-			std::cerr << "**" << ia.what() << std::endl;
-				
-		}
-		
-	}else{
+	try{
 
 		manage_all();
+	//Error Output
+	}catch(const Logged_Error& le){
+			
+		LOG_INFO(le.what());
+
+		ErrorLogger::dump_log_for_Mode(logger, ErrorLogger::Mode::error);
+			
+	}catch(const SyntaxError& se){
+			
+		LOG_INFO(se.what());
+		
+	}catch(const DeviceConnectionError& de){
+			
+		std::cerr << "**" << de.what() << std::endl;
+			
+	}catch(const std::runtime_error& re){
+			
+		std::cerr << "**" << re.what() << std::endl;
+			
+	}catch(const std::invalid_argument& ia){
+			
+		std::cerr << "**" << ia.what() << std::endl;
 	}
 }
 void Env_Manager::manage_all(){
@@ -102,7 +95,7 @@ void Env_Manager::manage_all(){
 					break;
 				}
 				log("error: Syntax wrong");
-				throw SyntaxError{"currently unavailable"};
+				add_output("currently unavailable");
 			}
 				
 			case 3:
@@ -116,7 +109,7 @@ void Env_Manager::manage_all(){
 					<< "> -delete <entity>\n"
 					<< "> -language <language>\n> -touch BME280";
 				
-				throw SyntaxError{syntax.str()};
+				add_output(syntax.str());
 			}
 
 			case 4:
@@ -130,7 +123,7 @@ void Env_Manager::manage_all(){
 					<< "> -add <entity> <alias>\n> <alias> [ ] -h/ -m\n"
 					<< "> <alias> -tag [ ]\n"
 					<< "> -f <entityFilepath> <accountsFilepath>";
-				throw SyntaxError{syntax.str()};
+				add_output(syntax.str());
 			}
 				
 			case 5:
@@ -145,7 +138,7 @@ void Env_Manager::manage_all(){
 					<< "> <alias> -activate -measure [time_value]\n"
 					<< "> <alias> -deactivate -measure -all/ -detail\n"
 					<< "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
-				throw SyntaxError{syntax.str()};
+				add_output(syntax.str());
 			}
 
 			case 6:
@@ -154,7 +147,7 @@ void Env_Manager::manage_all(){
 					break;
 				}
 				log("syntax wrong");
-				throw SyntaxError{"> -add <entity> <alias> -tag [ ]"};
+				add_output("> -add <entity> <alias> -tag [ ]");
 			}
 
 			default:
@@ -522,12 +515,9 @@ void Env_Manager::reset_args(){
 	argc = 0;
 };
 
-void Env_Manager::hold_env_running(){
-	output_flags.set(static_cast<size_t>(OutputType::environment));
-}
-
 //give str_argv to Env_manager and check if its valid
 void Env_Manager::setup_next_iteration(std::pair<int, std::vector<std::string>>& argc_input_buffer){
+	
 	int _size = static_cast<int>(argc_input_buffer.second.size());
 	
 	auto parsed_str_argv = ctrl->parse_argv(_size, argc_input_buffer.second);
@@ -544,9 +534,6 @@ const std::vector<std::string>& Env_Manager::get_str_argv() const{
 	return str_argv;
 };
 
-int Env_Manager::get_argc() const {
-	return argc;
-}
 void Env_Manager::set_argc(){
 	argc = static_cast<int>(str_argv.size());
 };

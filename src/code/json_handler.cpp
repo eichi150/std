@@ -371,6 +371,7 @@ void JSON_Handler::read_json_entity(std::vector<Time_Account>& all_accounts) {
     }
 }
 
+
 void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
     std::ifstream eingabe(accounts_filepath);
     if (!eingabe.is_open()) {
@@ -397,6 +398,42 @@ void JSON_Handler::read_json_accounts(std::vector<Time_Account>& all_accounts) {
             account.set_hours(total_hours);
             
             all_accounts.push_back(account);
+        }
+        log("all_accounts loaded");
+        
+    } catch (const json::parse_error& e) {
+        log("##JSON-Fehler: " + std::string{e.what()});
+    }
+}
+
+void JSON_Handler::read_one_entity(std::vector<Time_Account>& all_accounts, const std::string& load_entity) {
+    std::ifstream eingabe(accounts_filepath);
+    if (!eingabe.is_open()) {
+        log("##Datei konnte nicht geöffnet werden. " + accounts_filepath);
+        return;
+    }
+
+    if (eingabe.peek() == std::ifstream::traits_type::eof()) {
+        log("##Datei ist leer.");
+        return;
+    }
+
+    try {
+        json gelesene_daten;
+        eingabe >> gelesene_daten;
+
+        for (const auto& account_json : gelesene_daten) {
+            std::string entity = account_json.value("entity", "");
+            
+            std::string alias = account_json.value("alias", "");
+            
+            Time_Account account(entity, alias);
+            float total_hours = account_json.value("total_hours", 0.0f);
+            account.set_hours(total_hours);
+            
+            if(load_entity == entity){
+                all_accounts.push_back(account);
+            }
         }
         log("all_accounts loaded");
         

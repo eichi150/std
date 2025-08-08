@@ -29,13 +29,20 @@ void STD_Master::run_std(){
 		std::cout << "Simple Time Documentation - github.com/eichi150/std" << std::endl;
 		return;
 	}
-	
-	if (!logger) throw std::runtime_error{"Logger initialization failed"};
-	if (!ctrl) throw std::runtime_error{"Cmd_Ctrl initialization failed"};
-	if (!jsonH) throw std::runtime_error{"JSON_Handler initialization failed"};
+	if(!logger){
+		throw std::runtime_error{"Logger initialization failed"};
+	} 
+	if(!ctrl){
+		throw std::runtime_error{"Cmd_Ctrl initialization failed"};
+	}
+	if(!jsonH){
+		throw std::runtime_error{"JSON_Handler initialization failed"};
+	}
 
+	std::stringstream msg;
 	try{
 		if(ctrl->is_argument_valid(argc, str_argv)){
+
 #ifdef __linux__
 			//measure automation linux only
 			linux_only();
@@ -43,11 +50,13 @@ void STD_Master::run_std(){
 		
 			output_logger = std::make_shared<Default_Logger>();
 
+			bool run_env = false;
 			auto environment_pattern = ctrl->get_specific_regex_pattern({command::environment});
 			if( std::regex_match(str_argv[1], environment_pattern.at(command::environment)) ){
-
+				//Start Environment
 				run_env = true;
-				manager = std::make_shared<Env_Manager>(
+				//Init Environment Manager
+				auto tmp_ = std::make_shared<Env_Manager>(
 					logger
 					, output_logger
 					, jsonH
@@ -55,6 +64,11 @@ void STD_Master::run_std(){
 					, argc
 					, str_argv
 				);
+
+				env_man = tmp_;
+				manager = tmp_;
+				
+				
 			}else{
 				
 				//Init Argument Manager
@@ -73,8 +87,16 @@ void STD_Master::run_std(){
 				, manager
 				, jsonH
 				, run_env
-				, ctrl
 			);
+
+			if(run_env){
+				_rx = std::make_shared<myReplxx>(
+					ctrl->get_regex_pattern()
+					, cli->get_emojis()
+				);
+			}
+
+
 			log("run CLI");
 			do{
 				if(manager){
@@ -85,44 +107,74 @@ void STD_Master::run_std(){
 				}
 				//Debug Output
 				logger->dump_log_for_Mode(logger, ErrorLogger::Mode::debug);
-				if(cli->is_env_running()){
-					output_logger->clear();
-					logger->clear();
-					argc = manager->get_argc();
-					str_argv = manager->get_str_argv();
+
+				if(run_env){
+					run_env = run_environment();
 				}
 				
-			}while(cli->is_env_running());
+			}while(run_env);
 
 		}else{
 			throw std::invalid_argument{"Invalid Arguments"};
 		}		
-			
 	//Error Output
 	}catch(const Logged_Error& le){
-			
+		
 		LOG_INFO(le.what());
-
 		ErrorLogger::dump_log_for_Mode(logger, ErrorLogger::Mode::error);
-			
 	}catch(const SyntaxError& se){
 			
 		LOG_INFO(se.what());
-		
 	}catch(const DeviceConnectionError& de){
-			
-		std::cerr << "**" << de.what() << std::endl;
-			
+		msg << "§" << de.what();
+		LOG_ERROR(msg.str());
 	}catch(const std::runtime_error& re){
-			
-		std::cerr << "**" << re.what() << std::endl;
-			
+		msg << "**" << re.what();	
+		LOG_ERROR(msg.str());
 	}catch(const std::invalid_argument& ia){
-			
-		std::cerr << "**" << ia.what() << std::endl;
-			
+		msg << "*" << ia.what();		
+		LOG_ERROR(msg.str());
 	}
 }
+
+bool STD_Master::run_environment(){
+	if(!_rx){
+		throw std::runtime_error{"Replexx initialization failed"};
+	}
+
+	//Reset Env_Manager Argc/Str_Argv
+	env_man->reset_args();
+	//Debug Output reset
+	output_logger->clear();
+	logger->clear();
+
+	//collect alias names as strings for tab insertion
+	std::vector<std::string> alias_strings;
+	for(const auto& acc : env_man->get_all_accounts()){
+		alias_strings.push_back(acc.get_alias());
+	}
+	//collect entity names as strings for tab insertion
+	std::vector<std::string> entity_strings;
+	std::set<std::string> unique_entities;
+	for (const auto& acc : env_man->get_all_accounts()) {
+		unique_entities.insert(acc.get_entity());
+	}
+	entity_strings.assign(unique_entities.begin(), unique_entities.end());
+
+	_rx->set_tab_completion(alias_strings, entity_strings);
+	
+	//while input != exit || quit => run_environment = true
+	std::pair<int, std::vector<std::string>> argc_input_buffer;
+	bool still_run_env =_rx->run_replxx(argc_input_buffer);
+
+	if(still_run_env){
+		//Pass input to Env_Manager if Environment should further run
+		env_man->setup_next_iteration(argc_input_buffer);
+		return true;
+	}
+	return false;
+}
+
 
 #ifdef __linux__
 void STD_Master::linux_only(){

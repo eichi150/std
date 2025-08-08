@@ -40,26 +40,24 @@ public:
 		, std::shared_ptr<JSON_Handler> _jsonH
 		, std::shared_ptr<Cmd_Ctrl> _ctrl
 		, int _argc
-		, const std::vector<std::string>& _str_argv
+		, std::vector<std::string> _str_argv
 	);
 
 	void manage() override ;
 
 	void manage_all();
-	void hold_env_running();
 
 	void reset_args();
 	void setup_next_iteration(std::pair<int, std::vector<std::string>>& argc_input_buffer);
 	const std::vector<std::string>& get_str_argv() const override;
-	int get_argc()const override;
 	void set_argc();
 	
-	void set_output_flag(OutputType flag, bool value);
-	OutputBitset get_output_flags() const;
-	void clear_output_flags();
+	void set_output_flag(OutputType flag, bool value) override;
+	OutputBitset get_output_flags() const override;
+	void clear_output_flags() override;
 
-	const std::vector<Time_Account>& get_all_accounts() const;
-	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias);
+	const std::vector<Time_Account>& get_all_accounts() const override;
+	std::shared_ptr<Time_Account> get_account_with_alias(const std::string& alias) override;
 	
 private:
 	//arguments

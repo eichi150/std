@@ -68,7 +68,7 @@ public:
 			, { command::environment, 		std::regex{R"(^-?env$)", std::regex_constants::icase } }
 			, { command::debug, 			std::regex{R"(^-?debug$)", std::regex_constants::icase} }
 			, { command::integer, 			std::regex{R"(^\d+$)"} }
-			, { command::all, 				std::regex{R"(^-?all?|all$)", std::regex_constants::icase } }
+			, { command::all, 				std::regex{R"(^-?all|all$)", std::regex_constants::icase } }
 			, { command::detail, 			std::regex{R"(^-?detail?|detail$)", std::regex_constants::icase } }
 			, { command::exit, 				std::regex{R"(^-?exit?|exit$)", std::regex_constants::icase } }
 		};

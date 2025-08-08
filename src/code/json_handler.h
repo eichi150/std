@@ -59,6 +59,7 @@ public:
 	void save_automation_config_file(const std::vector<Automation_Config>& automation_config);
 	std::vector<Automation_Config> read_automation_config_file();
 	
+	void read_one_entity(std::vector<Time_Account>& all_accounts, const std::string& load_entity);
 
 private:
 	void log(const std::string& msg) const;

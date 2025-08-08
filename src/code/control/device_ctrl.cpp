@@ -2,33 +2,45 @@
 #include "device_ctrl.h"
 
 std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>& jsonH, const std::string& _command){
-
 	//auto Accounts lesen
-	all_automations = jsonH->read_automation_config_file();
+	std::vector<Automation_Config> all_automations = jsonH->read_automation_config_file();
 	
-	//auto Accounts erstellen
+	//accounts to process
+	std::vector<Time_Account> for_process;
 	std::string device_name;
-	bool device_found = false;
-	for(const auto& auto_config : all_automations){
-		if(auto_config.crontab_command == _command){
-			if(device_found && device_name != auto_config.device_name){
-				throw std::runtime_error{"Multiple devices found for command: " + _command};
-			}
-			Time_Account loaded_account{auto_config.entity, auto_config.alias};
-					
-			all_accounts.push_back(loaded_account);
+	for(const auto& _cfg : all_automations){
+		device_name = _cfg.device_name;
+		Time_Account proc_account{_cfg.entity, _cfg.alias};
+		for_process.push_back(proc_account);
+	}
 
-			device_name = auto_config.device_name;
-			device_found = true;
-		}
+	//Entitys to save
+	std::vector<std::string> entity_strings;
+	std::set<std::string> unique_entities;
+	for (const auto& _auto : all_automations) {
+		unique_entities.insert(_auto.entity);
 	}
-	if(!device_found){
-		throw std::runtime_error("No device found for command: " + _command);
+	entity_strings.assign(unique_entities.begin(), unique_entities.end());
+
+	//read each entity data
+	std::vector<Time_Account> all_accounts;
+	for(const auto& entity : entity_strings){
+		jsonH->read_one_entity(all_accounts, entity);
 	}
-	//auto Accounts <entity>.json lesen
 	jsonH->read_json_entity(all_accounts);
 
-	//Sensor Werte abfragen
+	/*for(const auto& acc : all_accounts){
+		for(auto& _proc : for_process){
+			if(_proc.get_alias() == acc.get_alias()){
+				for(const auto& _entry : acc.get_entry()){
+					_proc.add_entry(_entry);
+				}
+				
+				break;
+			}
+		}
+	}*/
+	//get Sensordata
 	std::vector<float> output_sensor = check_device(device_name);
 	if(output_sensor.empty()){
 		throw DeviceConnectionError{"§§ No Sensor Output"};
@@ -39,12 +51,30 @@ std::string Device_Ctrl::process_automation(const std::shared_ptr<JSON_Handler>&
 		<< "Humidity: " << std::fixed << std::setprecision(2) << output_sensor[2] << " %";
 		
 	std::tm localTime = clock.get_time();
+	//Data pass in Time_Account
+	for(auto& acc : all_accounts){
+		for(const auto& _acc : for_process){
+			if(_acc.get_alias() == acc.get_alias()){
+				Entry entry{0.f, ss.str(), localTime};
+				acc.add_entry(entry);
+				break;
+			}
+			
+		}
+	}
 	
-	//auto Accounts speichern
-	for(auto& account : all_accounts){
-		Entry entry{0.f, ss.str(), localTime};
-		account.add_entry(entry);
-		jsonH->save_json_entity(all_accounts, account.get_entity());
+	//Pass Account into the rest of the entitys data
+	/*for(const auto& _proc : for_process){
+		for(auto& acc : all_accounts){
+			if(acc.get_alias() == _proc.get_alias()){
+				acc = _proc;
+				break;
+			}
+		}
+	}*/
+	//save each entity
+	for(const auto& entity : entity_strings){
+		jsonH->save_json_entity(all_accounts, entity);
 	}
 	
 	std::stringstream output;

@@ -172,7 +172,9 @@ void Interact_Alias_Command::execute(){
 		
 	}else{
 		log("No Interaction to execute");
-		throw Logged_Error("No Interaction to execute", logger);
+		add_output("Describe what to deactivate. Did you mean 'deactivate measure all'?");
+		return;
+		//throw Logged_Error("No Interaction to execute", logger);
 	}	
 };	
 
@@ -203,7 +205,8 @@ void Interact_Alias_Command::interact_with_Crontab(){
 	if( std::regex_match(str_argv[2], regex_pattern.at(command::deactivate)) ){
 		
 		if(automation_config.empty()){
-			throw Logged_Error("No Automations saved", logger);
+			return;
+			//throw Logged_Error("No Automations saved", logger);
 		}
 		
 		log("deactivate Crontab");

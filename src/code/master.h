@@ -36,7 +36,7 @@
 #include "./control/clock.h"
 #include "./interface/translator.h"
 #include "./interface/cli_ui.h"
-
+#include "./interface/replex.h"
 
 #include "./manager/arg_manager.h"
 #include "./manager/env_manager.h"
@@ -51,14 +51,14 @@ public:
 	void run_std();
 	
 private:
+	bool run_environment();
 
 	void log(const std::string& new_log);
+	
 	#ifdef __linux__
 	void linux_only();
 	#endif // __linux__
 private:
-	bool run_env = false;
-
 	//logs
 	std::shared_ptr<ErrorLogger> logger;
 	std::shared_ptr<ErrorLogger> output_logger;
@@ -69,7 +69,9 @@ private:
 	std::shared_ptr<Manager> manager;
 	std::unique_ptr<CLI_UI> cli;
 	std::shared_ptr<Processor> proc;
-	
+	//Environment
+	std::shared_ptr<myReplxx> _rx;
+	std::shared_ptr<Env_Manager> env_man;
 	//arguments as strings
 	std::vector<std::string> str_argv;
 	int argc;
