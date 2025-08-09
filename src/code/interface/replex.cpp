@@ -7,7 +7,6 @@ myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
     , emojis(_emojis)
 
 {
-
         tab_completions[Tab_Cmd::activate_measure] = {
             "measure []"
         };
@@ -32,7 +31,7 @@ myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
         setup_highlighter(*this);
     }
 
-void myReplxx::set_tab_completion(//called by CLI_UI
+void myReplxx::set_tab_completion(//called by Master
     const std::vector<std::string>& alias_strings
     , const std::vector<std::string>& entity_strings
 ){
@@ -45,24 +44,18 @@ bool myReplxx::run_replxx(std::pair<int, std::vector<std::string>>& argc_input_b
         throw std::runtime_error{"RegexPattern fehlen im Replxx"};
     }
 
-    int argc = argc_input_buffer.first;
-    std::vector<std::string> input_buffer = argc_input_buffer.second;
-
     setup_hint_callback();
     //update Autocompletion each iteration
     setup_autocompletion();
 
-    bool still_running = user_input(argc, input_buffer);
+    bool still_running = user_input(argc_input_buffer.first, argc_input_buffer.second);
     
-    argc_input_buffer.first = argc;
-    argc_input_buffer.second = input_buffer;
     return still_running;
 }
 
 bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
 
-    input_buffer.clear();
-    
+    bool wrong_input = false;
     while (true) {
         
         //replxx::Replxx handles input
@@ -83,18 +76,61 @@ bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
             continue;
         }
         if (!input_str.empty()) {
-
-            parse_input_to_tokens(input_str, input_buffer, argc);
-
-            if(!is_command_complete(input_buffer)){
-                std::cout << "⚠️  Befehl unvollständig\n";
-                input_buffer.clear();
-                input_str.clear();
-                continue;
-            }
            
+            //if input wrong erase it out the history. 
+            //if user inputs a large comment or something, he could correct the mistakes without rewriting it
+            if (wrong_input == true) {
+                // 1. hold current history
+                std::ostringstream history_stream_out;
+                history_save(history_stream_out);
+
+                // 2. clear history
+                history_clear();
+
+                // 3. reread history and delete last entry
+                std::istringstream history_stream_in(history_stream_out.str());
+                std::string entry;
+                std::vector<std::string> entries;
+                while (std::getline(history_stream_in, entry)) {
+                    entries.push_back(entry);
+                }
+                if (!entries.empty()) {
+                    entries.pop_back(); 
+                }
+                
+                // 4. add to history
+                for (auto const& e : entries) {
+                    if (e.substr(0, 3) != "###") {
+                        history_add(e);
+                    }
+                }
+                wrong_input = false;
+            }
+
+            //parse into tokens
+            bool valid_tokens = parse_input_to_tokens(input_str, input_buffer, argc);
+
             //add input to the history
             history_add(input_str);
+
+            if(!valid_tokens){
+                wrong_input = true;
+                std::cout << emojis.at(emojID::warning).first << "  Befehl unvollständig\n";
+                input_buffer.clear();
+                input_str.clear();
+                argc = 0;
+                continue;
+            }
+
+            if(!is_command_complete(input_buffer)){
+                wrong_input = true;
+                std::cout << emojis.at(emojID::warning).first << "  Befehl unvollständig\n";
+                input_buffer.clear();
+                input_str.clear();
+                argc = 0;
+                continue;
+            }
+            
             //add last command to the history
             for(const auto& cmd : tab_completions.at(Tab_Cmd::command)){
                 if(std::find(input_buffer.begin(), input_buffer.end(), cmd) != input_buffer.end()){
@@ -124,36 +160,103 @@ bool myReplxx::is_command_complete(const std::vector<std::string>& tokens) {
             );
         }
     );
-    if (!matches) {
-        return false;
+
+    if(!matches){
+        //input isnt command, check for alias
+        bool alias_matches = std::any_of(
+            tokens.begin(), tokens.end(),
+            [this](const auto& token){
+                return std::any_of(
+                    tab_completions[Tab_Cmd::alias].begin(), tab_completions[Tab_Cmd::alias].end(),
+                    [&token](const auto& alias){
+                        return token == alias;
+                    } 
+                );
+            }
+        );
+        if(!alias_matches || tokens.size() < 3){
+            return false;
+        }
+        if(alias_matches && !bit_parse.test(static_cast<size_t>(Parse::succesfully_parsed))){
+            return false;
+        }
     }
 
     return true;
 }
 
-void myReplxx::parse_input_to_tokens(const std::string& input_, std::vector<std::string>& tokens, int& argc){
+bool myReplxx::parse_input_to_tokens(const std::string& input_, std::vector<std::string>& tokens, int& argc){
     std::stringstream ss(input_);
     std::string _cmd;
 
     tokens.push_back("std");
     argc += 1;
 
+    std::array<char, 4> parse_char_start{'[', '"', '(', '{'};
+    std::array<char, 4> parse_char_end{']', '"', ')', '}'};
+
+    size_t start_index = 0;
+    bit_parse.reset();
+   
     while(ss >> _cmd){
         std::string skip_str;
-        if(_cmd.front() == '[' || _cmd.front() == '"'){
-            skip_str.append(_cmd.substr(1, _cmd.size() -1));
-            _cmd = skip_str;
+
+        if( !bit_parse.test(static_cast<size_t>(Parse::start_parsing)) ){
+            for(size_t i{0}; i < parse_char_start.size(); ++i){
+                if(_cmd.front() == parse_char_start[i]){
+                    start_index = i;
+                    bit_parse.set(static_cast<size_t>(Parse::parse));
+                    bit_parse.set(static_cast<size_t>(Parse::start_parsing));
+
+                    //erase first character
+                    std::string fresh_cmd;
+                    for(size_t i{1}; i < _cmd.size(); ++i){
+                        fresh_cmd += _cmd[i];
+                    }
+                    _cmd = fresh_cmd;
+                    break;
+                }
+            }
+        }
+
+        if(bit_parse.test(static_cast<size_t>(Parse::parse))){
+            //if parse then dont count them as argc. str_argv.size() > argc
             --argc;
         }
-        if(_cmd.back() == ']' || _cmd.back() == '"'){
+
+        if( !bit_parse.test(static_cast<size_t>(Parse::ended_parsing)) 
+            && bit_parse.test(static_cast<size_t>(Parse::parse))
+        ){
+            
+            if(_cmd.back() == parse_char_end[start_index]){
+                bit_parse.reset(static_cast<size_t>(Parse::parse));
+                bit_parse.set(static_cast<size_t>(Parse::ended_parsing));
+            }
+            
+        }
+        if( bit_parse.test(static_cast<size_t>(Parse::ended_parsing)) ){
             skip_str = _cmd;
             skip_str.pop_back();
             _cmd = skip_str;
+            ++argc;
         }
-        
         ++argc;
         tokens.push_back(_cmd); 
     }
+    if(bit_parse.test(static_cast<size_t>(Parse::start_parsing)) && bit_parse.test(static_cast<size_t>(Parse::ended_parsing))){
+        bit_parse.set(static_cast<size_t>(Parse::succesfully_parsed));
+        return true;
+    }
+
+    if(bit_parse.test(static_cast<size_t>(Parse::start_parsing)) && !bit_parse.test(static_cast<size_t>(Parse::ended_parsing))){
+        return false;
+    }
+    if( !bit_parse.test(static_cast<size_t>(Parse::start_parsing)) && bit_parse.test(static_cast<size_t>(Parse::ended_parsing)) ){
+        return false;
+    }
+
+    //not every input has to be parsed. so stay true
+    return true;
 }
 
 //give user hints for inputs in grey color
@@ -178,7 +281,7 @@ void myReplxx::setup_hint_callback() {
                 }
             }
             
-            if(std::regex_match(last, regex_pattern.at(command::activate))){
+            if(std::regex_match(last, this->regex_pattern.at(command::activate))){
                 for (const auto& cmd : this->tab_completions.at(Tab_Cmd::activate_measure)) {
                     if (cmd.rfind(last, 0) == 0) {  
                         result.push_back(cmd);
@@ -196,8 +299,8 @@ void myReplxx::setup_hint_callback() {
 void myReplxx::select_completion(
     const std::vector<Tab_Cmd>& _cmd_vec,
     const std::string& token,
-    replxx::Replxx::completions_t& result
-) {
+    replxx::Replxx::completions_t& result )
+{
     for(const auto& _cmd : _cmd_vec){
         auto it = tab_completions.find(_cmd);
         if(it == tab_completions.end()){
@@ -297,8 +400,8 @@ void myReplxx::setup_color(
     const std::vector<std::string>& Words
     , const std::string& input
     , replxx::Replxx::colors_t& colors
-    , const replxx::Replxx::Color& set_color
-){
+    , const replxx::Replxx::Color& set_color )
+{
     //Highlight Commands Green
     for(const auto& word : Words){
         size_t pos = input.find(word);

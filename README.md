@@ -59,7 +59,7 @@ chmod +x install.sh
 
 ---
 
-## ⚙️ Konfiguration
+## ⚙️  Konfiguration
 
 ### Config-Pfade anzeigen:
 ```bash
@@ -101,6 +101,11 @@ std -del <entity>
 std <alias> -del
 ```
 
+### Nur Kommentar eintragen
+```bash
+std <alias> [Message]
+```
+
 ### ⏱️ Zeit eintragen (Stunden oder Minuten)
 ```bash
 std <alias> <zeit> -h/-m ["Kommentar"]
@@ -124,7 +129,7 @@ std -show <entity>
 std -add <entity> <alias> -tag <tag>
 ```
 
-### 🏷️ Tag nachträglich setzen
+### 🏷️  Tag nachträglich setzen
 ```bash
 std <alias> -tag <tag>
 ```

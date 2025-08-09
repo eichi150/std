@@ -43,6 +43,24 @@ private:
 	
 }; // Add_Alias_Command
 
+class BlankComment_Add_Alias_Command : public Add_Alias_Command{
+public:
+	BlankComment_Add_Alias_Command(
+		std::vector<Time_Account>& all_accounts
+		, const std::vector<std::string>& str_argv
+		, std::shared_ptr<JSON_Handler> jsonH
+		, const std::string& arg_alias
+		, std::shared_ptr<ErrorLogger> logger
+		
+	);
+
+	void execute() override;
+
+private:
+	std::shared_ptr<Translator> translator;
+	std::tm localTime;
+
+}; // BlankComment_Add_Add_Command
 
 class Hours_Add_Alias_Command : public Add_Alias_Command{
 public:

@@ -48,7 +48,7 @@ public:
 		regex_pattern = {
 			  { command::help,      		std::regex{R"(^-?help$)", std::regex_constants::icase } }
 			, { command::add,       		std::regex{R"(^-?add$)", std::regex_constants::icase } }
-			, { command::show,      		std::regex{R"(^(-?show|--?sh)$)", std::regex_constants::icase }}
+			, { command::show,      		std::regex{R"(^(-?show|--?sh?|sh)$)", std::regex_constants::icase }}
 			, { command::delete_,   		std::regex{R"(^(-?del(ete)?|delete)$)", std::regex_constants::icase } }
 			, { command::hours, 			std::regex{R"(^(-?h(ours)?|hours)$)", std::regex_constants::icase } }
 			, { command::minutes, 			std::regex{R"(^(-?m(inutes)?|minutes)$)", std::regex_constants::icase } }

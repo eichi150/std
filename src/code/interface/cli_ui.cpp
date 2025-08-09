@@ -10,7 +10,6 @@ CLI_UI::CLI_UI(
 		, run_env(_run_env)
 		, manager(_manager)
 	{
-		
 		if(_manager){
 			translator = _manager->get_translator_ptr();
 		}
@@ -28,7 +27,6 @@ void CLI_UI::update(){
 	}
 }
 
-
 void CLI_UI::write_env_header_footer(){
 	
 	if(!first_run){
@@ -42,7 +40,6 @@ void CLI_UI::write_env_header_footer(){
 	if(!run_env){
 		std::cout << print_centered_message("Goodbye", 30, '-');
 	}
-		
 }
 
 void CLI_UI::standard(){
@@ -269,9 +266,11 @@ std::string CLI_UI::create_entity_table(const std::vector<Time_Account>& all_acc
 
 	//HEAD
 	std::string entity = all_accounts.front().get_entity();
+	std::string entity_emoji = get_emoji_str(emojID::open_ordner) + " " + entity;
+
 	std::stringstream ss_head;
 	ss_head << std::string(table_width, '=') << '\n'
-			<< std::setw(table_width) << std::left << get_emoji_str(emojID::open_ordner) << " " << entity << '\n'
+			<< std::setw(table_width) << std::left << entity_emoji << '\n'
 			<< std::string(table_width, '=') << '\n';
 
 	//TABLE

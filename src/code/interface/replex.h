@@ -4,18 +4,28 @@
 #include "extern/replxx/include/replxx.hxx"
 #include <iostream>
 #include <vector>
+#include <array>
 #include <sstream>
 #include <set>
 #include <map>
 #include <regex>
 #include <memory>
 #include <stdexcept>
+#include <bitset>
+
 #include "../control/cmd_ctrl.h"
 #include "emoji.h"
 
 
+
 class myReplxx : public replxx::Replxx{
 public:
+    enum class Parse{
+        succesfully_parsed = 0
+        , start_parsing
+        , parse
+        , ended_parsing
+    };
     enum class Tab_Cmd{
         command = 0
         , alias
@@ -33,7 +43,7 @@ public:
     
 private:
     bool user_input(int& argc, std::vector<std::string>& input_buffer);
-    void parse_input_to_tokens(const std::string& input_, std::vector<std::string>& tokens, int& argc);
+    bool parse_input_to_tokens(const std::string& input_, std::vector<std::string>& tokens, int& argc);
     bool is_command_complete(const std::vector<std::string>& tokens);
 private: //Setup
 
@@ -55,6 +65,7 @@ private: //Setup
     
     void setup_hint_callback();
 private:
+    std::bitset<4> bit_parse;
     std::map<command, std::regex> regex_pattern;
 
     int size_tab_cmd;
@@ -62,7 +73,7 @@ private:
     
     std::map<emojID, std::pair<std::string, std::string>> emojis;
     
-    std::string cmd_line = (emojis.at(emojID::hourglass).first.empty() ? "@" : emojis.at(emojID::hourglass).first) + "std >> ";
+    std::string cmd_line = emojis.at(emojID::hourglass).first + "std >> ";
 };
 
 #endif // MY_REPLEX_H

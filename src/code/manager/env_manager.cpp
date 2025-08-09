@@ -18,11 +18,14 @@ Env_Manager::Env_Manager(
 	{
 		log("===== Env_Manager_Log: =====");
 		log(std::string{__FILE__} + " - Env_Manager");
-		jsonH->read_all_accounts(all_accounts);	
+		
 	}
 
 void Env_Manager::manage(){
 	try{
+		//reload the accounts, if a automatic measure data is inserted, this instance wouldnt have the new data
+		all_accounts.clear();
+		jsonH->read_all_accounts(all_accounts);
 
 		manage_all();
 	//Error Output
@@ -59,6 +62,27 @@ void Env_Manager::manage_all(){
 		return;
     }
     
+	//Alias blank Entry
+	// <alias> [msg]
+	if( argc == 3 
+		&& std::find_if(all_accounts.begin(), all_accounts.end(),
+			[this](const auto& acc){
+				return acc.get_alias() == str_argv[1];
+			}) != all_accounts.end() 
+		)
+	{
+		cmd = std::make_shared<BlankComment_Add_Alias_Command>(
+			all_accounts
+			, str_argv
+			, jsonH
+			, str_argv[1]
+			, logger
+		);
+		if(!cmd){
+			add_output("> <alias> [Entry]");
+		}
+	}
+
     //show options
     if(std::regex_match(str_argv[1], regex_pattern.at(command::show))){
 		std::vector<command> commands = {
@@ -95,7 +119,7 @@ void Env_Manager::manage_all(){
 					break;
 				}
 				log("error: Syntax wrong");
-				add_output("currently unavailable");
+				break;
 			}
 				
 			case 3:
@@ -105,11 +129,12 @@ void Env_Manager::manage_all(){
 				}
 				std::stringstream syntax;
 				syntax 
-					<< "> <alias> -delete\n> <alias> -measure\n"
+					<< "> delete <alias>\n> measure <alias>\n"
 					<< "> -delete <entity>\n"
 					<< "> -language <language>\n> -touch BME280";
 				
 				add_output(syntax.str());
+				break;
 			}
 
 			case 4:
@@ -124,6 +149,7 @@ void Env_Manager::manage_all(){
 					<< "> <alias> -tag [ ]\n"
 					<< "> -f <entityFilepath> <accountsFilepath>";
 				add_output(syntax.str());
+				break;
 			}
 				
 			case 5:
@@ -134,11 +160,12 @@ void Env_Manager::manage_all(){
 				log("error: Syntax wrong");
 				std::stringstream syntax;
 				syntax 
-					<< "> <alias> [time value] -h -m [ ]\n"
+					<< "> <alias> [time value] -h -m [Comment]\n"
 					<< "> <alias> -activate -measure [time_value]\n"
 					<< "> <alias> -deactivate -measure -all/ -detail\n"
 					<< "> -cf <configFilepath> <entityFilepath> <accountsFilepath>";
 				add_output(syntax.str());
+				break;
 			}
 
 			case 6:
@@ -148,6 +175,7 @@ void Env_Manager::manage_all(){
 				}
 				log("syntax wrong");
 				add_output("> -add <entity> <alias> -tag [ ]");
+				break;
 			}
 
 			default:
@@ -189,12 +217,12 @@ bool Env_Manager::check_two_args(){
 		output_flags.set(static_cast<size_t>(OutputType::environment));
 		return true;
     }
-    
+
     return false;
 }
 
 bool Env_Manager::check_three_args(){
-    
+
     //-delete
     if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
 
@@ -237,17 +265,17 @@ bool Env_Manager::check_three_args(){
     //-l ger
     if(std::regex_match(str_argv[1], regex_pattern.at(command::language))){
 		    
-	log("-l " + str_argv[2]);
-	cmd = std::make_shared<Language_Change_Command>(
-	    jsonH
-	    , translator
-	    , str_argv[2]
-	    , logger
-	);
-		    
-	add_output("Language changed to " + str_argv[2]);
-	log("Language changed to " + str_argv[2]);
-	return true;
+		log("-l " + str_argv[2]);
+		cmd = std::make_shared<Language_Change_Command>(
+			jsonH
+			, translator
+			, str_argv[2]
+			, logger
+		);
+				
+		add_output("Language changed to " + str_argv[2]);
+		log("Language changed to " + str_argv[2]);
+		return true;
     }
 
     //Connection check
@@ -255,38 +283,38 @@ bool Env_Manager::check_three_args(){
     if(std::regex_match(str_argv[1], regex_pattern.at(command::touch_sensor))){
 				
 #ifdef __linux__
-	log("-touch" + str_argv[2]);
-	cmd = std::make_shared<TouchDevice_Command>(
-	    str_argv[2]
-	    , logger
-	);
+		log("-touch" + str_argv[2]);
+		cmd = std::make_shared<TouchDevice_Command>(
+			str_argv[2]
+			, logger
+		);
 #else
 log("-touch <device> Only available for Linux");
 add_output("Only available for Linux");
 #endif // __linux__
 		
-	return true;
+		return true;
     }
                                 
     //Sensor Messwerte für <alias> speichern
-    // <alias> -measure
-    if(std::regex_match(str_argv[2], regex_pattern.at(command::measure_sensor))){
+    // measure <alias>
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::measure_sensor))){
                 
 #ifdef __linux__
-	cmd = std::make_shared<SensorData_Add_Alias_Command>(
-	    all_accounts
-	    , str_argv
-	    , jsonH
-	    , translator
-	    , str_argv[1]
-	    , logger
-	);
+		cmd = std::make_shared<SensorData_Add_Alias_Command>(
+			all_accounts
+			, str_argv
+			, jsonH
+			, translator
+			, str_argv[2]
+			, logger
+		);
 #else
 log("<alias> -measure Only available for Linux");
 add_output("Only available for Linux");
 #endif // __linux__
 		
-	return true;
+		return true;
     }
 
     return false;
@@ -526,7 +554,22 @@ void Env_Manager::setup_next_iteration(std::pair<int, std::vector<std::string>>&
 		str_argv = parsed_str_argv;
 		argc = argc_input_buffer.first;
 	}else{
-		throw Logged_Error("Env_Manager: Arguments unvalid", logger);
+		
+		//search for Alias in Parsed_str_argv, maybe Alias_Command passed
+		if( argc_input_buffer.first > 1 &&
+			std::find_if(all_accounts.begin(), all_accounts.end(),
+			[&parsed_str_argv](const auto& acc){
+				return acc.get_alias() == parsed_str_argv[1];
+			}) != all_accounts.end() )
+		{
+
+			str_argv = parsed_str_argv;
+			argc = argc_input_buffer.first;
+
+		}else{
+			throw Logged_Error("Parse to Env_Manager: Arguments unvalid", logger);
+		}
+
 	}
 }
 

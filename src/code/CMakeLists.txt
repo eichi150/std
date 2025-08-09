@@ -65,7 +65,6 @@ set_target_properties(std PROPERTIES
 # Output-Verzeichnisse
 set_target_properties(std PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/linux)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/linux)
-file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/win_32)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/win_64)
 
 # Windows-spezifische Quellen (ohne Linux-spezifische Dateien)

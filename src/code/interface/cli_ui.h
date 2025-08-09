@@ -18,7 +18,7 @@
 #include "../manager/arg_manager.h"
 #include "../manager/env_manager.h"
 #include "../time_account.h"
-
+#include "../json_handler.h"
 
 //Console Line Interface - Konsolenausgaben
 class CLI_UI : public UI::UI_Interface{
@@ -56,7 +56,6 @@ private:
 		, const std::string& time_format
 	);
 
-
 	std::string create_automation_table(const std::string& account_alias, const std::vector<Automation_Config>& all_automations);
 	std::string create_data_table(std::shared_ptr<Time_Account> account, const std::string& alias, const std::string& time_format);
 	std::string create_all_accounts_table(const std::vector<Time_Account>& all_accounts);
@@ -67,6 +66,7 @@ private:
 	int scale_int_to_float(int num, float scaling);
 
 	void log(const std::string& msg);
+
 private:
 	bool first_run = false;
 	bool run_env = false;

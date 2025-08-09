@@ -38,14 +38,14 @@ public:
         if(it != emojis.end()){
             return emojis.at(id).first;
         }
-        return std::string{};
+        return std::string{"@"};
     }
     std::string get_emoji_unicode(const emojID& id) const {
         auto it = emojis.find(id);
         if(it != emojis.end()){
             return emojis.at(id).second;
         }
-        return std::string{};
+        return std::string{"@"};
     }
 
     std::map<emojID, std::pair<std::string, std::string>> get_emojis() const {

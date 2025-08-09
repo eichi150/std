@@ -43,6 +43,49 @@ void Add_Alias_Command::add_alias(){
 }
 
 //==========================//
+//==BlankComment_Add_Alias_Command//
+//==========================//
+
+BlankComment_Add_Alias_Command::BlankComment_Add_Alias_Command(
+	std::vector<Time_Account>& all_accounts
+	, const std::vector<std::string>& str_argv
+	, std::shared_ptr<JSON_Handler> jsonH
+	, const std::string& arg_alias
+	, std::shared_ptr<ErrorLogger> logger
+	
+): Add_Alias_Command(
+	all_accounts
+	, str_argv
+	, jsonH
+	, arg_alias
+	, std::move(logger)
+)
+{
+	log("BlankComment_Add_Add_Command");
+};
+
+void BlankComment_Add_Alias_Command::execute(){
+
+	if(!account){
+		throw Logged_Error("Unknown Alias", logger);
+	}
+	
+	Clock clock{};
+	localTime = clock.get_time();
+
+	std::stringstream description;
+	for(size_t i{2}; i < str_argv.size(); ++i){
+		description << str_argv[i] << " ";
+	}
+	Entry entry{0.f, description.str(), localTime};
+	account->add_entry(entry);
+
+	finalize();
+	add_output("Entry saved");
+};
+
+
+//==========================//
 //==Hours_Add_Alias_Command=//
 //==========================//
 

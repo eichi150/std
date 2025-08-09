@@ -164,7 +164,7 @@ bool STD_Master::run_environment(){
 	_rx->set_tab_completion(alias_strings, entity_strings);
 	
 	//while input != exit || quit => run_environment = true
-	std::pair<int, std::vector<std::string>> argc_input_buffer;
+	std::pair<int, std::vector<std::string>> argc_input_buffer = {};
 	bool still_run_env =_rx->run_replxx(argc_input_buffer);
 
 	if(still_run_env){
