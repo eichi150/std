@@ -26,7 +26,6 @@ Ein **terminalbasiertes Zeiterfassungstool** mit optionaler Sensoranbindung (BME
 ```
 std/
 ├── linux/                  # Linux Binaries und Scripts
-├── win_32/                 # Windows 32bit Version
 ├── win_64/                 # Windows 64bit Version
 ├── src/code/               # C++ Sourcecode
 │   └── bme280/             # Sensor-Treiber
