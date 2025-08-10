@@ -57,7 +57,7 @@ chmod +x install.sh
 
 > Nutzt `g++ 12.2.0` (Debian). Binary: `bin/std.exe`
 
-### Windows 64-bit
+### Windows 64-bit <a id="windows-64-bit"></a>
 
 1. Führe `install.bat` aus dem jeweiligen Ordner (`win_64/`) aus.
    Dadurch werden:
