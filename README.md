@@ -9,7 +9,7 @@ Ein **terminalbasiertes Zeiterfassungstool** mit optionaler Sensoranbindung (BME
 - [🗂️ Projektstruktur](#-projektstruktur)
 - [🔧 Installation](#-installation)
   - [Linux](#linux)
-  - [Windows 64-bit](#-windows-64-bit)
+  - [Windows 64-bit](#-windows-64-bit-)
 - [⚙️ Konfiguration](#️-konfiguration)
 - [💡 Befehle](#-befehle)
 - [🌱 Pflanzenpflege-Tools](#-pflanzenpflege-tools)
