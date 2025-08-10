@@ -76,12 +76,14 @@ private:
 		, "language"
 		, "automation_filepath"
 	};
-	
+
+private:
+	Language config_language = Language::english;
+
 	std::string entity_filepath{"../files/"};
 	std::string accounts_filepath{"../files/accounts.json"};
+
 	std::string automation_config_filepath{"../files/automation_config.json"};
-	
-	Language config_language = Language::english;
 };
 
 #endif // JSON_HANDLER_H

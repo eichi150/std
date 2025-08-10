@@ -48,19 +48,20 @@ UserFilepath_Change_Command::UserFilepath_Change_Command(
 void UserFilepath_Change_Command::execute() {
 	
 	if(str_argv.size() > 4){
+		//-cf config.json /files/ /files/accounts.json
 		log("Change: config, entity, accounts filepath");
 		new_data = {
 			  {"config_filepath", str_argv[2]} // <- Change Config_Filepath
 			, {"entity_filepath", str_argv[3]} // <- Change Entity_Filepath
 			, {"accounts_filepath", str_argv[4]} // <- Change Account_Filepath
 			, {"language", translator->get_str_language()}
-			, {"automation_filepath", std::string{str_argv[3] + "/automation_config.json"} } // <- Change Automation_Config_Filepath
+			, {"automation_filepath", std::string{str_argv[3] + "automation_config.json"} } // <- Change Automation_Config_Filepath
 		};
 		std::stringstream ss;
 		ss  << str_argv[2] << "\n"
 			<< str_argv[3] << "\n" 
 			<< str_argv[4] << "\n"
-			<< std::string{str_argv[3] + "/automation_config.json"}
+			<< str_argv[3] << "automation_config.json"
 			<< "\n";
 			
 		log(ss.str());
@@ -78,7 +79,8 @@ void UserFilepath_Change_Command::execute() {
 		ss  << str_argv[2] << "\n"
 			<< str_argv[3] << "\n" 
 			<< translator->get_str_language() << "\n"
-			<< std::string{str_argv[3] + "/automation_config.json"}
+			<< str_argv[3] 
+			<< jsonH->get_automatic_config_filepath()
 			<< "\n";
 			
 		log(ss.str());
