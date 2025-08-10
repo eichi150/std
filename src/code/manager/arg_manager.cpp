@@ -186,22 +186,22 @@ bool Arg_Manager::check_two_args(){
 bool Arg_Manager::check_three_args(){
     
     //Account löschen
-    //<alias> -del
-    if(std::regex_match(str_argv[2], regex_pattern.at(command::delete_)) ){
+    //delete <alias> 
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
 
-	log("<alias> -delete");
+	log("delete <alias>");
 	cmd = std::make_shared<Delete_Alias_Command>(
 	    all_accounts
 	    , str_argv
 	    , jsonH
-	    , str_argv[1]
+	    , str_argv[2]
 	    , logger
 	);
 	return true;
 	
     }
     //Entität und zugehörige Alias löschen
-    // -del <entity>
+    //delete <entity>
     if(std::regex_match(str_argv[1], regex_pattern.at(command::delete_)) ){
 	
 	log("-delete <entity>");
@@ -252,8 +252,8 @@ add_output("Only available for Linux");
     }
                                 
     //Sensor Messwerte für <alias> speichern
-    // <alias> -mes
-    if(std::regex_match(str_argv[2], regex_pattern.at(command::measure_sensor))){
+    // measure <alias>
+    if(std::regex_match(str_argv[1], regex_pattern.at(command::measure_sensor))){
                 
 #ifdef __linux__
 	cmd = std::make_shared<SensorData_Add_Alias_Command>(
@@ -261,7 +261,7 @@ add_output("Only available for Linux");
 	    , str_argv
 	    , jsonH
 	    , translator
-	    , str_argv[1]
+	    , str_argv[2]
 	    , logger
 	);
 #else

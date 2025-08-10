@@ -37,6 +37,15 @@ std/
 
 ---
 
+# 🧩 Neue Tools Version 1.1
+
+ ### 1. 🐚 std - Environment
+ ### 2. 🌱 Pflanzenpflege-Tagebuch
+ ### 3. 🤖 Sensor Connection
+ ### 4. ⏳ Automatische Sensorabfrage (Crontab)
+ 
+---
+
 ## 🔧 Installation
 
 ### Linux
@@ -48,11 +57,11 @@ chmod +x install.sh
 
 > Nutzt `g++ 12.2.0` (Debian). Binary: `bin/std.exe`
 
-### Windows 32/64-bit
+### Windows 64-bit
 
-1. Führe `install.bat` aus dem jeweiligen Ordner (`win_32/` oder `win_64/`) aus.
+1. Führe `install.bat` aus dem jeweiligen Ordner (`win_64/`) aus.
    Dadurch werden:
-   - Die benötigten Dateien (`std_win<..>.exe`, `std.bat`) nach `C:/std/bin/` kopiert.
+   - Die benötigten Dateien (`std_win64.exe`, `std.bat`) nach `C:/std/bin/` kopiert.
    - Die Konfigurationsstruktur (`config.json`, `files/`, `accounts.json`) erstellt.
    
 2. Setze den Ordner `C:\std\bin` **manuell** in die PATH-Umgebungsvariable, um `std` global verfügbar zu machen.
@@ -66,7 +75,7 @@ chmod +x install.sh
 std -show -cf
 ```
 
-### Config manuell setzen:
+### Config manuell setzen: 
 ```bash
 std -cf <config_path> <entity_path> <accounts_path>
 ```
@@ -86,19 +95,29 @@ std -l english
 
 ## 💡 Befehle
 
+### 🧠 Environment starten und nahtlos Befehle eingeben
+Das Environment ist Replxx gestützt. 
+```bash
+std env
+```
+Beende Environment
+```bash
+@std > exit
+```
+
 ### ➕ Neue Entität mit Alias
 ```bash
-std -add <entity> <alias>
+std add <entity> <alias>
 ```
 
 ### ❌ Entität löschen
 ```bash
-std -del <entity>
+std delete <entity>
 ```
 
 ### ❌ Alias löschen
 ```bash
-std <alias> -del
+std delete <alias>
 ```
 
 ### Nur Kommentar eintragen
@@ -113,9 +132,9 @@ std <alias> <zeit> -h/-m ["Kommentar"]
 
 ### 📄 Accounts anzeigen
 ```bash
-std -show
-std -show <alias>
-std -show <entity>
+std show
+std show <alias>
+std show <entity>
 ```
 
 ---
@@ -126,18 +145,18 @@ std -show <entity>
 
 ### ➕ Entität mit Tag anlegen
 ```bash
-std -add <entity> <alias> -tag <tag>
+std add <entity> <alias> -tag <tag>
 ```
 
 ### 🏷️  Tag nachträglich setzen
 ```bash
-std <alias> -tag <tag>
+std <alias> tag <tag>
 ```
 
 Beispiel:
 ```bash
-std -add ChocoHaze CH -tag plant
-std CH -tag plant
+std add ChocoHaze CH -tag plant
+std CH tag plant
 ```
 
 ---
@@ -157,8 +176,8 @@ sudo i2cdetect -y 1   # Adresse prüfen (z. B. 0x76)
 
 ### Sensor abfragen
 ```bash
-std -touch BME280         # Aktuelle Daten anzeigen
-std CH -measure           # Messwerte für CH speichern
+std touch BME280         # Aktuelle Daten anzeigen
+std measure CH	         # Messwerte für CH speichern
 ```
 
 ---
@@ -167,14 +186,15 @@ std CH -measure           # Messwerte für CH speichern
 
 ### Aktivierung der Automatisierung
 ```bash
-std <alias> -activate -measure "time_config"
+std <alias> activate measure "time_config"
+std <alias> deactivate measure all/ detail
 ```
 
 ### Deaktivierung der Automatisierung
 ```bash
-std <alias> -deactivate -measure -detail  (Auswahlmöglichkeiten)
+std <alias> deactivate measure detail  (Auswahlmöglichkeiten)
 
-std <alias> -deactivate -measure -all
+std <alias> deactivate measure all
 ```
 
 | Beschreibung               | "time_config"    |
@@ -191,7 +211,7 @@ std <alias> -deactivate -measure -all
 
 ### Test-Trigger manuell
 ```bash
-std -auto <crontab_command> -measure
+std -auto <crontab_command> measure
 ```
 
 ### Crontab anzeigen:
