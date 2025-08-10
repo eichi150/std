@@ -12,7 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <bitset>
-
+#include <algorithm>
 #include "../control/cmd_ctrl.h"
 #include "emoji.h"
 
@@ -31,10 +31,14 @@ public:
         , alias
         , entity
         , activate_measure
+        , deactivate_measure
         , zero_cmd
         , alias_one_cmd
         , hint_callback
         , show
+        , open_brackets
+        , default_close_brackets
+        , close_brackets
     };
 public:
     myReplxx(

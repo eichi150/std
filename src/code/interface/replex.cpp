@@ -8,9 +8,20 @@ myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
 
 {
         tab_completions[Tab_Cmd::activate_measure] = {
-            "measure []"
+            "measure ["
         };
-        
+        tab_completions[Tab_Cmd::deactivate_measure] = {
+            "all"
+            , "detail"
+        };
+
+        tab_completions[Tab_Cmd::open_brackets] = {
+            "[", "(", "\"", "{"
+        };
+        tab_completions[Tab_Cmd::default_close_brackets] = {
+            "]", ")", "\"", "}"
+        };
+
         tab_completions[Tab_Cmd::zero_cmd] = {
             "exit"
             , "help"
@@ -19,19 +30,21 @@ myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
             , "delete"
             , "touch BME280"
         };
+        
         tab_completions[Tab_Cmd::alias_one_cmd] = {
             "tag"
             , "measure"
             , "activate"
             , "deactivate"
         };
+
         tab_completions[Tab_Cmd::show] = {
             "activate"
            , "deactivate"
         };
+
         tab_completions[Tab_Cmd::command] = {
-            "all"
-            , "detail"
+            "measure"
             , "hours"
             , "minutes"
         };
@@ -92,6 +105,10 @@ bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
 
         std::string input_str(_input);
         
+        if(input_str.back() == ' '){
+            input_str.pop_back();
+        }
+
         if (std::regex_match(input_str, regex_pattern.at(command::exit))) {
             input_str.clear();
             _input = {};
@@ -212,6 +229,7 @@ bool myReplxx::is_command_complete(const std::vector<std::string>& tokens) {
 }
 
 bool myReplxx::parse_input_to_tokens(const std::string& input_, std::vector<std::string>& tokens, int& argc){
+
     std::stringstream ss(input_);
     std::string _cmd;
 
@@ -227,6 +245,7 @@ bool myReplxx::parse_input_to_tokens(const std::string& input_, std::vector<std:
     while(ss >> _cmd){
         std::string skip_str;
 
+        //start parsing if opening brackets
         if( !bit_parse.test(static_cast<size_t>(Parse::start_parsing)) ){
             for(size_t i{0}; i < parse_char_start.size(); ++i){
                 if(_cmd.front() == parse_char_start[i]){
@@ -249,7 +268,7 @@ bool myReplxx::parse_input_to_tokens(const std::string& input_, std::vector<std:
             //if parse then dont count them as argc. str_argv.size() > argc
             --argc;
         }
-
+        //end parsing if close brackets closes the opening bracket
         if( !bit_parse.test(static_cast<size_t>(Parse::ended_parsing)) 
             && bit_parse.test(static_cast<size_t>(Parse::parse))
         ){
@@ -367,7 +386,7 @@ void myReplxx::setup_autocompletion(){
             }
 
             size_t s_tok = tokens.size();
-            
+
             if(s_tok == 0){
                 //Command
                 for(const auto& cmd : tab_completions.at(Tab_Cmd::zero_cmd)){
@@ -378,6 +397,52 @@ void myReplxx::setup_autocompletion(){
                 for(const auto& alias : tab_completions.at(Tab_Cmd::alias)){
                     result.emplace_back(alias);
                 }
+                return result;
+            }
+            if(std::regex_match(tokens[0], regex_pattern.at(command::exit))){
+
+                return result; 
+            }
+
+            //if token contain open bracket - be ready to complete the closing after ' '
+            std::string bracket;
+            if( std::find_if(tokens.begin(), tokens.end(),
+                [this, &bracket](const auto& token) {
+                    return std::any_of(
+                        tab_completions.at(Tab_Cmd::open_brackets).begin(),
+                        tab_completions.at(Tab_Cmd::open_brackets).end(),
+                        [&bracket, &token](const auto& br) {
+                            if(token.find(br) != std::string::npos){
+                                bracket = br;
+                            }
+                            return token.find(br) != std::string::npos;
+                        }
+                    );
+                }) != tokens.end() )
+            {
+                if(tab_completions.at(Tab_Cmd::open_brackets).size() != tab_completions.at(Tab_Cmd::default_close_brackets).size()){
+                    throw std::runtime_error{"tab completion open/closed brackets have different size"};
+                }
+                std::vector<std::string> c_br_vec;
+                //select the close bracket matching to the opening bracket
+                for(size_t i{0}; i < tab_completions.at(Tab_Cmd::open_brackets).size(); ++i){
+                    if(tab_completions.at(Tab_Cmd::open_brackets)[i] == bracket){
+                        c_br_vec.push_back(tab_completions.at(Tab_Cmd::default_close_brackets)[i]);
+                        break;
+                    }
+                }
+                
+                //only include clock ifndefined
+                if (std::none_of(tokens.begin(), tokens.end(),
+                    [&](const auto& token) {
+                    return token == "clock";
+                } )
+                ){
+                    c_br_vec.push_back("clock");
+                }
+
+                tab_completions[Tab_Cmd::close_brackets] = c_br_vec;
+                select_completion({Tab_Cmd::close_brackets}, last_word, result);
                 return result;
             }
 
@@ -397,17 +462,14 @@ void myReplxx::setup_autocompletion(){
                             result.emplace_back(entity);
                         }
                     }
-
+                }
                 //if alias is on first position
-                }else if (std::find_if(tokens.begin(), tokens.end(),
-                    [this](const auto& token) {
-                        return std::find(
-                            tab_completions.at(Tab_Cmd::alias).begin(),
-                            tab_completions.at(Tab_Cmd::alias).end(),
-                            token
-                        ) != tab_completions.at(Tab_Cmd::alias).end();
-                    }) != tokens.end())
-                {
+                if(std::find(
+                        tab_completions.at(Tab_Cmd::alias).begin(),
+                        tab_completions.at(Tab_Cmd::alias).end(),
+                        tokens[0]
+                    ) != tab_completions.at(Tab_Cmd::alias).end()
+                ){
                     select_completion({Tab_Cmd::alias_one_cmd}, last_word, result);
 
                 }else{
@@ -428,11 +490,6 @@ void myReplxx::setup_autocompletion(){
             
             if(s_tok == 2){   
 
-                if(std::regex_match(tokens[1], regex_pattern.at(command::deactivate))){
-
-                    select_completion({Tab_Cmd::alias_one_cmd}, last_word, result);
-                }
-
                 //show alias or entitys
                 if(std::regex_match(tokens[0], regex_pattern.at(command::show_env))){
                     select_completion({Tab_Cmd::alias, Tab_Cmd::entity}, last_word, result);
@@ -448,7 +505,14 @@ void myReplxx::setup_autocompletion(){
 
                     select_completion({Tab_Cmd::alias, Tab_Cmd::entity}, last_word, result);
                     
-                }else{
+                }
+                // Alias
+                if (std::find(
+                        tab_completions.at(Tab_Cmd::alias).begin(),
+                        tab_completions.at(Tab_Cmd::alias).end(),
+                        tokens[0]
+                    ) != tab_completions.at(Tab_Cmd::alias).end()
+                ){
                     select_completion({Tab_Cmd::alias_one_cmd}, last_word, result);
                 }
             }
@@ -464,17 +528,28 @@ void myReplxx::setup_autocompletion(){
                 
                     select_completion({Tab_Cmd::activate_measure}, last_word, result);
                 }
+
+                
+                select_completion({Tab_Cmd::command}, last_word, result);
             }
                 
             if(s_tok == 4){
-                select_completion({Tab_Cmd::command}, last_word, result);
+                
+                if(std::regex_match(tokens[1], regex_pattern.at(command::deactivate))){
+                    if(std::regex_match(tokens[2], regex_pattern.at(command::measure_sensor))){
+                        select_completion({Tab_Cmd::deactivate_measure}, last_word, result);
+                    }
+
+                }else{
+                    select_completion({Tab_Cmd::command}, last_word, result);
+                }
+                
             }
             
             return result;
         }
     );
 }
-
 
 void myReplxx::setup_color(
     const std::vector<std::string>& Words
@@ -498,14 +573,8 @@ void myReplxx::setup_color(
 void myReplxx::setup_highlighter(replxx::Replxx& repl){
     repl.set_highlighter_callback(
         [this](const std::string& input, replxx::Replxx::colors_t& colors){
-            static std::vector<std::string> goodWords = { //shortform Commands
-                "show"
-                , "del"
-                , "a"
-                , "dea"
-                //, "h"
-                //, "m"
-            };
+            static std::vector<std::string> goodWords;
+
             for(const auto& cmd : tab_completions.at(Tab_Cmd::hint_callback)){
                 goodWords.push_back(cmd);
             }
@@ -516,11 +585,17 @@ void myReplxx::setup_highlighter(replxx::Replxx& repl){
             for(const auto& alias : tab_completions.at(Tab_Cmd::alias)){
                 goodWords.push_back(alias);
             }
+            for(const auto& o_br : tab_completions.at(Tab_Cmd::open_brackets)){
+                goodWords.push_back(o_br);
+            }
+            for(const auto& c_br : tab_completions.at(Tab_Cmd::default_close_brackets)){
+                goodWords.push_back(c_br);
+            }
 
             static std::regex numberRegex{R"(\b\d+\b)"};
-            static std::vector<std::string> badWords;/* = {
-                "oops", "fail", "error", "foo"
-            };*/
+            static std::vector<std::string> badWords = {
+                "§", "$", "%", "&", "/", "!"
+            };
             //Highlight Commands Green
             setup_color(goodWords, input, colors, replxx::Replxx::Color::GREEN);
             //Highlight BadWords Red
