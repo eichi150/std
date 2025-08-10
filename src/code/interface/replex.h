@@ -31,10 +31,16 @@ public:
         , alias
         , entity
         , activate_measure
+        , zero_cmd
+        , alias_one_cmd
+        , hint_callback
+        , show
     };
 public:
-    myReplxx(std::map<command, std::regex> _regex_pattern
-        , std::map<emojID, std::pair<std::string, std::string>> _emojis);
+    myReplxx(
+        std::map<command, std::regex> _regex_pattern
+        , std::map<emojID, std::pair<std::string, std::string>> _emojis
+    );
 
     bool run_replxx(std::pair<int, std::vector<std::string>>& argc_input_buffer);
 

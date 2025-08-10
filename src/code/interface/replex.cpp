@@ -10,8 +10,32 @@ myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
         tab_completions[Tab_Cmd::activate_measure] = {
             "measure []"
         };
-
+        
+        tab_completions[Tab_Cmd::zero_cmd] = {
+            "exit"
+            , "help"
+            , "add"
+            , "show"
+            , "delete"
+            , "touch BME280"
+        };
+        tab_completions[Tab_Cmd::alias_one_cmd] = {
+            "tag"
+            , "measure"
+            , "activate"
+            , "deactivate"
+        };
+        tab_completions[Tab_Cmd::show] = {
+            "activate"
+           , "deactivate"
+        };
         tab_completions[Tab_Cmd::command] = {
+            "all"
+            , "detail"
+            , "hours"
+            , "minutes"
+        };
+        tab_completions[Tab_Cmd::hint_callback] = {
             "exit"
             , "help"
             , "add"
@@ -25,6 +49,7 @@ myReplxx::myReplxx(std::map<command, std::regex> _regex_pattern
             , "touch BME280"
             , "hours"
             , "minutes"
+            , "measure"
         };
         //show tab_completions by pressing tab once
         this->set_double_tab_completion(false);
@@ -56,6 +81,7 @@ bool myReplxx::run_replxx(std::pair<int, std::vector<std::string>>& argc_input_b
 bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
 
     bool wrong_input = false;
+    history_add("exit");
     while (true) {
         
         //replxx::Replxx handles input
@@ -65,7 +91,7 @@ bool myReplxx::user_input(int& argc, std::vector<std::string>& input_buffer){
         }
 
         std::string input_str(_input);
-
+        
         if (std::regex_match(input_str, regex_pattern.at(command::exit))) {
             input_str.clear();
             _input = {};
@@ -273,7 +299,7 @@ void myReplxx::setup_hint_callback() {
             while(iss >> word){
                 last = word;
             }
-            for (const auto& cmd : this->tab_completions.at(Tab_Cmd::command)) {
+            for (const auto& cmd : this->tab_completions.at(Tab_Cmd::hint_callback)) {
                 if (cmd.rfind(last, 0) == 0) {  // cmd beginnt mit input
                     result.push_back(cmd);
                     contextLen = static_cast<int>(last.size());
@@ -340,56 +366,110 @@ void myReplxx::setup_autocompletion(){
                 contextLen = static_cast<int>(last_word.size());
             }
 
-            if(tokens.empty()){
-                return result;
-            }
-
-            // 1. Erste Wort vervollständigen, wenn nur ein Token
-            if(tokens.size() == 1){
+            size_t s_tok = tokens.size();
+            
+            if(s_tok == 0){
                 //Command
-                for(const auto& cmd : tab_completions.at(Tab_Cmd::command)){
+                for(const auto& cmd : tab_completions.at(Tab_Cmd::zero_cmd)){
                     if(cmd.find(last_word) == 0){
                         result.emplace_back(cmd);
                     }
                 }
-                //Alias
                 for(const auto& alias : tab_completions.at(Tab_Cmd::alias)){
-                    if(alias.find(last_word) == 0){
-                        result.emplace_back(alias);
+                    result.emplace_back(alias);
+                }
+                return result;
+            }
+
+            // 1. Erste Wort vervollständigen, wenn nur ein Token
+            if(s_tok == 1){
+                if(std::regex_match(tokens[0], regex_pattern.at(command::show_env))){
+                    //Alias
+                    for(const auto& alias : tab_completions.at(Tab_Cmd::alias)){
+                        if(alias.find(last_word) == 0){
+                            result.emplace_back(alias);
+                        }
+                    }
+                    
+                    //Entity
+                    for(const auto& entity : tab_completions.at(Tab_Cmd::entity)){
+                        if(entity.find(last_word) == 0){
+                            result.emplace_back(entity);
+                        }
+                    }
+
+                //if alias is on first position
+                }else if (std::find_if(tokens.begin(), tokens.end(),
+                    [this](const auto& token) {
+                        return std::find(
+                            tab_completions.at(Tab_Cmd::alias).begin(),
+                            tab_completions.at(Tab_Cmd::alias).end(),
+                            token
+                        ) != tab_completions.at(Tab_Cmd::alias).end();
+                    }) != tokens.end())
+                {
+                    select_completion({Tab_Cmd::alias_one_cmd}, last_word, result);
+
+                }else{
+                    //Command
+                    for(const auto& cmd : tab_completions.at(Tab_Cmd::zero_cmd)){
+                        if(cmd.find(last_word) == 0){
+                            result.emplace_back(cmd);
+                        }
+                    }
+                    //Alias
+                    for(const auto& alias : tab_completions.at(Tab_Cmd::alias)){
+                        if(alias.find(last_word) == 0){
+                            result.emplace_back(alias);
+                        }
                     }
                 }
             }
+            
+            if(s_tok == 2){   
 
-            //with more than one word
-            if(tokens.size() > 1){
-                for(size_t i{0}; i < tokens.size(); ++i){
-                    
-                    const std::string& cmd = tokens[i];
-                    //alias or entitys after command
-                    if(std::regex_match(cmd, regex_pattern.at(command::show))){
+                if(std::regex_match(tokens[1], regex_pattern.at(command::deactivate))){
 
-                        select_completion({Tab_Cmd::alias, Tab_Cmd::entity}, last_word, result);
-                    }else
-                    
-                    if(std::regex_match(cmd, regex_pattern.at(command::add))){
+                    select_completion({Tab_Cmd::alias_one_cmd}, last_word, result);
+                }
 
-                        select_completion({Tab_Cmd::entity}, last_word, result);
-                    }else
+                //show alias or entitys
+                if(std::regex_match(tokens[0], regex_pattern.at(command::show_env))){
+                    select_completion({Tab_Cmd::alias, Tab_Cmd::entity}, last_word, result);
                     
-                    if(std::regex_match(cmd, regex_pattern.at(command::delete_))){
+                }
+                
+                if(std::regex_match(tokens[0], regex_pattern.at(command::add))){
 
-                        select_completion({Tab_Cmd::alias, Tab_Cmd::entity}, last_word, result);
-                    }else
+                    select_completion({Tab_Cmd::entity}, last_word, result);
+                }
+                
+                if(std::regex_match(tokens[0], regex_pattern.at(command::delete_))){
+
+                    select_completion({Tab_Cmd::alias, Tab_Cmd::entity}, last_word, result);
                     
-                    if(std::regex_match(cmd, regex_pattern.at(command::activate))){
-                        
-                        select_completion({Tab_Cmd::activate_measure}, last_word, result);
-                    }else{
-                        //commands after alias
-                        select_completion({Tab_Cmd::command}, last_word, result);
-                    }
+                }else{
+                    select_completion({Tab_Cmd::alias_one_cmd}, last_word, result);
                 }
             }
+
+            if(s_tok == 3){
+                //show alias or entitys
+                if(std::regex_match(tokens[0], regex_pattern.at(command::show_env))){
+                    select_completion({Tab_Cmd::show}, last_word, result);
+                    
+                }
+                
+                if(std::regex_match(tokens[1], regex_pattern.at(command::activate))){
+                
+                    select_completion({Tab_Cmd::activate_measure}, last_word, result);
+                }
+            }
+                
+            if(s_tok == 4){
+                select_completion({Tab_Cmd::command}, last_word, result);
+            }
+            
             return result;
         }
     );
@@ -419,15 +499,14 @@ void myReplxx::setup_highlighter(replxx::Replxx& repl){
     repl.set_highlighter_callback(
         [this](const std::string& input, replxx::Replxx::colors_t& colors){
             static std::vector<std::string> goodWords = { //shortform Commands
-                "sh"
+                "show"
                 , "del"
-                , "me"
                 , "a"
                 , "dea"
                 //, "h"
                 //, "m"
             };
-            for(const auto& cmd : tab_completions.at(Tab_Cmd::command)){
+            for(const auto& cmd : tab_completions.at(Tab_Cmd::hint_callback)){
                 goodWords.push_back(cmd);
             }
             for(const auto& cmd : tab_completions.at(Tab_Cmd::activate_measure)){

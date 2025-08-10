@@ -55,6 +55,9 @@ private:
 
 	void log(const std::string& new_log);
 	
+	std::vector<std::string> generate_alias_string();
+	std::vector<std::string> generate_entity_string();
+
 	#ifdef __linux__
 	void linux_only();
 	#endif // __linux__

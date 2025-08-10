@@ -96,7 +96,6 @@ void STD_Master::run_std(){
 				);
 			}
 
-
 			log("run CLI");
 			do{
 				if(manager){
@@ -149,17 +148,9 @@ bool STD_Master::run_environment(){
 	logger->clear();
 
 	//collect alias names as strings for tab insertion
-	std::vector<std::string> alias_strings;
-	for(const auto& acc : env_man->get_all_accounts()){
-		alias_strings.push_back(acc.get_alias());
-	}
+	std::vector<std::string> alias_strings = generate_alias_string();
 	//collect entity names as strings for tab insertion
-	std::vector<std::string> entity_strings;
-	std::set<std::string> unique_entities;
-	for (const auto& acc : env_man->get_all_accounts()) {
-		unique_entities.insert(acc.get_entity());
-	}
-	entity_strings.assign(unique_entities.begin(), unique_entities.end());
+	std::vector<std::string> entity_strings = generate_entity_string();
 
 	_rx->set_tab_completion(alias_strings, entity_strings);
 	
@@ -173,6 +164,25 @@ bool STD_Master::run_environment(){
 		return true;
 	}
 	return false;
+}
+
+std::vector<std::string> STD_Master::generate_alias_string(){
+	std::vector<std::string> alias_strings;
+	for(const auto& acc : env_man->get_all_accounts()){
+		alias_strings.push_back(acc.get_alias());
+	}
+	return alias_strings;
+}
+std::vector<std::string> STD_Master::generate_entity_string(){
+	//collect entity names as strings for tab insertion
+	std::vector<std::string> entity_strings;
+	std::set<std::string> unique_entities;
+	for (const auto& acc : env_man->get_all_accounts()) {
+		unique_entities.insert(acc.get_entity());
+	}
+	entity_strings.assign(unique_entities.begin(), unique_entities.end());
+	
+	return entity_strings;
 }
 
 

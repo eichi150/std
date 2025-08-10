@@ -16,6 +16,7 @@ enum class command{
 	, add
 	, delete_
 	, show
+	, show_env
 	, hours
 	, minutes
 	, day
@@ -49,6 +50,7 @@ public:
 			  { command::help,      		std::regex{R"(^-?help$)", std::regex_constants::icase } }
 			, { command::add,       		std::regex{R"(^-?add$)", std::regex_constants::icase } }
 			, { command::show,      		std::regex{R"(^(-?show|--?sh?|sh)$)", std::regex_constants::icase }}
+			, { command::show_env,      	std::regex{R"(^(-?show)$)", std::regex_constants::icase }}
 			, { command::delete_,   		std::regex{R"(^(-?del(ete)?|delete)$)", std::regex_constants::icase } }
 			, { command::hours, 			std::regex{R"(^(-?h(ours)?|hours)$)", std::regex_constants::icase } }
 			, { command::minutes, 			std::regex{R"(^(-?m(inutes)?|minutes)$)", std::regex_constants::icase } }
@@ -60,7 +62,7 @@ public:
 			, { command::language,  		std::regex{R"(^(-?l(anguage)?|language)$)", std::regex_constants::icase } }
 			, { command::tag,				std::regex{R"(^-?tag?|tag$)", std::regex_constants::icase } }
 			, { command::touch_sensor, 		std::regex{R"(^-?touch?|touch$)", std::regex_constants::icase } }
-			, { command::measure_sensor,	std::regex{R"(^(-?me(asure)?|measure)$)", std::regex_constants::icase } }
+			, { command::measure_sensor,	std::regex{R"(^(measure?|-?me(asure))$)", std::regex_constants::icase } }
 			, { command::activate,			std::regex{R"(^(-?a(ctivate)?|activate)$)", std::regex_constants::icase } }
 			, { command::deactivate,		std::regex{R"(^(-?dea(ctivate)?|deactivate)$)", std::regex_constants::icase } }
 			, { command::i2c, 				std::regex{R"(^-?i2c$)", std::regex_constants::icase } }
